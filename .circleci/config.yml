@@ -44,7 +44,7 @@ non_master_and_release: &non_master_and_release
 
 
 # the "release_build" branch is used in the release process and should be triggered only through CircleCI API
-# so, we skip triggering from regular git push.
+# so, we skip triggering from the regular git push.
 skip_release_build_branch_push: &skip_release_build_branch_push
   unless:
     and:
@@ -2116,6 +2116,7 @@ jobs:
               }
               else {
                  echo "Build package for AMI tests."
+                 get-content .\VERSION
                  version = get-content .\VERSION
                  echo "${version}.1" | Out-File -FilePath .\VERSION
                  echo "${version}"
