@@ -2114,8 +2114,8 @@ jobs:
 
               echo "Build package for AMI tests."
               get-content .\VERSION
-              version = get-content .\VERSION -Encoding utf8NoBOM
-              echo "${version}.1" | Out-File -Encoding utf8NoBOM -FilePath .\VERSION
+              version = get-content .\VERSION -Encoding "utf8NoBOM"
+              echo "${version}.1" | Out-File -Encoding "utf8NoBOM" -FilePath .\VERSION
               echo "${version}"
               c:\Python27\python.exe build_package.py win32
               mv .\ScalyrAgentInstaller-*.msi output\ScalyrAgentInstaller.msi
@@ -2131,7 +2131,7 @@ jobs:
               mkdir artifacts
 
               mv .\ScalyrAgentInstaller.msi package
-              cp output/* artifacts
+              cp output\* artifacts
 
               #cp .\ScalyrAgentInstaller-*.msi artifacts/
               #mv .\ScalyrAgentInstaller-*.msi package\ScalyrAgentInstaller.msi
