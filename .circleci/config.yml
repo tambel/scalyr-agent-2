@@ -2117,6 +2117,7 @@ jobs:
               $version = get-content -Raw .\VERSION
               echo "GGG ${version}"
               echo "${version}.1" | Out-File  -FilePath .\VERSION
+              echo "1111"
               get-content .\VERSION
 
               c:\Python27\python.exe build_package.py win32
