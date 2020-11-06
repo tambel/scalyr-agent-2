@@ -2273,7 +2273,7 @@ jobs:
             popd
             tar -czvf production.tar production/*
             # copy installer script for the AMI tests
-            cp production/installScalyrAgentV2.sh package
+            cp production/installScalyrAgentV2.sh ../package
             rm -r production
 
             popd
