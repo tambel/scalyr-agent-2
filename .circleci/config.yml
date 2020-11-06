@@ -2113,15 +2113,17 @@ jobs:
               mv .\ScalyrAgentInstaller-*.msi output
 
               echo "Build package for AMI tests."
+              cp VERSION VERSION.backup
               $version = get-content .\VERSION
               echo "${version}.1" | Out-File  -Encoding ascii -FilePath .\VERSION
 
               c:\Python27\python.exe build_package.py win32
               mv .\ScalyrAgentInstaller-*.msi package
+              cp VERSION.backup VERSION
 
               if (![string]::IsNullOrEmpty("<< pipeline.parameters.agent_version >>")) {
                 echo "build package for the release."
-                echo "<< pipeline.parameters.agent_version >>" | Out-File -FilePath .\VERSION
+                echo "<< pipeline.parameters.agent_version >>" | Out-File -Encoding ascii -FilePath .\VERSION
                 c:\Python27\python.exe build_package.py win32
                 mv .\ScalyrAgentInstaller-*.msi output
               }
