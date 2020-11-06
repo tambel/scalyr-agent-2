@@ -2114,9 +2114,9 @@ jobs:
               mv .\ScalyrAgentInstaller-*.msi output
 
               echo "Build package for AMI tests."
-              $version = get-content .\VERSION -Encoding "utf8"
+              $version = get-content .\VERSION
               echo "GGG ${version}"
-              echo "${version}.1" | Out-File -Encoding "utf8" -FilePath .\VERSION
+              echo "${version}.1" | Out-File -FilePath .\VERSION
               get-content .\VERSION
 
               c:\Python27\python.exe build_package.py win32
