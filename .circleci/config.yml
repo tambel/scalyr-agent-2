@@ -2114,7 +2114,7 @@ jobs:
               mv .\ScalyrAgentInstaller-*.msi output
 
               echo "Build package for AMI tests."
-              $version = get-content -Raw .\VERSION
+              $version = get-content .\VERSION
               echo "GGG ${version}"
               echo "${version}.1" | Out-File  -FilePath .\VERSION
               echo "1111"
