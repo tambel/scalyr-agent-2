@@ -375,6 +375,7 @@ def build_win32_installer_package(variant, version):
         del parts[3]
         version = ".".join(parts)
 
+    print("FFFF", version)
     # Gather files by 'heat' tool from WIX and generate .wxs file for 'bin' folder.
     run_command(
         "heat dir Scalyr/bin -sreg -ag -cg BIN -dr APPLICATIONROOTDIRECTORY -var var.BinFolderSource -t wix-heat-bin-transform.xsl -o bin.wxs",
