@@ -2102,7 +2102,6 @@ jobs:
           name: Build MSI package
           command: |
               $Env:WIX = ";C:\wix311;"
-              $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
               c:\Python27\python.exe -m pip install -r win32\windows-build-requirements.txt
 
               # copy patched win32evtlog.pyd.
