@@ -222,7 +222,7 @@ def __determine_version():
     try:
         r = version_fp.readline().strip()
         print((type(r), r))
-        return version_fp.readline().strip()
+        return r
     finally:
         version_fp.close()
 
