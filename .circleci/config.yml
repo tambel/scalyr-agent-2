@@ -2274,6 +2274,8 @@ jobs:
             bash ~/scalyr-agent-2/scripts/circleci/release/create-agent-installer.sh "$GPG_SIGNING_KEYID" "$GPG_ALT_SIGNING_KEYID" stable stable
             popd
             tar -czvf production.tar.gz production/*
+            # copy installer script for the AMI tests
+            cp production/installScalyrAgentV2.sh package/installScalyrAgentV2.sh
             rm -r production
 
             popd
