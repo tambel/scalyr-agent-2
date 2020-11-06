@@ -2114,8 +2114,9 @@ jobs:
 
               echo "Build package for AMI tests."
               $version = get-content .\VERSION -Encoding "utf8"
-              echo "${version}"
+              echo "GGG ${version}"
               echo "${version}.1" | Out-File -Encoding "utf8" -FilePath .\VERSION
+              get-content .\VERSION
 
               c:\Python27\python.exe build_package.py win32
               mv .\ScalyrAgentInstaller-*.msi output\ScalyrAgentInstaller.msi
@@ -2275,7 +2276,7 @@ jobs:
             popd
             tar -czvf production.tar.gz production/*
             # copy installer script for the AMI tests
-            cp production/installScalyrAgentV2.sh package/installScalyrAgentV2.sh
+            cp production/installScalyrAgentV2.sh package
             rm -r production
 
             popd
