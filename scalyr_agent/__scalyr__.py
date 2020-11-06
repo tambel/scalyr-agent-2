@@ -16,7 +16,6 @@
 # author: Steven Czerwinski <czerwin@scalyr.com>
 
 from __future__ import absolute_import
-from __future__ import print_function
 
 __author__ = "czerwin@scalyr.com"
 
@@ -220,9 +219,7 @@ def __determine_version():
 
     version_fp = open(version_path, "r")
     try:
-        r = version_fp.readline().strip()
-        print((type(r), r))
-        return r
+        return version_fp.readline().strip()
     finally:
         version_fp.close()
 

@@ -2115,7 +2115,7 @@ jobs:
               echo "Build package for AMI tests."
               $version = get-content .\VERSION
               echo "GGG ${version}"
-              echo "${version}.1" | Out-File  -FilePath .\VERSION
+              echo "${version}.1" | Out-File  -Encoding ascii -FilePath .\VERSION
               echo "1111"
               get-content .\VERSION
 
