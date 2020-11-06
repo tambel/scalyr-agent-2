@@ -2107,27 +2107,34 @@ jobs:
               # copy patched win32evtlog.pyd.
               cp .\win32evtlog-cache\win32evtlog.pyd C:\Python27\Lib\site-packages\win32\win32evtlog.pyd
 
+              mkdir output
               echo "build stable version"
               c:\Python27\python.exe build_package.py win32
+              mv .\ScalyrAgentInstaller-*.msi output
 
               echo "Build package for AMI tests."
               get-content .\VERSION
-              version = get-content .\VERSION
-              echo "${version}.1" | Out-File -Encoding utf8 -FilePath .\VERSION
+              version = get-content .\VERSION -Encoding utf8NoBOM
+              echo "${version}.1" | Out-File -Encoding utf8NoBOM -FilePath .\VERSION
               echo "${version}"
               c:\Python27\python.exe build_package.py win32
+              mv .\ScalyrAgentInstaller-*.msi output\ScalyrAgentInstaller.msi
 
               if (![string]::IsNullOrEmpty("<< pipeline.parameters.agent_version >>")) {
 
                 echo "<< pipeline.parameters.agent_version >>" | Out-File -FilePath .\VERSION
                 c:\Python27\python.exe build_package.py win32
+                mv .\ScalyrAgentInstaller-*.msi output
               }
 
               mkdir package
               mkdir artifacts
 
-              cp .\ScalyrAgentInstaller-*.msi artifacts/
-              mv .\ScalyrAgentInstaller-*.msi package\ScalyrAgentInstaller.msi
+              mv .\ScalyrAgentInstaller.msi package
+              cp output/* artifacts
+
+              #cp .\ScalyrAgentInstaller-*.msi artifacts/
+              #mv .\ScalyrAgentInstaller-*.msi package\ScalyrAgentInstaller.msi
 
 
 
@@ -2259,14 +2266,14 @@ jobs:
             pushd beta
             bash ~/scalyr-agent-2/scripts/circleci/release/create-agent-installer.sh "$GPG_SIGNING_KEYID" "$GPG_ALT_SIGNING_KEYID" beta beta
             popd
-            tar -czvf internal.tar.gz beta/*
+            tar -czvf beta.tar.gz beta/*
             rm -r beta
 
             mkdir production
             pushd production
             bash ~/scalyr-agent-2/scripts/circleci/release/create-agent-installer.sh "$GPG_SIGNING_KEYID" "$GPG_ALT_SIGNING_KEYID" stable stable
             popd
-            tar -czvf stable.tar.gz production/*
+            tar -czvf production.tar.gz production/*
             rm -r production
 
             popd
