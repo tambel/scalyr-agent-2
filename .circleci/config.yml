@@ -2113,7 +2113,7 @@ jobs:
               echo "Build package for AMI tests."
               get-content .\VERSION
               version = get-content .\VERSION
-              echo "${version}.1" | Out-File -FilePath .\VERSION
+              echo "${version}.1" | Out-File -Encoding utf8 -FilePath .\VERSION
               echo "${version}"
               c:\Python27\python.exe build_package.py win32
 
