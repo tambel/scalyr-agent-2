@@ -145,4 +145,5 @@ echo "Stopping agent."
 docker stop ${contname_agent}
 echo "Agent stopped, copying .coverage results."
 docker cp ${contname_agent}:/.coverage .
+docker cp ${contname_agent}:/var/log/scalyr-agent-2 ./agent_logs
 kill_and_delete_docker_test_containers
