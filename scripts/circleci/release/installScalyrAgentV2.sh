@@ -156,6 +156,9 @@ KEYSERVER_URL="keyserver.ubuntu.com"
 PUBLIC_KEY_FINGERPRINT="84AC559B5FB5463885CE0841F70CEEDB4AD7B6C6"
 USE_BOOTSTRAP_PACKAGES=false
 
+# { # replace the placeholder with a public key # }
+PUBLIC_KEY="{ % REPLACE_PUBLIC_KEY % }"
+
 # Handle the options
 while (( $# > 0)); do
   case "$1" in

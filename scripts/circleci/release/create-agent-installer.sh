@@ -357,12 +357,21 @@ clean_package_files;
 create_alt_yum_repo_packages;
 
 tar -cf repo_packages.tar *bootstrap*.rpm *bootstrap*.deb
+installer_script_text='$(echo $SCRIPTPATH/installScalyrAgentV2.sh )'
 
 # replace a special placeholder for the repository type in the install sript to determine a final URL of the repository.
-sed "s~{ % REPLACE_REPOSITORY_TYPE % }~$REPO_BASE_URL~g" $SCRIPTPATH/installScalyrAgentV2.sh > installScalyrAgentV2.sh
-# also remove all special comments which are usefull only for template but not for the resulting file.
-sed "s~# { #.*# }~~g" -i installScalyrAgentV2.sh
+installer_script_text="$(sed "s~{ % REPLACE_REPOSITORY_TYPE % }~$REPO_BASE_URL~g" <<< "$installer_script_text")"
 
+# download a public key
+public_key=$(curl -s "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x84AC559B5FB5463885CE0841F70CEEDB4AD7B6C6")
+
+# replace a special placeholder for the public key. Use awk because sed cannot handle the public key's content properly.
+installer_script_text=$(awk -v PK="$public_key" '{sub("{ % REPLACE_PUBLIC_KEY % }", PK); print}' <<< "$installer_script_text")
+
+# also remove all special comments which are usefull only for template but not for the resulting file.
+installer_script_text="$(sed "s~# { #.*# }~~g" <<< "$installer_script_text")"
+
+echo "$installer_script_text" > installScalyrAgentV2.sh
 
 cat repo_packages.tar >> installScalyrAgentV2.sh
 rm -rf *bootstrap*.rpm

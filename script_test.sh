@@ -1,0 +1,2 @@
+PUBLIC_KEY="{ % REPLACE_PUBLIC_KEY % }"
+
