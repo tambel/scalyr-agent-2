@@ -357,7 +357,7 @@ clean_package_files;
 create_alt_yum_repo_packages;
 
 tar -cf repo_packages.tar *bootstrap*.rpm *bootstrap*.deb
-installer_script_text='$(echo $SCRIPTPATH/installScalyrAgentV2.sh )'
+installer_script_text="$(echo $SCRIPTPATH/installScalyrAgentV2.sh )"
 
 # replace a special placeholder for the repository type in the install sript to determine a final URL of the repository.
 installer_script_text="$(sed "s~{ % REPLACE_REPOSITORY_TYPE % }~$REPO_BASE_URL~g" <<< "$installer_script_text")"
