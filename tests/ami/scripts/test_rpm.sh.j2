@@ -42,6 +42,9 @@ fi
 
 sleep 5
 
+# Deny the default gpg port to test the installscript.
+iptables -A OUTPUT -p tcp --dport 11371 -j DROP
+
 echo_with_date "==========================="
 echo_with_date "System information"
 echo_with_date "==========================="
