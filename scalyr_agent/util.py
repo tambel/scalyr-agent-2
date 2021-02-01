@@ -568,6 +568,8 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
                         )
             except psutil.AccessDenied:
                 pass
+        else:
+            scalyr_agent.scalyr_logging.getLogger(__name__).error("NOT FOUND")
 
         scalyr_agent.scalyr_logging.getLogger(__name__).exception(
             "Could not write checkpoint file.\n"
