@@ -592,6 +592,8 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
             error_code="failedCheckpointWrite",
         )
 
+        raise
+
 
 def create_unique_id():
     """
