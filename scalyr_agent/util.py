@@ -557,6 +557,18 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
             fp.close()
         import scalyr_agent.scalyr_logging
 
+        import psutil
+
+        for process in psutil.process_iter():
+            try:
+                for path, fd in process.open_files():
+                    if path == file_path:
+                        scalyr_agent.scalyr_logging.getLogger(__name__).error(
+                            "{}, {}".format(str(process.name()), process.pid)
+                        )
+            except psutil.AccessDenied:
+                pass
+
         scalyr_agent.scalyr_logging.getLogger(__name__).exception(
             "Could not write checkpoint file.\n"
             + "File path: '{0}', type: {1}.\n".format(file_path, type(file_path))
