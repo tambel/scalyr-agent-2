@@ -558,6 +558,14 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
         import scalyr_agent.scalyr_logging
 
         import psutil
+        import traceback
+        import io
+
+        s = io.StringIO()
+
+        traceback.print_stack(file=s)
+        scalyr_agent.scalyr_logging.getLogger(__name__).error("TRACE")
+        scalyr_agent.scalyr_logging.getLogger(__name__).error(s.getvalue())
 
         for process in psutil.process_iter():
             try:
