@@ -30,7 +30,7 @@ import socket
 
 import scalyr_agent.scalyr_logging as scalyr_logging
 
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 
 log = scalyr_logging.getLogger(__name__)
 

@@ -32,7 +32,7 @@ import pytest
 
 from scalyr_agent.configuration import Configuration
 from scalyr_agent.platform_controller import DefaultPaths
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 from scalyr_agent.json_lib import JsonObject
 from six.moves import range
 

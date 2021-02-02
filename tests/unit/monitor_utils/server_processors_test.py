@@ -36,7 +36,7 @@ from scalyr_agent.monitor_utils.server_processors import (
     ConnectionIdleTooLong,
     RequestSizeExceeded,
 )
-from scalyr_agent.util import FakeRunState
+from scalyr_agent.util.common import FakeRunState
 from scalyr_agent.test_base import ScalyrTestCase
 
 

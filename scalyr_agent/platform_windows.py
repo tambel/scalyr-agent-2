@@ -106,7 +106,7 @@ from six.moves import input
 # [end of 2->TOD0]t
 
 from scalyr_agent.json_lib import JsonObject
-from scalyr_agent.util import RedirectorServer, RedirectorClient, RedirectorError
+from scalyr_agent.util.common import RedirectorServer, RedirectorClient, RedirectorError
 from scalyr_agent.platform_controller import (
     PlatformController,
     DefaultPaths,

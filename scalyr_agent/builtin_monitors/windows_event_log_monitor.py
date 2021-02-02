@@ -39,7 +39,7 @@ except ImportError as e:
     win32con = None
     windll = None
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent import ScalyrMonitor, define_config_option
 import scalyr_agent.scalyr_logging as scalyr_logging
 

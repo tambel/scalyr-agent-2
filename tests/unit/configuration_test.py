@@ -53,8 +53,8 @@ from scalyr_agent.builtin_monitors.journald_utils import (
     LogConfigManager,
     JournaldLogFormatter,
 )
-from scalyr_agent.util import JsonReadFileException
-import scalyr_agent.util as scalyr_util
+from scalyr_agent.util.common import JsonReadFileException
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent.compat import os_environ_unicode
 
 import scalyr_agent.configuration
@@ -664,7 +664,7 @@ class TestConfiguration(TestConfigurationBase):
         self.assertEqual(config.network_proxies, {"https": "https://bar.com"})
 
     @skipIf(sys.platform.startswith("win"), "Skipping test on Windows")
-    @mock.patch("scalyr_agent.util.read_config_file_as_json")
+    @mock.patch("scalyr_agent.util.common.read_config_file_as_json")
     def test_parse_incorrect_file_permissions_or_owner(
         self, mock_read_config_file_as_json
     ):
@@ -2075,7 +2075,7 @@ class TestConfiguration(TestConfigurationBase):
         self.assertEqual(mock_logger.info.call_count, 0)
 
     @skipIf(platform.system() == "Windows", "Skipping tests on Windows")
-    @mock.patch("scalyr_agent.util.read_config_file_as_json")
+    @mock.patch("scalyr_agent.util.common.read_config_file_as_json")
     def test_parse_invalid_config_file_permissions(self, mock_read_config_file_as_json):
         # User-friendly exception should be thrown on some config permission related errors
         error_msgs = [
@@ -2168,7 +2168,7 @@ class TestConfiguration(TestConfigurationBase):
         self.assertRaisesRegexp(BadConfiguration, expected_msg, config.parse)
 
     @mock.patch(
-        "scalyr_agent.util.get_compress_and_decompress_func",
+        "scalyr_agent.util.common.get_compress_and_decompress_func",
         mock.Mock(side_effect=ImportError("")),
     )
     def test_parse_library_for_specified_compression_type_not_available(self):

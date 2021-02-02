@@ -46,8 +46,8 @@ import inspect
 
 import six
 
-import scalyr_agent.util as util
-from scalyr_agent.util import RateLimiter
+import scalyr_agent.util.common as util
+from scalyr_agent.util.common import RateLimiter
 
 if six.PY2:
     _METRIC_NAME_SUPPORTED_TYPES = (six.text_type, six.binary_type)

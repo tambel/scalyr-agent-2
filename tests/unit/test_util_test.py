@@ -29,7 +29,7 @@ import mock
 import six
 
 from scalyr_agent import compat
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util import common as scalyr_util
 from scalyr_agent.test_base import BaseScalyrLogCaptureTestCase
 from scalyr_agent.test_base import ScalyrTestCase
 from scalyr_agent.test_base import skipIf

@@ -22,7 +22,7 @@ __author__ = "echee@scalyr.com"
 
 import threading
 
-from scalyr_agent.util import FakeClock, StoppableThread
+from scalyr_agent.util.common import FakeClock, StoppableThread
 from scalyr_agent.test_base import ScalyrTestCase
 from scalyr_agent.monitor_utils.blocking_rate_limiter import BlockingRateLimiter
 

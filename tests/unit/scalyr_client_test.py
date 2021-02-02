@@ -28,7 +28,7 @@ import time
 from scalyr_agent.__scalyr__ import SCALYR_VERSION
 
 from scalyr_agent import scalyr_client
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util import common as scalyr_util
 from scalyr_agent.scalyr_client import (
     AddEventsRequest,
     PostFixBuffer,

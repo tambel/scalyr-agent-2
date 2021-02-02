@@ -22,11 +22,11 @@ __author__ = "czerwin@scalyr.com"
 
 import re
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
 from scalyr_agent.test_base import ScalyrTestCase
 from scalyr_agent.test_util import ScalyrTestUtils
-from scalyr_agent.util import FakeClockCounter
+from scalyr_agent.util.common import FakeClockCounter
 
 import six
 

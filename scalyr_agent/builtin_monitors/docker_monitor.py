@@ -39,7 +39,6 @@ from io import open
 # See:
 # 1. https://github.com/scalyr/scalyr-agent-2/pull/700#issuecomment-761676613
 # 2. https://bugs.python.org/issue7980
-import _strptime  # NOQA
 
 import six
 from requests.packages.urllib3.exceptions import (  # pylint: disable=import-error
@@ -48,13 +47,13 @@ from requests.packages.urllib3.exceptions import (  # pylint: disable=import-err
 from docker.types.daemon import CancellableStream
 
 from scalyr_agent import ScalyrMonitor, define_config_option, define_metric
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 import scalyr_agent.scalyr_logging as scalyr_logging
 from scalyr_agent.json_lib import JsonObject, ArrayOfStrings
 import scalyr_agent.monitor_utils.annotation_config as annotation_config
 from scalyr_agent.scalyr_monitor import BadMonitorConfiguration
 
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 
 
 global_log = scalyr_logging.getLogger(__name__)

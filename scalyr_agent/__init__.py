@@ -65,8 +65,8 @@ from scalyr_agent.scalyr_monitor import define_metric
 from scalyr_agent.scalyr_monitor import define_config_option
 from scalyr_agent.scalyr_monitor import define_log_field
 
-from scalyr_agent.util import StoppableThread
-from scalyr_agent.util import RunState
+from scalyr_agent.util.common import StoppableThread
+from scalyr_agent.util.common import RunState
 
 from scalyr_agent.scalyr_logging import getLogger
 from scalyr_agent.scalyr_logging import AgentLogger

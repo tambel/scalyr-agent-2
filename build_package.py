@@ -54,7 +54,7 @@ from scalyr_agent.__scalyr__ import get_install_root, SCALYR_VERSION, scalyr_ini
 
 scalyr_init()
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
 # [start of 2->TODO]
 # Check for suitability.

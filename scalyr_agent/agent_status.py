@@ -41,7 +41,7 @@ if False:
     from typing import Optional
     from typing import Generator
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent import compat
 
 import six

@@ -50,7 +50,7 @@ from scalyr_agent.monitor_utils.server_processors import RequestSizeExceeded
 from scalyr_agent.monitor_utils.auto_flushing_rotating_file import (
     AutoFlushingRotatingFile,
 )
-from scalyr_agent.util import (
+from scalyr_agent.util.common import (
     StoppableThread,
     get_parser_from_config,
 )

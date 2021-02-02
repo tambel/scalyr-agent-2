@@ -30,7 +30,7 @@ from scalyr_agent.test_base import BaseScalyrLogCaptureTestCase
 import mock
 
 from scalyr_agent.test_util import ScalyrTestUtils
-from scalyr_agent.util import FakeClock
+from scalyr_agent.util.common import FakeClock
 
 
 def empty():

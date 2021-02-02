@@ -23,11 +23,11 @@ import json
 import six
 import pytest
 
-from scalyr_agent.util import set_json_lib
-from scalyr_agent.util import get_json_lib
-from scalyr_agent.util import json_encode
-from scalyr_agent.util import json_decode
-import scalyr_agent.util
+from scalyr_agent.util.common import set_json_lib
+from scalyr_agent.util.common import get_json_lib
+from scalyr_agent.util.common import json_encode
+from scalyr_agent.util.common import json_decode
+import scalyr_agent.util.common
 
 from .utils import generate_random_dict
 from .utils import read_bytes_from_log_fixture_file
@@ -55,7 +55,7 @@ def test_json_encode_with_custom_options(benchmark, json_lib, keys_count, sort_k
             pytest.skip("orjson doesn't support sort_keys=True")
 
     set_json_lib(json_lib)
-    scalyr_agent.util.SORT_KEYS = sort_keys
+    scalyr_agent.util.common.SORT_KEYS = sort_keys
 
     data = generate_random_dict(keys_count=keys_count)
 
@@ -65,7 +65,7 @@ def test_json_encode_with_custom_options(benchmark, json_lib, keys_count, sort_k
     result = benchmark.pedantic(run_benchmark, iterations=50, rounds=100)
 
     assert get_json_lib() == json_lib
-    assert scalyr_agent.util.SORT_KEYS == sort_keys
+    assert scalyr_agent.util.common.SORT_KEYS == sort_keys
     assert isinstance(result, six.text_type)
     assert json_decode(result) == data
 

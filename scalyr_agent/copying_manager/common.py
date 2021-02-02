@@ -20,7 +20,7 @@ from __future__ import absolute_import
 if False:
     from typing import Dict
 
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util import common as scalyr_util
 
 import six
 

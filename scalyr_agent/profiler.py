@@ -53,7 +53,7 @@ except ImportError:
 
 from scalyr_agent.configuration import Configuration
 import scalyr_agent.scalyr_logging as scalyr_logging
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 
 __all__ = ["ScalyrProfiler"]
 

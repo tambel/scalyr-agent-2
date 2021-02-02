@@ -41,7 +41,7 @@ except ImportError:
 from scalyr_agent import ScalyrMonitor, define_config_option
 import scalyr_agent.scalyr_logging as scalyr_logging
 from scalyr_agent.scalyr_monitor import BadMonitorConfiguration
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent.builtin_monitors.journald_utils import (
     LogConfigManager,
     JournaldLogFormatter,

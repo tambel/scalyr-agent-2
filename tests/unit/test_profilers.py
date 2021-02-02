@@ -27,7 +27,7 @@ from scalyr_agent.profiler import ScalyrProfiler
 from scalyr_agent.profiler import CPUProfiler
 from scalyr_agent.profiler import MemoryProfiler
 from scalyr_agent.profiler import PeriodicMemorySummaryCaptureThread
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 
 
 def mock_write_profiling_data(file_path, data_type):

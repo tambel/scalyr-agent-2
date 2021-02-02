@@ -43,8 +43,8 @@ import scalyr_agent.scalyr_logging as scalyr_logging
 
 import six
 
-from scalyr_agent.util import StoppableThread
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util.common import StoppableThread
+from scalyr_agent.util import common as scalyr_util
 
 PYTHON_26_OR_OLDER = sys.version_info[:2] < (2, 7)
 

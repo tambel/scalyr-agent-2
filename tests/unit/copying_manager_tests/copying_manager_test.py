@@ -44,7 +44,7 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 from scalyr_agent import scalyr_init
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util import common as scalyr_util
 
 scalyr_init()
 

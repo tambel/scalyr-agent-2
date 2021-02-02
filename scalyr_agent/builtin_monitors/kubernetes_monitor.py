@@ -43,7 +43,6 @@ from six.moves.urllib.parse import quote_plus
 # See:
 # 1. https://github.com/scalyr/scalyr-agent-2/pull/700#issuecomment-761676613
 # 2. https://bugs.python.org/issue7980
-import _strptime  # NOQA
 
 from scalyr_agent import compat
 
@@ -53,7 +52,7 @@ from scalyr_agent import (
     define_metric,
     BadMonitorConfiguration,
 )
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 import scalyr_agent.scalyr_logging as scalyr_logging
 from scalyr_agent.json_lib import (
     JsonObject,
@@ -76,7 +75,7 @@ from scalyr_agent.monitor_utils.k8s import (
 import scalyr_agent.monitor_utils.k8s as k8s_utils
 from scalyr_agent.third_party.requests.exceptions import ConnectionError
 
-from scalyr_agent.util import StoppableThread, HistogramTracker
+from scalyr_agent.util.common import StoppableThread, HistogramTracker
 
 
 global_log = scalyr_logging.getLogger(__name__)

@@ -46,7 +46,7 @@ from scalyr_agent.config_util import (
     get_config_from_env,
     BadConfiguration,
 )
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 
 log = scalyr_logging.getLogger(__name__)
 

@@ -47,7 +47,7 @@ except ImportError:
     # Likely not running on Windows
     win32file = None
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
 from scalyr_agent.json_lib import JsonConversionException, JsonMissingFieldException
 from scalyr_agent.json_lib.objects import (

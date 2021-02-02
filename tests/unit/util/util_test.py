@@ -39,23 +39,23 @@ import mock
 from mock import patch, MagicMock
 import six
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
-from scalyr_agent.util import (
+from scalyr_agent.util.common import (
     JsonReadFileException,
     RateLimiter,
     FakeRunState,
     ScriptEscalator,
     HistogramTracker,
 )
-from scalyr_agent.util import (
+from scalyr_agent.util.common import (
     StoppableThread,
     RedirectorServer,
     RedirectorClient,
     RedirectorError,
 )
-from scalyr_agent.util import verify_and_get_compress_func
-from scalyr_agent.util import get_compress_and_decompress_func
+from scalyr_agent.util.common import verify_and_get_compress_func
+from scalyr_agent.util.common import get_compress_and_decompress_func
 from scalyr_agent.json_lib import JsonObject
 
 
@@ -138,7 +138,7 @@ class TestUtilCompression(ScalyrTestCase):
             raise Exception("Mimic exception when importing compression lib")
 
         @patch(
-            "scalyr_agent.util.get_compress_and_decompress_func",
+            "scalyr_agent.util.common.get_compress_and_decompress_func",
             new=_mock_get_compress_and_decompress_func,
         )
         def _test(compression_type):
@@ -162,7 +162,7 @@ class TestUtilCompression(ScalyrTestCase):
             return m.compress, m.decompress
 
         @patch(
-            "scalyr_agent.util.get_compress_and_decompress_func",
+            "scalyr_agent.util.common.get_compress_and_decompress_func",
             new=_mock_get_compress_and_decompress_func,
         )
         def _test(compression_type):
@@ -485,7 +485,7 @@ class TestRateLimiter(ScalyrTestCase):
         self.advance_time(seconds)
 
     def test_basic_use_sleep(self):
-        with mock.patch("scalyr_agent.util.time.sleep", self.fake_sleep):
+        with mock.patch("scalyr_agent.util.common.time.sleep", self.fake_sleep):
             self.__last_sleep_amount = -1
             self.block_until_charge_succeeds(20)
             self.assertEqual(self.__last_sleep_amount, -1)
@@ -495,7 +495,7 @@ class TestRateLimiter(ScalyrTestCase):
             self.assertEqual(self.__last_sleep_amount, 0.1)
 
     def test_custom_bucket_size_and_rate_sleep(self):
-        with mock.patch("scalyr_agent.util.time.sleep", self.fake_sleep):
+        with mock.patch("scalyr_agent.util.common.time.sleep", self.fake_sleep):
             self.__last_sleep_amount = -1
             self.__test_rate = RateLimiter(10, 1, current_time=0)
             self.block_until_charge_succeeds(10)
@@ -511,7 +511,7 @@ class TestRateLimiter(ScalyrTestCase):
         self.assertRaises(ValueError, self.block_until_charge_succeeds, 20)
 
     def test_refill_sleep(self):
-        with mock.patch("scalyr_agent.util.time.sleep", self.fake_sleep):
+        with mock.patch("scalyr_agent.util.common.time.sleep", self.fake_sleep):
             self.__last_sleep_amount = -1
             self.block_until_charge_succeeds(60)
             self.assertEqual(self.__last_sleep_amount, -1)
@@ -522,7 +522,7 @@ class TestRateLimiter(ScalyrTestCase):
             self.assertEqual(self.__last_sleep_amount, 5)
 
     def test_charge_greater_than_bucket_size_sleep(self):
-        with mock.patch("scalyr_agent.util.time.sleep", self.fake_sleep):
+        with mock.patch("scalyr_agent.util.common.time.sleep", self.fake_sleep):
             self.__last_sleep_amount = -1
             self.__test_rate = RateLimiter(10, 1, current_time=0)
             self.block_until_charge_succeeds(20)

@@ -37,8 +37,8 @@ if False:
 from scalyr_agent import (
     scalyr_logging as scalyr_logging,
     StoppableThread,
-    util as scalyr_util,
 )
+from scalyr_agent.util import common as scalyr_util
 from scalyr_agent.agent_status import (
     CopyingManagerStatus,
     CopyingManagerWorkerStatus,

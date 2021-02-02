@@ -23,9 +23,9 @@ import copy
 
 import requests
 
-from scalyr_agent.util import SUPPORTED_COMPRESSION_ALGORITHMS
-from scalyr_agent.util import COMPRESSION_TYPE_TO_DEFAULT_LEVEL
-from scalyr_agent.util import get_compress_and_decompress_func
+from scalyr_agent.util.common import SUPPORTED_COMPRESSION_ALGORITHMS
+from scalyr_agent.util.common import COMPRESSION_TYPE_TO_DEFAULT_LEVEL
+from scalyr_agent.util.common import get_compress_and_decompress_func
 
 from benchmarks.micro.utils import generate_add_events_request
 from scalyr_agent import compat

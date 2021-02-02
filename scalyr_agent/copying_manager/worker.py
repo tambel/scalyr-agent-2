@@ -34,8 +34,8 @@ if False:
 from scalyr_agent import scalyr_logging as scalyr_logging, StoppableThread
 from scalyr_agent.agent_status import CopyingManagerWorkerSessionStatus
 from scalyr_agent.log_processing import LogFileProcessor
-from scalyr_agent.util import RateLimiter
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util.common import RateLimiter
+from scalyr_agent.util import common as scalyr_util
 from scalyr_agent.configuration import Configuration
 from scalyr_agent.scalyr_client import (
     create_client,

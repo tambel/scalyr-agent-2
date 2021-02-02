@@ -45,7 +45,7 @@ from tests.unit.copying_manager_tests.common import (
     TestingConfiguration,
 )
 
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util import common as scalyr_util
 
 import six
 from six.moves import range

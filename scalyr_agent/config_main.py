@@ -81,8 +81,8 @@ from scalyr_agent.configuration import Configuration
 from scalyr_agent.platform_controller import PlatformController
 from scalyr_agent import compat
 
-from scalyr_agent.util import win_remove_user_file_path_permissions
-import scalyr_agent.util as scalyr_util
+from scalyr_agent.util.common import win_remove_user_file_path_permissions
+import scalyr_agent.util.common as scalyr_util
 
 
 def set_api_key(config, config_file_path, new_api_key):

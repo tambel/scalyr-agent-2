@@ -29,13 +29,13 @@ import threading
 from io import open
 
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent.builtin_monitors.docker_monitor import DockerMonitor
 from scalyr_agent.builtin_monitors.docker_monitor import ContainerChecker
 from scalyr_agent.builtin_monitors.docker_monitor import _get_containers
 from scalyr_agent.test_base import ScalyrTestCase
 from scalyr_agent.test_util import ScalyrTestUtils
-from scalyr_agent.util import FakeClock, FakeClockCounter
+from scalyr_agent.util.common import FakeClock, FakeClockCounter
 
 import mock
 from mock import patch

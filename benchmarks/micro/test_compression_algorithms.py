@@ -27,7 +27,7 @@ from __future__ import print_function
 
 import pytest
 
-from scalyr_agent.util import get_compress_and_decompress_func
+from scalyr_agent.util.common import get_compress_and_decompress_func
 
 
 from .utils import read_bytes_from_log_fixture_file

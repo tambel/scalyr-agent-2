@@ -42,7 +42,7 @@ from scalyr_agent.platform_controller import (
     AgentAlreadyRunning,
 )
 from scalyr_agent.platform_controller import CannotExecuteAsUser, AgentNotRunning
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
 from scalyr_agent.__scalyr__ import (
     get_install_root,

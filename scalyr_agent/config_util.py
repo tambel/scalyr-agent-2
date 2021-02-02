@@ -22,7 +22,7 @@ __author__ = "echee@scalyr.com"
 
 import re
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
 from scalyr_agent.json_lib.objects import (
     JsonArray,

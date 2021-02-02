@@ -25,11 +25,11 @@ import scalyr_agent.monitor_utils.annotation_config as annotation_config
 from scalyr_agent.monitor_utils.annotation_config import BadAnnotationConfig
 from scalyr_agent.monitor_utils.blocking_rate_limiter import BlockingRateLimiter
 import scalyr_agent.third_party.requests as requests
-from scalyr_agent.util import StoppableThread
+from scalyr_agent.util.common import StoppableThread
 from scalyr_agent.json_lib import JsonObject
 
 import scalyr_agent.scalyr_logging as scalyr_logging
-import scalyr_agent.util as util
+import scalyr_agent.util.common as util
 from scalyr_agent.compat import os_environ_unicode
 from scalyr_agent.configuration import Configuration
 

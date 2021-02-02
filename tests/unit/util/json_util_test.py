@@ -30,7 +30,7 @@ import six
 import mock
 import pytest
 
-from scalyr_agent import util
+from scalyr_agent.util import common
 from scalyr_agent.test_base import ScalyrTestCase
 from scalyr_agent.test_base import skipIf
 
@@ -48,17 +48,17 @@ class EncodeDecodeTest(ScalyrTestCase):
 
     def _setlib(self, library):
         if library == JSON:
-            util.set_json_lib("json")
+            common.set_json_lib("json")
         elif library == UJSON:
-            util.set_json_lib("ujson")
+            common.set_json_lib("ujson")
         elif library == ORJSON:
-            util.set_json_lib("orjson")
+            common.set_json_lib("orjson")
         else:
             raise ValueError("Invalid library name: %s" % (library))
 
     def test_invalid_lib(self):
         self.assertRaises(
-            ValueError, lambda: util.set_json_lib("BAD JSON LIBRARY NAME")
+            ValueError, lambda: common.set_json_lib("BAD JSON LIBRARY NAME")
         )
 
     def test_dict(self):
@@ -114,24 +114,24 @@ class EncodeDecodeTest(ScalyrTestCase):
 
     def __test_encode_decode(self, text, obj):
         def __runtest(library):
-            original_lib = util.get_json_lib()
+            original_lib = common.get_json_lib()
 
             self._setlib(library)
             try:
-                text2 = util.json_encode(obj)
+                text2 = common.json_encode(obj)
                 self.assertEquals(
                     sorted(six.ensure_text(text)),
                     sorted(text2),
                     "%s != %s" % (str(text), str(text2)),
                 )
-                obj2 = util.json_decode(text2)
-                text3 = util.json_encode(obj2)
+                obj2 = common.json_decode(text2)
+                text3 = common.json_encode(obj2)
                 self.assertEquals(
                     sorted(six.ensure_text(text)),
                     sorted(text3),
                     "%s != %s" % (str(text), str(text3)),
                 )
-                obj3 = util.json_decode(text)
+                obj3 = common.json_decode(text)
                 self.assertEquals(obj3, obj)
 
                 # Sanity test to ensure curly brace is always the last character when serializing
@@ -145,10 +145,10 @@ class EncodeDecodeTest(ScalyrTestCase):
                 ]
 
                 for value in values:
-                    result = util.json_encode(value)
+                    result = common.json_encode(value)
                     self.assertEqual(result[-1], "}")
             finally:
-                util.set_json_lib(original_lib)
+                common.set_json_lib(original_lib)
 
         if sys.version_info[:2] > (2, 4) and sys.version_info[:2] != (2, 6):
             __runtest(UJSON)
@@ -182,52 +182,52 @@ class UnicodeAndLocaleEncodingAndDecodingTestCase(ScalyrTestCase):
             del os.environ["LC_ALL"]
 
     def test_non_ascii_data_non_utf_locale_coding_default_json_lib(self):
-        util.set_json_lib("json")
+        common.set_json_lib("json")
         original_data = "čććžšđ"
 
         # Default (UTF-8) locale
-        result = util.json_encode(original_data)
+        result = common.json_encode(original_data)
         self.assertEqual(result, '"\\u010d\\u0107\\u0107\\u017e\\u0161\\u0111"')
 
-        loaded = util.json_decode(result)
+        loaded = common.json_decode(result)
         self.assertEqual(loaded, original_data)
 
         # Non UTF-8 Locale
         os.environ["LC_ALL"] = "invalid"
 
-        result = util.json_encode(original_data)
+        result = common.json_encode(original_data)
         self.assertEqual(result, '"\\u010d\\u0107\\u0107\\u017e\\u0161\\u0111"')
 
-        loaded = util.json_decode(result)
+        loaded = common.json_decode(result)
         self.assertEqual(loaded, original_data)
 
     @skipIf(six.PY2, "Skipping under Python 2")
     def test_non_ascii_data_non_utf_locale_coding_orjson(self):
-        util.set_json_lib("orjson")
+        common.set_json_lib("orjson")
         original_data = "čććžšđ"
 
         # Default (UTF-8) locale
-        result = util.json_encode(original_data)
+        result = common.json_encode(original_data)
         self.assertEqual(result, '"%s"' % (original_data))
 
-        loaded = util.json_decode(result)
+        loaded = common.json_decode(result)
         self.assertEqual(loaded, original_data)
 
         # Non UTF-8 Locale
         os.environ["LC_ALL"] = "invalid"
 
-        result = util.json_encode(original_data)
+        result = common.json_encode(original_data)
         self.assertEqual(result, '"%s"' % (original_data))
 
-        loaded = util.json_decode(result)
+        loaded = common.json_decode(result)
         self.assertEqual(loaded, original_data)
 
         # Invalid UTF-8, should fall back to standard json implementation
         original_data = "\ud800"
-        result = util.json_encode(original_data)
+        result = common.json_encode(original_data)
         self.assertEqual(result, '"\\ud800"')
 
-        loaded = util.json_decode('"\ud800"')
+        loaded = common.json_decode('"\ud800"')
         self.assertEqual(loaded, original_data)
 
 
@@ -244,30 +244,30 @@ class TestDefaultJsonLibrary(ScalyrTestCase):
     def test_correct_default_json_library_is_used_python3(self):
         sys.modules["orjson"] = mock.Mock()
 
-        import scalyr_agent.util
+        import scalyr_agent.util.common
 
-        reload(scalyr_agent.util)
+        reload(scalyr_agent.util.common)
 
-        self.assertEqual(scalyr_agent.util.get_json_lib(), "orjson")
+        self.assertEqual(scalyr_agent.util.common.get_json_lib(), "orjson")
 
         sys.modules["orjson"] = None
         sys.modules["ujson"] = mock.Mock()
 
-        import scalyr_agent.util
+        import scalyr_agent.util.common
 
-        reload(scalyr_agent.util)
+        reload(scalyr_agent.util.common)
 
-        self.assertEqual(scalyr_agent.util.get_json_lib(), "ujson")
+        self.assertEqual(scalyr_agent.util.common.get_json_lib(), "ujson")
 
         sys.modules["orjson"] = None
         sys.modules["ujson"] = None
         sys.modules["json"] = mock.Mock()
 
-        import scalyr_agent.util
+        import scalyr_agent.util.common
 
-        reload(scalyr_agent.util)
+        reload(scalyr_agent.util.common)
 
-        self.assertEqual(scalyr_agent.util.get_json_lib(), "json")
+        self.assertEqual(scalyr_agent.util.common.get_json_lib(), "json")
 
     @skipIf(six.PY3, "Skipping under Python 3")
     def test_correct_default_json_library_is_used_python2(self):
@@ -275,30 +275,30 @@ class TestDefaultJsonLibrary(ScalyrTestCase):
         sys.modules["orjson"] = mock.Mock()
         sys.modules["ujson"] = mock.Mock()
 
-        import scalyr_agent.util
+        import scalyr_agent.util.common
 
-        reload(scalyr_agent.util)
+        reload(scalyr_agent.util.common)
 
-        self.assertEqual(scalyr_agent.util.get_json_lib(), "ujson")
+        self.assertEqual(scalyr_agent.util.common.get_json_lib(), "ujson")
 
         sys.modules["orjson"] = None
         sys.modules["ujson"] = mock.Mock()
 
-        import scalyr_agent.util
+        import scalyr_agent.util.common
 
-        reload(scalyr_agent.util)
+        reload(scalyr_agent.util.common)
 
-        self.assertEqual(scalyr_agent.util.get_json_lib(), "ujson")
+        self.assertEqual(scalyr_agent.util.common.get_json_lib(), "ujson")
 
         sys.modules["orjson"] = None
         sys.modules["ujson"] = None
         sys.modules["json"] = mock.Mock()
 
-        import scalyr_agent.util
+        import scalyr_agent.util.common
 
-        reload(scalyr_agent.util)
+        reload(scalyr_agent.util.common)
 
-        self.assertEqual(scalyr_agent.util.get_json_lib(), "json")
+        self.assertEqual(scalyr_agent.util.common.get_json_lib(), "json")
 
 
 def main():

@@ -33,7 +33,7 @@ if False:
 
 import pytest
 
-from scalyr_agent import util as scalyr_util
+from scalyr_agent.util import common as scalyr_util
 from scalyr_agent.copying_manager import CopyingManager
 from scalyr_agent.copying_manager.worker import CopyingParameters
 from scalyr_agent.platform_controller import DefaultPaths

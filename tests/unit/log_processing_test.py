@@ -29,7 +29,7 @@ import time
 import platform
 from io import open
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 
 from scalyr_agent.scalyr_client import EventSequencer
 from scalyr_agent.line_matcher import LineMatcher
@@ -45,7 +45,7 @@ from scalyr_agent.log_processing import FileSystem
 from scalyr_agent.log_processing import _parse_cri_log as parse_cri_log
 from scalyr_agent.json_lib import JsonObject
 from scalyr_agent.json_lib import JsonArray
-from scalyr_agent.util import md5_hexdigest
+from scalyr_agent.util.common import md5_hexdigest
 from scalyr_agent.configuration import Configuration, BadConfiguration
 from scalyr_agent.platform_controller import DefaultPaths
 

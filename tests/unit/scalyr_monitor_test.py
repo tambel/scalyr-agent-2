@@ -32,7 +32,7 @@ from scalyr_agent.scalyr_monitor import (
 )
 from scalyr_agent.test_base import ScalyrTestCase
 
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent.compat import os_environ_unicode
 
 import six

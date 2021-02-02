@@ -44,7 +44,6 @@ import os
 import sys
 import time
 import re
-import ssl
 from io import open
 
 if False:
@@ -57,7 +56,6 @@ if False:
 # See:
 # 1. https://github.com/scalyr/scalyr-agent-2/pull/700#issuecomment-761676613
 # 2. https://bugs.python.org/issue7980
-import _strptime  # NOQA
 
 try:
     from __scalyr__ import SCALYR_VERSION
@@ -83,7 +81,7 @@ except ImportError:
     import glob2 as glob  # type: ignore
 
 import scalyr_agent.scalyr_logging as scalyr_logging
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 import scalyr_agent.remote_shell as remote_shell
 
 # We have to be careful to set this logger class very early in processing, even before other
@@ -101,11 +99,10 @@ scalyr_logging.set_log_destination(use_stdout=True)
 from optparse import OptionParser
 
 from scalyr_agent.profiler import ScalyrProfiler
-from scalyr_agent.scalyr_client import ScalyrClientSession
 from scalyr_agent.scalyr_client import create_client, verify_server_certificate
 from scalyr_agent.copying_manager import CopyingManager
 from scalyr_agent.configuration import Configuration
-from scalyr_agent.util import RunState, ScriptEscalator
+from scalyr_agent.util.common import RunState, ScriptEscalator
 from scalyr_agent.agent_status import AgentStatus
 from scalyr_agent.agent_status import ConfigStatus
 from scalyr_agent.agent_status import OverallStats
@@ -118,8 +115,6 @@ from scalyr_agent.platform_controller import (
 )
 from scalyr_agent.platform_controller import AgentNotRunning
 from scalyr_agent.build_info import get_build_revision
-from scalyr_agent import compat
-
 
 STATUS_FILE = "last_status"
 STATUS_FORMAT_FILE = "status_format"

@@ -41,12 +41,12 @@ from six.moves import map
 from six.moves import range
 import six.moves.http_client
 
-from scalyr_agent.util import verify_and_get_compress_func
+from scalyr_agent.util.common import verify_and_get_compress_func
 from scalyr_agent.configuration import Configuration
 
 from scalyr_agent import __scalyr__
 import scalyr_agent.scalyr_logging as scalyr_logging
-import scalyr_agent.util as scalyr_util
+import scalyr_agent.util.common as scalyr_util
 from scalyr_agent.connection import ConnectionFactory
 
 # Maximum request body size (in characters / bytes) we log under DEBUG 5 log level. If the body is
