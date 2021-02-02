@@ -543,9 +543,30 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
     @param tmp_path: A temporary path to write the file to
     @param info: A dict containing the JSON object to write
     """
+    import scalyr_agent.scalyr_logging
+    import psutil
+
     fp = None
     try:
         fp = open(tmp_path, "w")
+        scalyr_agent.scalyr_logging.getLogger(__name__).error(
+            "FILE!!!:{}, {}, {}".format(
+                file_path, str(fp.fileno()), threading.get_ident()
+            )
+        )
+
+        pr = psutil.Process(os.getpid())
+        for f in pr.open_files():
+            if f.path == tmp_path:
+                scalyr_agent.scalyr_logging.getLogger(__name__).error(
+                    "TMP:{}".format(tmp_path)
+                )
+
+            if f.path == file_path:
+                scalyr_agent.scalyr_logging.getLogger(__name__).error(
+                    "TMP:{}".format(file_path)
+                )
+
         fp.write(json_encode(info))
         fp.close()
         fp = None
@@ -555,17 +576,6 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
     except Exception:
         if fp is not None:
             fp.close()
-        import scalyr_agent.scalyr_logging
-
-        import psutil
-        import traceback
-        import io
-
-        s = io.StringIO()
-
-        traceback.print_stack(file=s)
-        scalyr_agent.scalyr_logging.getLogger(__name__).error("TRACE")
-        scalyr_agent.scalyr_logging.getLogger(__name__).error(s.getvalue())
 
         for process in psutil.process_iter():
             try:
@@ -576,8 +586,6 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
                         )
             except psutil.AccessDenied:
                 pass
-        else:
-            scalyr_agent.scalyr_logging.getLogger(__name__).error("NOT FOUND")
 
         scalyr_agent.scalyr_logging.getLogger(__name__).exception(
             "Could not write checkpoint file.\n"
@@ -591,8 +599,6 @@ def atomic_write_dict_as_json_file(file_path, tmp_path, info):
             + "Error:",
             error_code="failedCheckpointWrite",
         )
-
-        raise
 
 
 def create_unique_id():
