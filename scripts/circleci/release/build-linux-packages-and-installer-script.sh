@@ -18,12 +18,11 @@
 #
 # This script is used to create build linux based packages agent, install script and other related things.
 # For now it is supposed to work only within the circleci job.
-# Usage: build-linux-packages-and-installer-script.sh <AGENT_RELEASE_VERSION> <OUTPUT_PATH> <RELEASE_REPO_BASE_URL> <RELEASE_REPO_NAME>
+# Usage: build-linux-packages-and-installer-script.sh <AGENT_RELEASE_VERSION> <OUTPUT_PATH> <RELEASE_REPO_BASE_URL>
 #
 # AGENT_RELEASE_VERSION - the version for the agent to set. The version form the VERSION file is used if emoty.
 # OUTPUT_PATH - the path for all build artifacts.
 # RELEASE_REPO_BASE_URL - the base url for the different types of release S3 repos (stable, beta, internal).
-# RELEASE_REPO_NAME - the type of the S3 repo (stable, beta, internal).
 
 set -e
 
@@ -34,28 +33,8 @@ AGENT_RELEASE_VERSION=$1
 
 OUTPUT_PATH="$(realpath "$2")"
 RELEASE_REPO_BASE_URL=${3:-stable}
-RELEASE_REPO_NAME=${4:-stable}
 
 VERSION_FILE_PATH="${AGENT_SOURCE_PATH}/VERSION"
-
-echo "Prepare the GPG public keys."
-gpg --update-trustdb
-
-# import remote sign machine public keys from files in the Scalyr agent repo.
-# gnupg < 2.1
-#GPG_SIGNING_KEYID=`gpg --with-fingerprint "${AGENT_SOURCE_PATH}/scripts/circleci/release/public_keys/main.asc" | grep "Key fingerprint" | awk '{print $10$11$12$13}'`
-#GPG_ALT_SIGNING_KEYID=`gpg --with-fingerprint "${AGENT_SOURCE_PATH}/scripts/circleci/release/public_keys/alt.asc" | grep "Key fingerprint" | awk '{print $10$11$12$13}'`
-
-# gnupg > 2.1
-GPG_SIGNING_KEYID=$(gpg --with-fingerprint --with-colons --import-options show-only --import < "${AGENT_SOURCE_PATH}/scripts/circleci/release/public_keys/main.asc" | grep "fpr:" | head -1 | awk -F ":" '{print $10}')
-GPG_ALT_SIGNING_KEYID=$(gpg --with-fingerprint --with-colons --import-options show-only --import < "${AGENT_SOURCE_PATH}/scripts/circleci/release/public_keys/alt.asc" | grep "fpr:" | head -1 | awk -F ":" '{print $10}')
-
-echo "Using GPG_SIGNING_KEYID=${GPG_SIGNING_KEYID}"
-echo "Using GPG_ALT_SIGNING_KEYID=${GPG_ALT_SIGNING_KEYID}"
-
-# import gpg public keys.
-gpg --import "${AGENT_SOURCE_PATH}/scripts/circleci/release/public_keys/main.asc"
-gpg --import "${AGENT_SOURCE_PATH}/scripts/circleci/release/public_keys/alt.asc"
 
 if [ -n "${AGENT_RELEASE_VERSION}" ]; then
   agent_version="${AGENT_RELEASE_VERSION}"
@@ -84,7 +63,7 @@ echo "$DEB_PACKAGE_PATH"
 
 echo "Build deb and rpm repo packages and installer script."
 
-bash ${AGENT_SOURCE_PATH}/scripts/circleci/release/create-agent-installer.sh "$GPG_SIGNING_KEYID" "$GPG_ALT_SIGNING_KEYID" "$RELEASE_REPO_BASE_URL" "$RELEASE_REPO_NAME"
+bash ${AGENT_SOURCE_PATH}/scripts/circleci/release/create-agent-installer.sh "$RELEASE_REPO_BASE_URL"
 
 cat "${VERSION_FILE_PATH}" > RELEASE_VERSION
 
