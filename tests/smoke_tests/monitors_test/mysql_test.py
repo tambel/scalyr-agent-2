@@ -36,7 +36,7 @@ from tests.utils.log_reader import AgentLogReader
 
 import six
 
-HOST = "0.0.0.0"
+HOST = "localhost"
 USERNAME = "scalyr_test_user"
 PASSWORD = "scalyr_test_password"
 DATABASE = "scalyr_test_db"
@@ -47,6 +47,8 @@ def mysql_client():
     os.system("service mysql start")
 
     os.system("mysql < /init.sql")
+
+    os.system("mysql --version")
 
     time.sleep(3)
 
