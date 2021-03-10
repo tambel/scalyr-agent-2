@@ -44,7 +44,10 @@ DATABASE = "scalyr_test_db"
 
 @pytest.fixture()
 def mysql_client():
-    os.system("find /var/lib/mysql -type f -exec touch {} \\; && service mysql start")
+    # os.system("find /var/lib/mysql -type f -exec touch {} \\; && service mysql start")
+
+    os.system("chown -R mysql:mysql /var/lib/mysql /var/run/mysqld")
+    os.system("service mysql start")
     os.system("cat /var/log/syslog")
     os.system("cat /var/log/mysql/error.log")
 
