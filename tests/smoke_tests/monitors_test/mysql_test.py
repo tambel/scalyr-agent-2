@@ -45,7 +45,7 @@ DATABASE = "scalyr_test_db"
 @pytest.fixture()
 def mysql_client():
     os.system("service mysql start")
-
+    os.system("cat /var/log/syslog")
     time.sleep(3)
 
     os.system("mysql < /init.sql")
