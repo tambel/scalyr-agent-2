@@ -36,7 +36,7 @@ from tests.utils.log_reader import AgentLogReader
 
 import six
 
-HOST = "localhost"
+HOST = "0.0.0.0"
 USERNAME = "scalyr_test_user"
 PASSWORD = "scalyr_test_password"
 DATABASE = "scalyr_test_db"
