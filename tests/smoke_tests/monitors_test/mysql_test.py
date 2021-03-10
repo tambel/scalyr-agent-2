@@ -47,6 +47,7 @@ def mysql_client():
     os.system("service mysql start")
     os.system("cat /var/log/syslog")
     os.system("cat /var/log/mysql/error.log")
+
     time.sleep(3)
 
     os.system("mysql < /init.sql")
