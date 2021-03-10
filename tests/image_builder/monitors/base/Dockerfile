@@ -3,7 +3,7 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update -y
 RUN apt install -y mysql-server
-RUN chown -R mysql /var/run/mysqld
+RUN find /var/lib/mysql -type f -exec touch {} \;
 RUN apt install -y postgresql
 
 
