@@ -46,6 +46,8 @@ DATABASE = "scalyr_test_db"
 def mysql_client():
     os.system("service mysql start")
 
+    time.sleep(3)
+
     os.system("mysql < /init.sql")
 
     os.system("mysql --version")
