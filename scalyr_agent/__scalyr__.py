@@ -110,6 +110,10 @@ class InstallType(enum.Enum):
 
 
 def __read_install_type_from_type_file(path: pl.Path) -> InstallType:
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Can not determine the package installation type. The file '{path}' is not found."
+        )
     # Read the type of the package from the file.
     install_type = path.read_text().strip()
     # Check if the package type is one of the valid install types.
@@ -140,28 +144,38 @@ def __determine_install_root_and_type() -> Tuple[str, InstallType]:
         # All agent packages have the special file 'install_type' which contains the type of the package.
         # This file is always located in the install root, so it is a good way to verify if it is a install root or not.
         install_type_file_path = install_root / "install_type"
-        if not install_type_file_path.is_file():
-            # For now, we expect that the frozen binary can only be run correctly as a part of a package,
-            # so if there's no an 'install_type' file, then something went wrong.
-            raise FileNotFoundError(
-                f"Can not determine the package installation type. The file '{install_type_file_path}' is not found."
-            )
 
         return str(install_root), __read_install_type_from_type_file(
             install_type_file_path
         )
 
     else:
-        # The agent code is not frozen.
-        # For now, there is only one possible scenario which is handled:
-        #   There is no any package installation and agent started directly from the source repo, the most likely,
-        #   during the development process (DEV_INSTALL). The install root is a source root.
+        # The agent code is not frozen. The main task here is determine whether the agent has been started from the
+        # source code (aka DEV_INSTALL) or from the package installation. In packages, the source code is located in the
+        # <install_root>/py folder, so it has to be enough to verify if the parent folder of the 'scalyr_agent' package
+        # is a folder named 'py'.
 
-        # Get install root, which should be a parent directory for the 'scalyr_agent' package directory where the
-        # '__scalyr__.py' file is located.
-        install_root = pl.Path(__file__).absolute().parent.parent
+        script_path = pl.Path(sys.argv[0])
 
-        return str(install_root), InstallType.DEV_INSTALL
+        # First of all get the real path of the executed script if it is a symlink.
+        while script_path.is_symlink():
+            script_path = pl.Path(script_path.parent, os.readlink(script_path)).resolve()
+
+        # parent folder of the script has to be a 'scalyr_agent' package folder.
+        package_folder = script_path.parent
+
+        # Get the source code root. The name of the folder has to be 'py'
+        source_code_root = package_folder.parent
+
+        if source_code_root.name == "py":
+            install_root = source_code_root.parent
+            install_type_file_path = install_root / "install_type"
+
+            return str(install_root), __read_install_type_from_type_file(install_type_file_path)
+        else:
+            # The name of hte parent folder of the 'scalyr_agent' package is not 'py', so it is likely that it
+            # started from source code.
+            return str(source_code_root), InstallType.DEV_INSTALL
 
 
 __install_root__, INSTALL_TYPE = __determine_install_root_and_type()

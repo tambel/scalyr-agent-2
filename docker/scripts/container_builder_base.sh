@@ -84,6 +84,7 @@ while (( $# > 0)); do
       untar_tarball $0 || die "Failed to extract packages";
       cp $TMPDIR/Dockerfile ./ || die "Failed to copy the Dockerfile to current directory";
       cp $TMPDIR/requirements.txt ./ || die "Failed to copy the requirements.txt to current directory";
+      cp $TMPDIR/container_requirements.txt ./ || die "Failed to copy the agent requirements.txt to current directory";
       cp $TMPDIR/*.tar.gz ./ ||
         die "Failed to copy the source tarball to the current directory";
       exit 0;;
@@ -144,25 +145,38 @@ do
    TAG_OPTIONS="$TAG_OPTIONS -t $x"
 done
 
-# Look for presence of docker buildx instance, otherwise create one
-# 'docker-container' is what the driver is called:
-# https://docs.docker.com/buildx/working-with-buildx/#build-multi-platform-images
-HAS_BUILD_X=$(docker buildx ls | grep 'docker-container' | cut -d ' ' -f 1)
+# TODO: return back the buildx approach when the bug with the local build is fixed. For now it does not produce
+#  an image.
+## Look for presence of docker buildx instance, otherwise create one
+## 'docker-container' is what the driver is called:
+## https://docs.docker.com/buildx/working-with-buildx/#build-multi-platform-images
+#HAS_BUILD_X=$(docker buildx ls | grep 'docker-container' | cut -d ' ' -f 1)
+#
+#if [ -z "$HAS_BUILD_X" ]; then
+#  report_progress "Adding Docker buildx instance" "$QUIET";
+#  run_docker_command "buildx create --use" "$QUIET" || die "Failed to create new builder instance"
+#else
+#  run_docker_command "buildx use $HAS_BUILD_X" "$QUIET" || die "Failed to use $HAS_BUILD_X builder instance"
+#fi
+#
+## If publishing, push all images together; otherwise just put them in local cache
+#if [ ! -z "$PUBLISH" ]; then
+#  report_progress "Publishing image(s)." "$QUIET";
+#  run_docker_command "buildx build --push --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+#else
+#  report_progress "Building image(s) to local cache." "$QUIET";
+#  run_docker_command "buildx build -o type=image --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+#fi
 
-if [ -z "$HAS_BUILD_X" ]; then
-  report_progress "Adding Docker buildx instance" "$QUIET";
-  run_docker_command "buildx create --use" "$QUIET" || die "Failed to create new builder instance"
-else
-  run_docker_command "buildx use $HAS_BUILD_X" "$QUIET" || die "Failed to use $HAS_BUILD_X builder instance"
-fi
+run_docker_command "build $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
 
-# If publishing, push all images together; otherwise just put them in local cache
 if [ ! -z "$PUBLISH" ]; then
   report_progress "Publishing image(s)." "$QUIET";
-  run_docker_command "buildx build --push --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
-else
-  report_progress "Building image(s) to local cache." "$QUIET";
-  run_docker_command "buildx build -o type=image --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+
+  for x in "${IMAGES[@]}"
+  do
+    run_docker_command "push $x" "$QUIET";
+  done
 fi
 
 report_progress "Success." "$QUIET";
