@@ -147,9 +147,9 @@ jobs:
             --package-test-path ~/package_test/package_test* \
             --scalyr-api-key "0v7dW1EIPpglMcSjGywUdgY9xTNWQP/kas6qHEmiUG5w-"
 
-  test-k8s:
-    needs: build
-    runs-on: ${{ matrix.os }}
+#  test-k8s:
+#    needs: build
+#    runs-on: ${{ matrix.os }}
 
 
 
