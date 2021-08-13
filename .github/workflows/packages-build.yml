@@ -196,7 +196,7 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: "package-${{ matrix.package_type }}"
+          name: "package-${{ matrix.docker-build-type }}"
           path: ~/package
 
       - name: Test.
