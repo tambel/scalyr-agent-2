@@ -7,14 +7,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8]
-        os: [ubuntu-20.04]
         include:
           - package_type: "deb"
             package_name: "scalyr-agent-2_*.*.*_all.deb"
+            os: ubuntu-20.04
             python-version: "3.8"
           - package_type: "rpm"
             package_name: "scalyr-agent-2-*.*.*-*.noarch.rpm"
+            os: ubuntu-20.04
             python-version: "3.8"
           - package_type: "tar"
             package_name: "scalyr-agent-*.*.*.tar.gz"
