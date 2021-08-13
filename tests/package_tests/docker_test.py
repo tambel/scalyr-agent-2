@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import pathlib as pl
 import subprocess
@@ -91,11 +93,11 @@ def main(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--builder-path", required=True)
+    parser.add_argument("--package-path", required=True)
     parser.add_argument("--scalyr-api-key", required=True)
 
     args = parser.parse_args()
     main(
-        builder_path=args.builder_path,
+        builder_path=args.package_path,
         scalyr_api_key=args.scalyr_api_key
     )

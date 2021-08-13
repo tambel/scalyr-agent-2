@@ -130,6 +130,12 @@ jobs:
           - package_type: "msi"
             os: windows-2019
             python-version: "3.8"
+          - package_type: "k8s"
+            os: ubuntu-20.04
+            python-version: "3.8"
+          - package_type: "docker-json"
+            os: ubuntu-20.04
+            python-version: "3.8"
 
     steps:
       - name: Checkout repository
@@ -145,6 +151,12 @@ jobs:
           name: "package-test-${{ matrix.package_type }}"
           path: ~/package_test
 
+      - name: Start minikube for the test of the kuberneter build.
+        if: ${{ matrix.package_type == 'k8s' }}
+        shell: bash
+        run: |
+          minikube start
+
       - name: Test.
         shell: bash
         env:
@@ -154,62 +166,63 @@ jobs:
           chmod +x ~/package_test/package_test*
           ls ~/package/*.${{ matrix.package_type }}*
           python3 tests/package_tests/package_test_runner.py \
+            --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
-            --package-path ~/package/*.${{ matrix.package_type }}* \
+            --package-path ~/package/${{ matrix.package_name }} \
             --package-test-path ~/package_test/package_test* \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
-  test-k8s:
-    needs: build
-    runs-on: "ubuntu-20.04"
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: "package-k8s"
-          path: ~/package
-
-      - name: Test.
-        shell: bash
-        env:
-          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-        run: |
-          minikube start
-          chmod +x ~/package/scalyr-agent-k8s-*.*.*
-          python3 tests/package_tests/k8s_test.py \
-            --builder-path ~/package/scalyr-agent-k8s-*.*.* \
-            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
-
-  test-docker:
-    needs: build
-    runs-on: "ubuntu-20.04"
-    strategy:
-      matrix:
-        docker-build-type: ["docker-json"]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: "package-${{ matrix.docker-build-type }}"
-          path: ~/package
-
-      - name: Test.
-        shell: bash
-        env:
-          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-        run: |
-          chmod +x ~/package/scalyr-agent-${{ matrix.docker-build-type }}-*.*.*
-          python3 tests/package_tests/docker_test.py \
-            --builder-path ~/package/scalyr-agent-${{ matrix.docker-build-type }}-*.*.* \
-            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
-
-
-
-
-
+#  test-k8s:
+#    needs: build
+#    runs-on: "ubuntu-20.04"
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: "package-k8s"
+#          path: ~/package
+#
+#      - name: Test.
+#        shell: bash
+#        env:
+#          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+#        run: |
+#          minikube start
+#          chmod +x ~/package/scalyr-agent-k8s-*.*.*
+#          python3 tests/package_tests/k8s_test.py \
+#            --builder-path ~/package/scalyr-agent-k8s-*.*.* \
+#            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+#
+#  test-docker:
+#    needs: build
+#    runs-on: "ubuntu-20.04"
+#    strategy:
+#      matrix:
+#        docker-build-type: ["docker-json"]
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: "package-${{ matrix.docker-build-type }}"
+#          path: ~/package
+#
+#      - name: Test.
+#        shell: bash
+#        env:
+#          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+#        run: |
+#          chmod +x ~/package/scalyr-agent-${{ matrix.docker-build-type }}-*.*.*
+#          python3 tests/package_tests/docker_test.py \
+#            --builder-path ~/package/scalyr-agent-${{ matrix.docker-build-type }}-*.*.* \
+#            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+#
+#
+#
+#
+#
