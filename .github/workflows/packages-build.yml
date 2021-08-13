@@ -185,7 +185,7 @@ jobs:
 
   test-docker:
     needs: build
-    runs-on: ${{ matrix.os }}
+    runs-on: "ubuntu-20.04"
     strategy:
       matrix:
         docker-build-type: ["docker-json"]
