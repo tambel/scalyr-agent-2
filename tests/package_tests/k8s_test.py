@@ -1,14 +1,11 @@
 import argparse
 import datetime
 import os
-import queue
 import re
 import subprocess
-import sys
 import pathlib as pl
-import threading
 
-from typing import Union, IO
+from typing import Union
 
 __SOURCE_ROOT__ = pl.Path(__file__).absolute().parent.parent.parent
 
@@ -16,40 +13,8 @@ import tempfile
 import time
 
 # Timeout 5 minutes.
-TIMEOUT = 2 * 60
-
-
-class PipeReader:
-    """
-    Simple reader to read process pipes. Since it's not possible to perform a non-blocking read from pipe,
-    we just read it in a separate thread and put it to the queue.
-    """
-    def __init__(self, pipe: IO):
-        self._pipe = pipe
-        self._queue = queue.Queue()
-        self._started = False
-        self._thread = None
-
-    def read_pipe(self):
-        """
-        Reads lines from pipe. Runs in a separate thread.
-        """
-        while True:
-            line = self._pipe.readline()
-            if line == b'':
-                break
-            self._queue.put(line.decode())
-
-    def next_line(self, timeout: int):
-        """
-        Return lines from queue if presented.
-        """
-        if not self._thread:
-            self._thread = threading.Thread(target=self.read_pipe)
-            self._thread.start()
-        return self._queue.get(timeout=timeout)
-
-
+from tests.package_tests.common import PipeReader, check_agent_log_request_stats_in_line, check_if_line_an_error
+from tests.package_tests.common import COMMON_TIMEOUT
 
 
 
@@ -74,17 +39,11 @@ def build_agent_image(builder_path: pl.Path):
     )
 
 
-def main(
-        builder_path: Union[str, pl.Path],
-        scalyr_api_key: str
-):
+_SCALYR_SERVICE_ACCOUNT_MANIFEST_PATH = __SOURCE_ROOT__ / "k8s" / "scalyr-service-account.yaml"
 
-    builder_path = pl.Path(builder_path)
 
-    build_agent_image(builder_path)
-
+def _delete_k8s_objects():
     # Delete previously created objects, if presented.
-    scalyr_service_account_manifest_path = __SOURCE_ROOT__ / "k8s" / "scalyr-service-account.yaml"
     try:
         subprocess.check_call(
             "kubectl delete daemonset scalyr-agent-2", shell=True
@@ -105,14 +64,16 @@ def main(
         pass
     try:
         subprocess.check_call(
-            ["kubectl", "delete", "-f", str(scalyr_service_account_manifest_path)],
+            ["kubectl", "delete", "-f", str(_SCALYR_SERVICE_ACCOUNT_MANIFEST_PATH)],
         )
     except subprocess.CalledProcessError:
         pass
 
+
+def _test(scalyr_api_key: str):
     # Create agent's service account.
     subprocess.check_call(
-        ["kubectl", "create", "-f", str(scalyr_service_account_manifest_path)]
+        ["kubectl", "create", "-f", str(_SCALYR_SERVICE_ACCOUNT_MANIFEST_PATH)]
     )
 
     # Define API key
@@ -166,101 +127,56 @@ def main(
 
     # Execute tail -f command on the agent.log inside the pod to read its content.
     agent_log_tail_process = subprocess.Popen(
-        ["kubectl", "exec", pod_name, "--container", "scalyr-agent", "--", "tail", "-f", "-n+1", "/var/log/scalyr-agent-2/agent.log"],
+        ["kubectl", "exec", pod_name, "--container", "scalyr-agent", "--", "tail", "-f", "-n+1",
+         "/var/log/scalyr-agent-2/agent.log"],
         stdout=subprocess.PIPE
     )
     found_errors = []
 
-    agent_log_line_timestamp = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+Z"
+    # Read lines from agent.log.
+    pipe_reader = PipeReader(pipe=agent_log_tail_process.stdout)
 
-    # The pattern to match the periodic message lines with network request statistics. This message is written only when
-    # all startup messages are written, so it's a good time to stop the verification of the agent.log file.
-    requests_pattern = rf"{agent_log_line_timestamp} INFO \[core] \[scalyr-agent-2:\d+] " \
-                       r"agent_requests requests_sent=(?P<requests_sent>\d+) " \
-                       r"requests_failed=(?P<requests_failed>\d+) " \
-                       r"bytes_sent=(?P<bytes_sent>\d+) " \
-                       r".+"
-
-    failed = False
-
-    timeout_time = datetime.datetime.now()
-    reader = PipeReader(agent_log_tail_process.stdout)
-
+    timeout_time = datetime.datetime.now() + datetime.timedelta(seconds=COMMON_TIMEOUT)
+    error_lines = []
     try:
         while True:
 
             seconds_until_timeout = timeout_time - datetime.datetime.now()
-            line = reader.next_line(timeout=seconds_until_timeout.seconds)
-
+            line = pipe_reader.next_line(timeout=seconds_until_timeout.seconds)
+            print(line)
             # Look for any ERROR message.
-            if re.match(rf"{agent_log_line_timestamp} ERROR .*", line):
-                found_errors.append(line)
+            if check_if_line_an_error(line):
+                error_lines.append(line)
 
-            # Match for the requests status message.
-            m = re.match(requests_pattern, line)
+            # TODO: add more checks.
 
-            if m:
+            if check_agent_log_request_stats_in_line(line):
                 # The requests status message is found. Stop the loop.
-                # But also do a final check for a valid request stats.
-                md = m.groupdict()
-                requests_sent = int(md["requests_sent"])
-                bytes_sent = int(md["bytes_sent"])
-                if bytes_sent <= 0 and requests_sent <= 0:
-                    print("Agent log says that during the run the agent sent zero bytes or requests.", file=sys.stderr)
-                    failed = True
                 break
-    except Exception as e:
-        print(e, file=sys.stderr)
-        failed = True
     finally:
         agent_log_tail_process.terminate()
 
-    if found_errors:
-        print("Errors have been found in the agent log:", file=sys.stderr)
-        for line in found_errors:
-            print("=====", file=sys.stderr)
-            print(line, file=sys.stderr)
-
-        failed = True
-
-    if failed:
-        print("Test failed.", file=sys.stderr)
-        exit(1)
+    agent_log_tail_process.communicate()
 
     print("Test passed!")
 
-    return
-
-    #
-    agent_status = subprocess.check_output(
-        ["kubectl", "exec", pod_name, "--container", "scalyr-agent", "--", "scalyr-agent-2", "status", "-v"]
-    ).decode()
-
-    print("Agent status:")
-    print(agent_status)
-
-    logs_dir = pl.Path(tmp_dir.name) / "agent_logs"
-    logs_dir.mkdir()
-
-    # copy agent logs from the pod.
-    subprocess.check_call(
-        ["kubectl", "cp", f"{pod_name}:/var/log/scalyr-agent-2", str(logs_dir)]
-    )
-
-    agent_log_path = logs_dir / "agent.log"
-
-    agent_log_text = agent_log_path.read_text()
-    # Do a simple check for any error lines in the agent log file.
-    found_errors = re.findall(
-        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+Z ERROR .*$",
-        agent_log_text,
-        flags=re.MULTILINE
-    )
-
-    # TODO: Add more checks.
-
     tmp_dir.cleanup()
 
+
+def main(
+        builder_path: Union[str, pl.Path],
+        scalyr_api_key: str
+):
+    builder_path = pl.Path(builder_path)
+
+    build_agent_image(builder_path)
+
+    _delete_k8s_objects()
+
+    try:
+        _test(scalyr_api_key)
+    finally:
+        _delete_k8s_objects()
 
 
 if __name__ == '__main__':

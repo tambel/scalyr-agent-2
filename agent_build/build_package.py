@@ -147,8 +147,7 @@ class PackageBuilder(abc.ABC):
         # If locally option is specified or builder class is not dockerized by default then just build the package
         # directly on this system.
         if locally or not type(self).DOCKERIZED:
-            self._build_output_path = pl.Path(output_path) / type(self).PACKAGE_TYPE
-            self._build_output_path.mkdir()
+            self._build_output_path = pl.Path(output_path)
             self._package_files_path = self._build_output_path / "package_root"
             self._package_files_path.mkdir()
             self._intermediate_results_path = self._build_output_path / "intermediate_results"
@@ -765,7 +764,7 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
             output_path=self._package_files_path
         )
 
-        container_tarball_path = self._intermediate_results_path / "container_tarball.tar.gz"
+        container_tarball_path = self._intermediate_results_path / "scalyr-agent.tar.gz"
 
         # Do a manual walk over the contents of root so that we can use `addfile` to add the tarfile... which allows
         # us to reset the owner/group to root.  This might not be that portable to Windows, but for now, Docker is
@@ -807,7 +806,7 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
                 arcname="container_requirements.txt"
             )
             # Add container source tarball.
-            tar.add(container_tarball_path, arcname=f"{type(self).RESULT_IMAGE_NAME}.tar.gz")
+            tar.add(container_tarball_path, arcname="scalyr-agent.tar.gz")
 
         if self._variant is None:
             version_string = self._package_version

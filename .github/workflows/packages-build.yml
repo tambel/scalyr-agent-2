@@ -60,7 +60,6 @@ jobs:
         shell: bash
         run: |
           python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
-          #ls -al agent-build-output/${{ matrix.package_type }}/*.${{ matrix.package_type }}*
 
 
       - name: Save the package.
@@ -69,7 +68,7 @@ jobs:
         with:
           name: "package-${{ matrix.package_type }}"
           path: |
-            agent-build-output/${{ matrix.package_type }}/*.${{ matrix.package_type }}*
+            agent-build-output/*.${{ matrix.package_type }}*
 
       - name: Save the package.
         uses: actions/upload-artifact@v2
@@ -77,7 +76,7 @@ jobs:
         with:
           name: "package-${{ matrix.package_type }}"
           path: |
-            agent-build-output/${{ matrix.package_type }}/${{ matrix.package_name }}*
+            agent-build-output/${{ matrix.package_name }}*
 
 
 
@@ -86,7 +85,7 @@ jobs:
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: |
-            agent-build-output/${{ matrix.package_type }}/package_test_frozen_binary/package_test*
+            agent-build-output/package_test_frozen_binary/package_test*
 
 
 
