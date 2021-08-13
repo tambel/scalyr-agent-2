@@ -165,9 +165,12 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
+          ping agent.scalyr.com
           minikube start
           chmod +x ~/package/scalyr-k8s-agent-*.*.*
-          python3 tests/package_tests/k8s_test.py --builder-path ~/package/scalyr-k8s-agent-*.*.* --scalyr-api-key $SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN
+          python3 tests/package_tests/k8s_test.py \
+            --builder-path ~/package/scalyr-k8s-agent-*.*.* \
+            --scalyr-api-key $SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN
 
 
 
