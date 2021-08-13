@@ -560,9 +560,12 @@ class PackageBuilder(abc.ABC):
             cwd=str(pyinstaller_output),
         )
 
-        # Make frozen binaries executable.
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Make frozen binaries executable and copy them into output folder.
         for child_path in frozen_binary_output.iterdir():
             child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
+            shutil.copy2(child_path, output_path)
 
         # Also build the frozen binary for the package test script, they will be used to test the packages later.
         package_test_pyinstaller_output = self._intermediate_results_path / "frozen_binary_test"
@@ -583,11 +586,9 @@ class PackageBuilder(abc.ABC):
             ]
         )
 
-        # Make the package test frozen binaries executable
+        # Make the package test frozen binaries executable.
         for child_path in package_test_pyinstaller_output.iterdir():
             child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
-
-        shutil.copytree(frozen_binary_output, output_path, dirs_exist_ok=True)
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
