@@ -549,7 +549,7 @@ class PackageBuilder(abc.ABC):
         # Create the special folder in the package output directory where the Pyinstaller's output will be stored.
         # That may be useful during the debugging.
         pyinstaller_output = self._intermediate_results_path / "frozen_binary"
-        pyinstaller_output.mkdir(parents=True)
+        pyinstaller_output.mkdir(parents=True, exist_ok=True)
 
         frozen_binary_output = pyinstaller_output / "dist"
 
