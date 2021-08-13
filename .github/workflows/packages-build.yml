@@ -96,29 +96,29 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        package_type: ["deb"]
         os: ["ubuntu-20.04"]
         docker-image: ["ubuntu:14.04", "ubuntu:16.04", "ubuntu:18.04", "ubuntu:20.04"]
-        package_type: ["deb"]
         python-version: [3.8]
         include:
-          - os: ubuntu-20.04
+          - package_type: "rpm"
+            os: ubuntu-20.04
             docker-image: "centos:7"
-            package_type: "rpm"
             python-version: "3.8"
-          - os: ubuntu-20.04
+          - package_type: "rpm"
+            os: ubuntu-20.04
             docker-image: "centos:8"
-            package_type: "rpm"
             python-version: "3.8"
-          - os: ubuntu-20.04
+          - package_type: "rpm"
+            os: ubuntu-20.04
             docker-image: "amazonlinux:2"
-            package_type: "rpm"
             python-version: "3.8"
-          - os: ubuntu-20.04
-            package_type: "tar"
+          - package_type: "tar"
+            os: ubuntu-20.04
             docker-image: "ubuntu:14.04"
             python-version: "3.8"
-          - os: windows-2019
-            package_type: "msi"
+          - package_type: "msi"
+            os: windows-2019
             python-version: "3.8"
 
     steps:
@@ -165,6 +165,7 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
+          minikube --version
           minikube docker-env
           python3 tests/package_tests/k8s_test.py --builder-path ~/package/scalyr-k8s-agent-*.*.* --scalyr-api-key $SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN
 
