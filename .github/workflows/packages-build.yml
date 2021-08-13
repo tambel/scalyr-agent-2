@@ -86,7 +86,7 @@ jobs:
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: |
-            agent-build-output/${{ matrix.package_type }}/frozen_binary_test/package_test*
+            agent-build-output/${{ matrix.package_type }}/package_test_frozen_binary/package_test*
 
 
 

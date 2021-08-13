@@ -568,7 +568,7 @@ class PackageBuilder(abc.ABC):
             shutil.copy2(child_path, output_path)
 
         # Also build the frozen binary for the package test script, they will be used to test the packages later.
-        package_test_pyinstaller_output = self._intermediate_results_path / "frozen_binary_test"
+        package_test_pyinstaller_output = self._build_output_path / "package_test_frozen_binary"
 
         package_test_script_path = (
             __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test.py"
