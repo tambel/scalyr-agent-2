@@ -11,14 +11,14 @@ jobs:
         python-version: [3.8]
         os: [ubuntu-20.04]
         include:
-          - os: ubuntu-20.04
-            package_type: "tar"
+          - package_type: "tar"
+            os: ubuntu-20.04
             python-version: "3.8"
-          - os: windows-2019
-            package_type: "msi"
+          - package_type: "msi"
+            os: windows-2019
             python-version: "3.8"
-          - os: ubuntu-20.04
-            package_type: "k8s"
+          - package_type: "k8s"
+            os: ubuntu-20.04
             package_name: "scalyr-k8s-agent-*.*.*"
             python-version: "3.8"
     steps:
@@ -157,7 +157,7 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: "package-${{ matrix.package_type }}"
+          name: "package-k8s"
           path: ~/package
 
       - name: Test.
