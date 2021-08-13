@@ -118,6 +118,10 @@ def main(
 
     time.sleep(3)
 
+    subprocess.check_call(
+        ["kubectl", "exec", pod_name, "--container", "scalyr-agent", "--", "scalyr-agent-2 status -v"]
+    )
+
     logs_dir = pl.Path(tmp_dir.name) / "agent_logs"
     logs_dir.mkdir()
 
