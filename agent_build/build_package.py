@@ -813,10 +813,11 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
         else:
             version_string = "%s.%s" % (self._package_version, self._variant)
 
+        builder_name = f"scalyr-agent-{type(self).PACKAGE_TYPE}"
         if self._no_versioned_file_name:
-            output_name = type(self).RESULT_IMAGE_NAME
+            output_name = builder_name
         else:
-            output_name = "%s-%s" % (type(self).RESULT_IMAGE_NAME, version_string)
+            output_name = "%s-%s" % (builder_name, version_string)
 
         # Read the base builder script into memory
         base_script_path = __SOURCE_ROOT__ / "docker/scripts/container_builder_base.sh"

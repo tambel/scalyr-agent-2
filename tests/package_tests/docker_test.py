@@ -1,9 +1,12 @@
 import argparse
 import pathlib as pl
 import subprocess
+import sys
 import time
 import datetime
 from typing import Union
+
+sys.path.append(str(pl.Path(__file__).absolute().parent.parent.parent))
 
 from tests.package_tests.common import PipeReader, check_agent_log_request_stats_in_line, check_if_line_an_error
 from tests.package_tests.common import COMMON_TIMEOUT

@@ -4,13 +4,14 @@ import os
 import re
 import subprocess
 import pathlib as pl
-
+import tempfile
+import time
+import sys
 from typing import Union
 
 __SOURCE_ROOT__ = pl.Path(__file__).absolute().parent.parent.parent
+sys.path.append(str(__SOURCE_ROOT__))
 
-import tempfile
-import time
 
 # Timeout 5 minutes.
 from tests.package_tests.common import PipeReader, check_agent_log_request_stats_in_line, check_if_line_an_error

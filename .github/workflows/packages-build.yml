@@ -7,19 +7,30 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        package_type: ["deb", "rpm"]
         python-version: [3.8]
         os: [ubuntu-20.04]
         include:
+          - package_type: "deb"
+            package_name: "scalyr-agent-2_*.*.*_all.deb"
+            python-version: "3.8"
+          - package_type: "rpm"
+            package_name: "scalyr-agent-2-*.*.*-*.noarch.rpm"
+            python-version: "3.8"
           - package_type: "tar"
+            package_name: "scalyr-agent-*.*.*.tar.gz"
             os: ubuntu-20.04
             python-version: "3.8"
           - package_type: "msi"
+            package_name: "ScalyrAgentInstaller-*.*.*.msi"
             os: windows-2019
             python-version: "3.8"
           - package_type: "k8s"
             os: ubuntu-20.04
-            package_name: "scalyr-k8s-agent-*.*.*"
+            package_name: "scalyr-agent-k8s-*.*.*"
+            python-version: "3.8"
+          - package_type: "docker-json"
+            os: ubuntu-20.04
+            package_name: "scalyr-agent-docker-json-*.*.*"
             python-version: "3.8"
     steps:
       - name: Checkout repository
@@ -170,6 +181,32 @@ jobs:
           chmod +x ~/package/scalyr-k8s-agent-*.*.*
           python3 tests/package_tests/k8s_test.py \
             --builder-path ~/package/scalyr-k8s-agent-*.*.* \
+            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+
+  test-docker:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        docker-build-type: ["docker-json"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: "package-${{ matrix.package_type }}"
+          path: ~/package
+
+      - name: Test.
+        shell: bash
+        env:
+          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+        run: |
+          chmod +x ~/package/scalyr-agent-docker-${{ matrix.docker-build-type }}-*.*.*
+          python3 tests/package_tests/k8s_test.py \
+            --builder-path ~/package/scalyr-agent-docker-${{ matrix.docker-build-type }}-*.*.* \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
 
