@@ -205,7 +205,7 @@ jobs:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
           chmod +x ~/package/scalyr-agent-docker-${{ matrix.docker-build-type }}-*.*.*
-          python3 tests/package_tests/k8s_test.py \
+          python3 tests/package_tests/docker_test.py \
             --builder-path ~/package/scalyr-agent-docker-${{ matrix.docker-build-type }}-*.*.* \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
