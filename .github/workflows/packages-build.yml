@@ -149,7 +149,7 @@ jobs:
 
   test-k8s:
     needs: build
-    runs-on: ${{ matrix.os }}
+    runs-on: "ubuntu-20.04"
 
     steps:
       - name: Checkout repository
