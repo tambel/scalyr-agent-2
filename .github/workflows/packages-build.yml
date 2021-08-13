@@ -165,7 +165,7 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          minikube --version
+          minikube version
           minikube docker-env
           python3 tests/package_tests/k8s_test.py --builder-path ~/package/scalyr-k8s-agent-*.*.* --scalyr-api-key $SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN
 
