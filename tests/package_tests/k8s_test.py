@@ -5,21 +5,23 @@ import subprocess
 import sys
 import pathlib as pl
 
+from typing import Union
+
 __SOURCE_ROOT__ = pl.Path(__file__).absolute().parent.parent.parent
 
 import tempfile
 import time
 
 
-def build_agent_image():
-    build_package_script_path = __SOURCE_ROOT__ / "agent_build/build_package.py"
-
-    output_path = pl.Path("/Users/arthur/PycharmProjects/scalyr-agent-2/agent-output-build")
-    subprocess.check_call(
-        # ["minikube", "start", "-p", "scalyr-agent-test"]
-        [sys.executable, str(build_package_script_path), "k8s", "build", "--output-dir", str(output_path)]
-    )
-    builder_script_path = list(output_path.glob("k8s/scalyr-k8s-agent-*.*.*"))[0]
+def build_agent_image(builder_path: pl.Path):
+    # build_package_script_path = __SOURCE_ROOT__ / "agent_build/build_package.py"
+    #
+    # output_path = pl.Path("/Users/arthur/PycharmProjects/scalyr-agent-2/agent-output-build")
+    # subprocess.check_call(
+    #     # ["minikube", "start", "-p", "scalyr-agent-test"]
+    #     [sys.executable, str(build_package_script_path), "k8s", "build", "--output-dir", str(output_path)]
+    # )
+    # builder_script_path = list(output_path.glob("k8s/scalyr-k8s-agent-*.*.*"))[0]
 
     output = subprocess.check_output(
         "minikube docker-env", shell=True
@@ -30,18 +32,20 @@ def build_agent_image():
         (n, v), = re.findall(r'(\w+)="(.+)"', e)
         env[n] = v
 
-
     subprocess.check_call(
-        [str(builder_script_path), "--tags", "k8s_test"],
+        [str(builder_path), "--tags", "k8s_test"],
         env=env
     )
 
 
 def main(
-        scalyr_api_key:str
+        builder_path: Union[str, pl.Path],
+        scalyr_api_key: str
 ):
 
-    build_agent_image()
+    builder_path = pl.Path(builder_path)
+
+    build_agent_image(builder_path)
 
     scalyr_service_account_manifest_path = __SOURCE_ROOT__ / "k8s" / "scalyr-service-account.yaml"
     try:
@@ -127,7 +131,7 @@ def main(
     agent_log_text = agent_log_path.read_text()
     # Do a simple check for any error lines in the agent log file.
     found_errors = re.findall(
-        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+Z INFO .*$",
+        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+Z ERROR .*$",
         agent_log_text,
         flags=re.MULTILINE
     )
@@ -148,10 +152,11 @@ def main(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    #parser.add_argument("--builder-path", required=True)
+    parser.add_argument("--builder-path", required=True)
     parser.add_argument("--scalyr-api-key", required=True)
 
     args = parser.parse_args()
     main(
+        builder_path=args.builder_path,
         scalyr_api_key=args.scalyr_api_key
     )

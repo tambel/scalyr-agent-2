@@ -147,9 +147,27 @@ jobs:
             --package-test-path ~/package_test/package_test* \
             --scalyr-api-key "0v7dW1EIPpglMcSjGywUdgY9xTNWQP/kas6qHEmiUG5w-"
 
-#  test-k8s:
-#    needs: build
-#    runs-on: ${{ matrix.os }}
+  test-k8s:
+    needs: build
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: "package-${{ matrix.package_type }}"
+          path: ~/package
+
+      - name: Test.
+        shell: bash
+        env:
+          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+        run: |
+          python3 tests/package_tests/k8s_test.py --builder-path ~/package/scalyr-k8s-agent-*.*.* --scalyr-api-key $SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN
+
+
 
 
 
