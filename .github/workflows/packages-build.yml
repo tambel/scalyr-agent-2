@@ -8,22 +8,22 @@ jobs:
     strategy:
       matrix:
         include:
-          - package_type: "deb"
-            package_name: "scalyr-agent-2_*.*.*_all.deb"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "rpm"
-            package_name: "scalyr-agent-2-*.*.*-*.noarch.rpm"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "tar"
-            package_name: "scalyr-agent-*.*.*.tar.gz"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "msi"
-            package_name: "ScalyrAgentInstaller-*.*.*.msi"
-            os: windows-2019
-            python-version: "3.8"
+#          - package_type: "deb"
+#            package_name: "scalyr-agent-2_*.*.*_all.deb"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            package_name: "scalyr-agent-2-*.*.*-*.noarch.rpm"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "tar"
+#            package_name: "scalyr-agent-*.*.*.tar.gz"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "msi"
+#            package_name: "ScalyrAgentInstaller-*.*.*.msi"
+#            os: windows-2019
+#            python-version: "3.8"
           - package_type: "k8s"
             os: ubuntu-20.04
             package_name: "scalyr-agent-k8s-*.*.*"
@@ -72,18 +72,8 @@ jobs:
         run: |
           python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
 
-
       - name: Save the package.
         uses: actions/upload-artifact@v2
-        if: ${{ ! matrix.package_name }}
-        with:
-          name: "package-${{ matrix.package_type }}"
-          path: |
-            agent-build-output/*.${{ matrix.package_type }}*
-
-      - name: Save the package.
-        uses: actions/upload-artifact@v2
-        if: ${{ matrix.package_name }}
         with:
           name: "package-${{ matrix.package_type }}"
           path: |
@@ -111,25 +101,25 @@ jobs:
         docker-image: ["ubuntu:14.04", "ubuntu:16.04", "ubuntu:18.04", "ubuntu:20.04"]
         python-version: [3.8]
         include:
-          - package_type: "rpm"
-            os: ubuntu-20.04
-            docker-image: "centos:7"
-            python-version: "3.8"
-          - package_type: "rpm"
-            os: ubuntu-20.04
-            docker-image: "centos:8"
-            python-version: "3.8"
-          - package_type: "rpm"
-            os: ubuntu-20.04
-            docker-image: "amazonlinux:2"
-            python-version: "3.8"
-          - package_type: "tar"
-            os: ubuntu-20.04
-            docker-image: "ubuntu:14.04"
-            python-version: "3.8"
-          - package_type: "msi"
-            os: windows-2019
-            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            docker-image: "centos:7"
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            docker-image: "centos:8"
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            docker-image: "amazonlinux:2"
+#            python-version: "3.8"
+#          - package_type: "tar"
+#            os: ubuntu-20.04
+#            docker-image: "ubuntu:14.04"
+#            python-version: "3.8"
+#          - package_type: "msi"
+#            os: windows-2019
+#            python-version: "3.8"
           - package_type: "k8s"
             os: ubuntu-20.04
             python-version: "3.8"
@@ -147,6 +137,7 @@ jobs:
           path: ~/package
 
       - uses: actions/download-artifact@v2
+        if: ${{ ! contains(k8s.docker-json, matrix.package_type) }}
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: ~/package_test
