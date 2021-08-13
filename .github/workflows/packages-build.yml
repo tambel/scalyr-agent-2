@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
-          ls -al agent-build-output/${{ matrix.package_type }}/*.${{ matrix.package_type }}*
+          #ls -al agent-build-output/${{ matrix.package_type }}/*.${{ matrix.package_type }}*
 
 
       - name: Save the package.
