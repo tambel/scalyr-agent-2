@@ -178,9 +178,9 @@ jobs:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
           minikube start
-          chmod +x ~/package/scalyr-k8s-agent-*.*.*
+          chmod +x ~/package/scalyr-agent-k8s-*.*.*
           python3 tests/package_tests/k8s_test.py \
-            --builder-path ~/package/scalyr-k8s-agent-*.*.* \
+            --builder-path ~/package/scalyr-agent-k8s-*.*.* \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
   test-docker:
