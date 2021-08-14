@@ -137,7 +137,7 @@ jobs:
           path: ~/package
 
       - uses: actions/download-artifact@v2
-        if: ${{ ! contains(k8s.docker-json, matrix.package_type) }}
+        if: matrix.package_type == 'k8s' || matrix.package_type == 'docker-json'
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: ~/package_test
