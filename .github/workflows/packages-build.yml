@@ -149,12 +149,17 @@ jobs:
         run: |
           minikube start
 
+      - name: Make package test frozen binaries executable.
+        uses: actions/download-artifact@v2
+        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
+        run: |
+          chmod +x ~/package_test/package_test*
+
       - name: Test.
         shell: bash
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          chmod +x ~/package_test/package_test*
           python3 tests/package_tests/package_test_runner.py \
             --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
