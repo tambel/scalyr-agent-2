@@ -169,7 +169,7 @@ jobs:
             --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
             --package-path ~/package/${{ matrix.package_name }} \
-            --package-test-path ~/package_test/package_test* \
+            ${package_test_path_option} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
 #  test-k8s:
