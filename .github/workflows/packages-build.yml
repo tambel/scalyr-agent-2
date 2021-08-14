@@ -156,7 +156,6 @@ jobs:
         run: |
           ls -al ~/package_test
           chmod +x ~/package_test/package_test*
-          ls ~/package/*.${{ matrix.package_type }}*
           python3 tests/package_tests/package_test_runner.py \
             --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
