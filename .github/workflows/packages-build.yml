@@ -168,7 +168,7 @@ jobs:
           python3 tests/package_tests/package_test_runner.py \
             --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
-            --package-path ~/package/${{ matrix.package_name }} \
+            --package-path ~/package/* \
             ${package_test_path_option} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
