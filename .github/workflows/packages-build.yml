@@ -150,7 +150,6 @@ jobs:
           minikube start
 
       - name: Make package test frozen binaries executable.
-        uses: actions/download-artifact@v2
         if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
         run: |
           chmod +x ~/package_test/package_test*
