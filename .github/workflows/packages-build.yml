@@ -154,7 +154,6 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          ls -al ~/package_test
           chmod +x ~/package_test/package_test*
           python3 tests/package_tests/package_test_runner.py \
             --package-type ${{ matrix.package_type }} \
