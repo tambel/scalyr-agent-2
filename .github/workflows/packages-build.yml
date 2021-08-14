@@ -154,6 +154,11 @@ jobs:
         run: |
           chmod +x ~/package_test/package_test*
 
+      - name: Make package test frozen binaries executable.
+        if: matrix.package_type == 'k8s' && matrix.package_type == 'docker-json'
+        run: |
+          chmod +x ~/package/*
+
       - name: Test.
         shell: bash
         env:
