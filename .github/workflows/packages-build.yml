@@ -159,6 +159,12 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
+          package_test_path="$(ls ~/package_test/package_test*)"
+          if [ -f "${package_test_path}" ]; then
+            package_test_path_option="--package-test-path ${package_test_path}"
+          else
+            package_test_path_option=""
+          fi
           python3 tests/package_tests/package_test_runner.py \
             --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
