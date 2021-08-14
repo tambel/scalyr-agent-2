@@ -149,11 +149,13 @@ jobs:
         run: |
           minikube start
 
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
       - name: Make Kubernetes and docker package builder scripts executable.
-        if: matrix.package_type == 'k8s' && matrix.package_type == 'docker-json'
+        if: matrix.package_type == 'k8s' || matrix.package_type == 'docker-json'
         run: |
           chmod +x ~/package/*
 
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
       - name: Make package test frozen binaries executable.
         if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
         run: |
@@ -164,12 +166,15 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
+          # Define the package_test_path option only if package test file is presented in artifacts.
           package_test_path="$(ls ~/package_test/package_test* || true)"
           if [ -f "${package_test_path}" ]; then
             package_test_path_option="--package-test-path ${package_test_path}"
           else
             package_test_path_option=""
           fi
+
+
           python3 tests/package_tests/package_test_runner.py \
             --package-type ${{ matrix.package_type }} \
             --docker-image "${{ matrix.docker-image }}" \
