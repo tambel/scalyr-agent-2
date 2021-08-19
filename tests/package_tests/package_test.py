@@ -160,7 +160,7 @@ def _get_logs_path(package_type: str) -> pl.Path:
     elif package_type == "tar":
         return _get_tarball_install_path() / "log"
     elif package_type == "msi":
-        _get_msi_install_path() / "log"
+        return _get_msi_install_path() / "log"
 
 
 
