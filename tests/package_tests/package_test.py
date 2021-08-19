@@ -123,7 +123,7 @@ def configure_agent(package_type: str, api_key: str):
         install_path = _get_tarball_install_path()
         config_path = install_path / "config/agent.json"
     elif package_type == "msi":
-        config_path = _get_msi_install_path() / "config", "agent.json"
+        config_path = _get_msi_install_path() / "config" / "agent.json"
 
     config = {}
     config["api_key"] = api_key
