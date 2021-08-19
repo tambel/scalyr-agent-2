@@ -193,6 +193,9 @@ def run(
         # Start agent.log file verification.
         agent_log_verifier.verify(timeout=300)
 
+        logging.info("Agent.log:")
+        logging.info(agent_log_path.read_text())
+
     get_agent_status(package_type)
 
     time.sleep(2)
