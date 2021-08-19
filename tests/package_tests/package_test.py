@@ -129,7 +129,10 @@ def configure_agent(package_type: str, api_key: str):
     config["api_key"] = api_key
 
     config["server_attributes"] = {"serverHost": "ARTHUR_TEST"}
+
+    # TODO enable and test system and process monitors
     config["implicit_metric_monitor"] = False
+    config["implicit_agent_process_metrics_monitor"] = False
     config["verify_server_certificate"] = False
     config_path.write_text(json.dumps(config))
 
