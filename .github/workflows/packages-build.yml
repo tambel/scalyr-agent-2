@@ -17,8 +17,10 @@ jobs:
         uses: ./.github/actions/prepare-environment
         with:
           name: 'TEST'
-          in_docker_base_image: "python:3.8"
+          #in_docker_base_image: "python:3.8"
 
+      - name: Run unit tests.
+        run: python -m pytest ./tests/unit
 
 #  build:
 #    runs-on: ${{ matrix.os }}
