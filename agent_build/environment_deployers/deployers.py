@@ -64,7 +64,7 @@ class EnvironmentDeployer:
         # file and that file will be stored in the cache.
 
         # Get the name of the builder image.
-        image_name = f"package-builder-base-{cls.get_used_files_checksum()}".lower()
+        image_name = f"scalyr-build-environment-base-{cls.get_used_files_checksum()}".lower()
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
         # of all files which are used in it, so the name identity also guarantees the content identity.
@@ -229,8 +229,17 @@ class EnvironmentDeployer:
         checksum_output_path.write_text(checksum)
 
 
+_AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
+
+
 class TestEnvironmentDeployer(EnvironmentDeployer):
     DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_test_environment.sh"
+    FILES_USED_IN_DEPLOYMENT = [
+        _AGENT_BUILD_DIR / "requirements.txt",
+        _AGENT_BUILD_DIR / "monitors_requirements.txt",
+        _AGENT_BUILD_DIR / "frozen-binary-builder-requirements.txt",
+        __SOURCE_ROOT__ / "dev-requirements.txt",
+    ]
 
 
 DEPLOYER_NAMES = {
