@@ -9,8 +9,9 @@ jobs:
       matrix:
         python: ["3.8"]
     steps:
+      - run: pwd
       - id: foo
-        uses: .github/actions/prepare-environment
+        uses: ./.github/actions/prepare-environment
         with:
           name: 'Mona the Octocat'
 
