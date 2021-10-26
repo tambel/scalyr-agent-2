@@ -5,7 +5,7 @@ import subprocess
 import hashlib
 from typing import Union
 
-__PARENT_DIR__ = pl.Path(__file__).parent
+__PARENT_DIR__ = pl.Path(__file__).parent.absolute()
 __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 
 
