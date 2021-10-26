@@ -4,6 +4,7 @@
 
 -r agent_build/requirements.txt
 -r agent_build/monitors_requirements.txt
+-r benchmarks/micro/requirements-compression-algorithms.txt
 
 # Testing tools and libraries
 mock==3.0.5

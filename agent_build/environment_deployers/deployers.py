@@ -239,6 +239,7 @@ class TestEnvironmentDeployer(EnvironmentDeployer):
         _AGENT_BUILD_DIR / "monitors_requirements.txt",
         _AGENT_BUILD_DIR / "frozen-binary-builder-requirements.txt",
         __SOURCE_ROOT__ / "dev-requirements.txt",
+        __SOURCE_ROOT__ / "benchmarks/micro/requirements-compression-algorithms.txt",
     ]
 
 
