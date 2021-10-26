@@ -12,7 +12,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - run: pwd
-      - id: foo
+      - name: Prepare environment for the tests.
+      - id: prepare
         uses: ./.github/actions/prepare-environment
         with:
           name: 'TEST'
