@@ -1,3 +1,5 @@
+set -e
+
 SOURCE_ROOT=$(dirname "$(dirname "$(dirname "$0")")")
 
 CACHE_DIR="${1}"
@@ -14,6 +16,7 @@ if [ -n "$CACHE_DIR" ]; then
 fi
 
 if $use_cache ; then
+  mkdir -p ~/.cache
   cp -a "$CACHE_DIR/pip" ~/.cache/pip
 fi
 
