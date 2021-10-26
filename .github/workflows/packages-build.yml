@@ -9,6 +9,8 @@ jobs:
       matrix:
         python: ["3.8"]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
       - run: pwd
       - id: foo
         uses: ./.github/actions/prepare-environment
