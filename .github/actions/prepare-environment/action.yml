@@ -32,7 +32,7 @@ runs:
         key: ${{ runner.os }}-deployer-${{ env.cache-version }}-${{ hashFiles('checksum.txt') }}
 
     - name: Prepare build environment.
-      if: !{{ inputs.in_docker_base_image }}
+      #if: !{{ inputs.in_docker_base_image }}
       shell: bash
       run: |
         python3 agent_build/environment_deployers/deployers.py ${{ matrix.package_type }} deploy --cache-dir ~/dependencies_cache
