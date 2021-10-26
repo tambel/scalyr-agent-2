@@ -2,6 +2,9 @@
 # These dependencies are not needed to run the Scalyr Agent, but mainly used for
 # running test suites, and mocking Python Objects for the Scalyr Agent.
 
+-r agent_build/requirements.txt
+-r agent_build/monitors_requirements.txt
+
 # Testing tools and libraries
 mock==3.0.5
 psutil==5.7.0
