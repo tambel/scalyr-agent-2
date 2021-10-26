@@ -10,7 +10,7 @@ jobs:
         python: ["3.8"]
     steps:
       - id: foo
-        uses: './.github/actions/prepare-environment'
+        uses: '.github/actions/prepare-environment'
         with:
           name: 'Mona the Octocat'
 
