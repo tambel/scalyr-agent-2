@@ -11,8 +11,9 @@ if [ -n "$CACHE_DIR" ]; then
   if [ ! -d "$CACHE_DIR" ]; then
     mkdir -p "${CACHE_DIR}"
     save_cache=true
+  else
+    use_cache=true
   fi
-  use_cache=true
 fi
 
 if $use_cache ; then
