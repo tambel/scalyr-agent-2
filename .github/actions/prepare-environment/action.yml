@@ -3,7 +3,11 @@ description: 'rrr'
 inputs:
   name:
     description: 'Name of the environment.'
+    required: true
+  in_docker_base_image:
+    description: ""
     required: false
+
 #outputs:
 #  random-number:
 #    description: "Random number"
@@ -13,3 +17,32 @@ runs:
   steps:
     - run: echo Hello ${{ inputs.name }}.
       shell: bash
+
+    - name: Calculate the checksum of the build dependencies.
+      shell: bash
+      run: |
+        python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} dump-checksum checksum.txt
+
+    - name: Restore cached dependensies of the environment deployer.
+      uses: actions/cache@v2
+      env:
+        cache-version: v1
+      with:
+        path: ~/dependencies_cache
+        key: ${{ runner.os }}-deployer-${{ env.cache-version }}-${{ hashFiles('checksum.txt') }}
+
+    - name: Prepare build environment.
+      if: !{{ inputs.in_docker_base_image }}
+      shell: bash
+      run: |
+        python3 agent_build/environment_deployers/deployers.py ${{ matrix.package_type }} deploy --cache-dir ~/dependencies_cache
+
+        # in some cases, the 'prepare-build-environment' command also generates file 'paths.txt'. This file contains paths
+        # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
+        # variable to be able to use those tools.
+        if [ -f ~/dependencies_cache/paths.txt ]; then
+          cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
+        fi
+
+        # Remove checksum file, it is not needed anymore.
+        rm checksum.txt

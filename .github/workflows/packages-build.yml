@@ -15,7 +15,8 @@ jobs:
       - id: foo
         uses: ./.github/actions/prepare-environment
         with:
-          name: 'Mona the Octocat'
+          name: 'TEST'
+
 
 #  build:
 #    runs-on: ${{ matrix.os }}
