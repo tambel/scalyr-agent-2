@@ -64,7 +64,7 @@ class EnvironmentDeployer:
         # file and that file will be stored in the cache.
 
         # Get the name of the builder image.
-        image_name = f"package-builder-base-{cls._get_build_environment_files_checksum()}".lower()
+        image_name = f"package-builder-base-{cls.get_used_files_checksum()}".lower()
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
         # of all files which are used in it, so the name identity also guarantees the content identity.
