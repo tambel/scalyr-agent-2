@@ -1,5 +1,14 @@
 set -e
 
+#if [ -n '' ] ; then
+#  echo "1"
+#else
+#  echo "2"
+#fi
+#
+#exit 0
+
+
 SOURCE_ROOT=$(dirname "$(dirname "$(dirname "$0")")")
 
 CACHE_DIR="${1}"
