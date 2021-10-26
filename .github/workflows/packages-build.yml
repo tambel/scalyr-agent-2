@@ -9,7 +9,6 @@ jobs:
       matrix:
         python: ["3.8"]
     steps:
-      - uses: actions/cache@v2
       - id: foo
         uses: './.github/actions/prepare-environment'
         with:
