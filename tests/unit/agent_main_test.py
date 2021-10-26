@@ -248,7 +248,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         from scalyr_agent.agent_main import ScalyrAgent
         from scalyr_agent.platform_controller import PlatformController
 
-        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.DEV_INSTALL):
+        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.DEV_INSTALL):
             config = mock.Mock()
             config.scalyr_server = "foo.bar.com"
             config.server_attributes = {"serverHost": "test"}
@@ -297,7 +297,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         from scalyr_agent.agent_main import ScalyrAgent
         from scalyr_agent.platform_controller import PlatformController
 
-        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.DEV_INSTALL):
+        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.DEV_INSTALL):
             config = mock.Mock()
             config.scalyr_server = "foo.bar.com"
             config.server_attributes = {"serverHost": "test"}

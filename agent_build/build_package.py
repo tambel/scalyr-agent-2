@@ -300,7 +300,7 @@ class PackageBuilder(abc.ABC):
                     return
                 else:
                     # Cache is used but there is no suitable image file. Set the flag to signal that the built
-                    # image has to be save to the cache.
+                    # image has to be saved to the cache.
                     save_to_cache = True
 
             print(f"Build image '{image_name}'")
@@ -318,7 +318,7 @@ class PackageBuilder(abc.ABC):
                 abs_container_path = container_root_path / rel_used_path
                 volumes_mappings.extend(["-v", f"{abs_host_path}:{abs_container_path}"])
 
-            # Map the prepare environment script's path to the docker.
+            # Map the 'prepare environment' script's path to the docker.
             container_prepare_env_script_path = pl.Path(
                 container_root_path,
                 pl.Path(cls.PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH).relative_to(

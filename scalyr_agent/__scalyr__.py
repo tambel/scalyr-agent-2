@@ -159,17 +159,20 @@ def __determine_install_root_and_type() -> Tuple[str, InstallType]:
         # '<install_root>/py' folder, so it has to be enough to verify if the parent folder of the 'scalyr_agent'
         # package is a folder named 'py'.
 
+        import scalyr_agent
+        scalyr_agent_module_path = pl.Path(scalyr_agent.__file__)
+        source_code_root = scalyr_agent_module_path.parent.parent
         script_path = pl.Path(sys.argv[0])
 
-        # First of all get the real path of the executed script if it is a symlink.
-        while script_path.is_symlink():
-            script_path = pl.Path(script_path.parent, os.readlink(script_path)).resolve()
+        # # First of all get the real path of the executed script if it is a symlink.
+        # while script_path.is_symlink():
+        #     script_path = pl.Path(script_path.parent, os.readlink(script_path)).resolve()
 
-        # parent folder of the script has to be a 'scalyr_agent' package folder.
-        package_folder = script_path.parent
+        # # parent folder of the script has to be a 'scalyr_agent' package folder.
+        # package_folder = script_path.parent
 
-        # Get the source code root. The name of the folder has to be 'py'
-        source_code_root = package_folder.parent
+        # # Get the source code root. The name of the folder has to be 'py'
+        # source_code_root = package_folder.parent
 
         if source_code_root.name == "py":
             install_root = source_code_root.parent
@@ -177,7 +180,7 @@ def __determine_install_root_and_type() -> Tuple[str, InstallType]:
 
             return str(install_root), __read_install_type_from_type_file(install_type_file_path)
         else:
-            # The name of hte parent folder of the 'scalyr_agent' package is not 'py', so it is likely that it
+            # The name of the parent folder of the 'scalyr_agent' package is not 'py', so it is likely that it
             # started from source code.
             return str(source_code_root), InstallType.DEV_INSTALL
 

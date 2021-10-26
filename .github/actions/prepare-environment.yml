@@ -1,0 +1,14 @@
+name: 'Prepare environment'
+description: ''
+inputs:
+  name:
+    description: 'Name of the environment.'
+    required: false
+#outputs:
+#  random-number:
+#    description: "Random number"
+#    value: ${{ steps.random-number-generator.outputs.random-id }}
+runs:
+  using: "composite"
+  steps:
+    - run: echo Hello ${{ inputs.name }}.
