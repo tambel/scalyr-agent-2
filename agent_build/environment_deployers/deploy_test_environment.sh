@@ -42,6 +42,8 @@ fi
 
 python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
+ls "$pip_cache_dir"
+echo "-----"
 ls "$CACHE_DIR"
 
 if $save_cache ; then
