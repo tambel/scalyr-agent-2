@@ -47,7 +47,7 @@ CORRECT_INIT_PRAGMA = """
 
 class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
     @pytest.mark.skipif(
-        __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.POSIX,
+        __scalyr__.PLATFORM_TYPE != __scalyr__.PlatformType.POSIX,
         reason="Both ca and intermediate cert files are checked only on Unix"
     )
     @mock.patch(
