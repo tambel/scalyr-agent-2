@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-python@v2
         #if: startsWith(runner.os, 'Windows')
         with:
-          python-version: '3.8.10' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          python-version: '3.8.10'
 
       - run: pwd
       - name: Prepare environment for the tests.
@@ -26,10 +26,10 @@ jobs:
         with:
           name: 'test'
 
-#      - name: Run unit tests.
-#        shell: bash
-#        run: |
-#          python -m pytest ./tests/unit
+      - name: Run unit tests.
+        shell: bash
+        run: |
+          python -m pytest ./tests/unit
 
 #  build:
 #    runs-on: ${{ matrix.os }}
