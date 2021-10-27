@@ -33,6 +33,8 @@ echo "PIP CACHE: ${pip_cache_dir}"
 
 ls "$CACHE_DIR"
 
+echo "FFFFF"
+
 if $use_cache ; then
   mkdir -p "$pip_cache_dir"
   cp -a "$CACHE_DIR/pip" "$pip_cache_dir"
