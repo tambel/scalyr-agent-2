@@ -30,11 +30,13 @@ runs:
         ls ~
         Start-Process ~/python_installer.exe -ArgumentList "/quiet /passive TargetDir=$python_path" -wait
 
+        echo $python_path >> $GITHUB_PATH
+
         rm ~/python_installer.exe
       shell: powershell
 
     - run: |
-        echo "RRRRRRR"
+        echo "PATH"
         python --version
 
       shell: powershell
