@@ -27,6 +27,7 @@ runs:
 
     - run: |
         $python_path = "C:\Python3"
+        ls ~
         Start-Process ~/python_installer -ArgumentList "/quiet /passive TargetDir=$python_path" -wait
 
         rm ~/python_installer
