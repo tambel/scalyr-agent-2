@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-2019]
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
         python: ["3.8"]
     steps:
       - name: Checkout repository
@@ -26,10 +26,10 @@ jobs:
         with:
           name: 'test'
 
-      - name: Run unit tests.
-        shell: bash
-        run: |
-          python -m pytest ./tests/unit
+#      - name: Run unit tests.
+#        shell: bash
+#        run: |
+#          python -m pytest ./tests/unit
 
 #  build:
 #    runs-on: ${{ matrix.os }}
