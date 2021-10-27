@@ -30,5 +30,5 @@ runs:
         ls ~
         Start-Process ~/python_installer.exe -ArgumentList "/quiet /passive TargetDir=$python_path" -wait
 
-        rm ~/python_installer
+        rm ~/python_installer.exe
       shell: powershell
