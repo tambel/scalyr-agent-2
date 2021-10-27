@@ -62,6 +62,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Install python.
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.10'
+
 #      - name: Calculate the checksum of the build dependencies.
 #        shell: bash
 #        run: |
