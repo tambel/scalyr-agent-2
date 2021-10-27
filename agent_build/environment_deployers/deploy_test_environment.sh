@@ -51,4 +51,6 @@ if $save_cache ; then
   cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
   echo "-------"
   ls "$CACHE_DIR"
+  echo "-----"
+  ls "$CACHE_DIR/pip"
 fi
