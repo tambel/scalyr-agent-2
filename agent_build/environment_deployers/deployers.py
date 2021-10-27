@@ -37,6 +37,8 @@ class EnvironmentDeployer:
         else:
             shell = "bash"
 
+        shell = "sh"
+
         command = [shell, str(cls.DEPLOYMENT_SCRIPT)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
