@@ -42,6 +42,8 @@ fi
 
 python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
+ls "$CACHE_DIR"
+
 if $save_cache ; then
   cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
 fi
