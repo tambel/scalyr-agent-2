@@ -44,11 +44,11 @@ fi
 #python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 python3 -m pip install flask
 
-echo "------"
-ls "$pip_cache_dir"
-echo "-----"
-ls "$CACHE_DIR"
 
 if $save_cache ; then
+  echo "Save pip cache."
+  ls "$pip_cache_dir"
   cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
+  echo "-------"
+  ls "$CACHE_DIR"
 fi
