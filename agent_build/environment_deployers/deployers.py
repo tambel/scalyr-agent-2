@@ -38,12 +38,12 @@ class EnvironmentDeployer:
         if cls.DEPLOYMENT_SCRIPT.suffix == "ps1":
             shell = "powershell"
         else:
-            shell = "bash"
+            shell = shutil.which("bash")
 
         print("FFFFF")
-        print(shutil.which("bash"))
+        print(shell)
 
-        command = ['C:\\Program Files\\Git\\bin\\bash.exe', str(cls.DEPLOYMENT_SCRIPT)]
+        command = [shell, str(cls.DEPLOYMENT_SCRIPT)]
         #command = [str(cls.DEPLOYMENT_SCRIPT)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
