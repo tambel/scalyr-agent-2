@@ -39,7 +39,7 @@ class EnvironmentDeployer:
         else:
             shell = "bash"
 
-        command = [shell, str(cls.DEPLOYMENT_SCRIPT)]
+        command = ['C:\\Program Files\\Git\\bin\\bash.exe', str(cls.DEPLOYMENT_SCRIPT)]
         #command = [str(cls.DEPLOYMENT_SCRIPT)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
