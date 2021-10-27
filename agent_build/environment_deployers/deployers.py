@@ -210,24 +210,6 @@ class EnvironmentDeployer:
         checksum = sha256.hexdigest()
         return checksum
 
-    @classmethod
-    def dump_used_files_content_checksum(
-        cls, checksum_output_path: Union[str, pl.Path]
-    ):
-        """
-        Dump the checksum of the content of the file used during the 'prepare-build-environment' action.
-            For more info see 'dump-checksum' action in class docstring.
-
-        :param checksum_output_path: Is mainly created for the CI/CD purposes. If specified, the function dumps the
-            file with the checksum of all the content of all files which are used during the preparation
-            of the build environment. This checksum can be used by CI/CD as the cache key..
-        """
-        checksum = cls._get_used_files_checksum()
-
-        checksum_output_path = pl.Path(checksum_output_path)
-        checksum_output_path.parent.mkdir(exist_ok=True, parents=True)
-        checksum_output_path.write_text(checksum)
-
 
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
@@ -243,14 +225,14 @@ class TestEnvironmentDeployer(EnvironmentDeployer):
     ]
 
 
-DEPLOYER_NAMES = {
-    "TEST": TestEnvironmentDeployer
+DEPLOYERS_TO_NAMES = {
+    "test": TestEnvironmentDeployer
 }
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("deployer_name", choices=DEPLOYER_NAMES.keys())
+    parser.add_argument("deployer_name", choices=DEPLOYERS_TO_NAMES.keys())
     subparsers = parser.add_subparsers(dest="command")
 
     deploy_parser = subparsers.add_parser("deploy")
@@ -276,7 +258,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Find the deployer class.
-    deployer_cls = DEPLOYER_NAMES[args.deployer_name]
+    deployer_cls = DEPLOYERS_TO_NAMES[args.deployer_name]
 
     if args.command == "dump-checksum":
         checksum = deployer_cls.get_used_files_checksum()

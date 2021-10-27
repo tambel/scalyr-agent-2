@@ -4,9 +4,10 @@ on: [push]
 
 jobs:
   unit-test:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [windows-2019]
         python: ["3.8"]
     steps:
       - name: Checkout repository
@@ -16,12 +17,10 @@ jobs:
         id: prepare
         uses: ./.github/actions/prepare-environment
         with:
-          name: 'TEST'
-          #in_docker_base_image: "python:3.8"
+          name: 'test'
 
       - name: Run unit tests.
         run: |
-          echo $PATH
           python -m pytest ./tests/unit
 
 #  build:
