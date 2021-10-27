@@ -1,11 +1,11 @@
 name: 'Prepare environment'
-description: 'rrr'
+description: "Prepares current machine with running one of the 'Deployers', which are defined in the 'agent_build/environment_deployers' folder"
 inputs:
   name:
-    description: 'Name of the environment.'
+    description: 'Name of the deployer.'
     required: true
   in_docker_base_image:
-    description: ""
+    description: "Name of the base docker image. If specified, then the deployer has to perform in docker using this image as base."
     required: false
 
 #outputs:
@@ -15,10 +15,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: echo Hello ${{ inputs.name }}.
-      shell: bash
-
-    - name: Calculate the checksum of the build dependencies.
+    - name: Calculate the checksum of the files used in deployer.
       shell: bash
       run: |
         python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} dump-checksum checksum.txt
@@ -36,11 +33,10 @@ runs:
       run: |
         python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} deploy --in-docker-base-image "${{ inputs.in_docker_base_image }}" --cache-dir ~/dependencies_cache
 
-        # in some cases, the 'prepare-build-environment' command also generates file 'paths.txt'. This file contains paths
+        # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
         # variable to be able to use those tools.
         if [ -f ~/dependencies_cache/paths.txt ]; then
-
           cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
         fi
 

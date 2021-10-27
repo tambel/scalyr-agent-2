@@ -67,7 +67,7 @@ class EnvironmentDeployer:
         # file and that file will be stored in the cache.
 
         # Get the name of the builder image.
-        image_name = f"scalyr-build-environment-base-{cls.get_used_files_checksum()}".lower()
+        image_name = cls.get_image_name()
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
         # of all files which are used in it, so the name identity also guarantees the content identity.
@@ -156,7 +156,9 @@ class EnvironmentDeployer:
             with cached_image_path.open("wb") as f:
                 subprocess.check_call(["docker", "save", image_name], stdout=f)
 
-
+    @classmethod
+    def get_image_name(cls):
+        return f"scalyr-build-environment-base-{cls.get_used_files_checksum()}".lower()
 
     @classmethod
     def _get_files_used_in_build_environment(cls):
@@ -216,9 +218,7 @@ class EnvironmentDeployer:
 
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
-
-class TestEnvironmentDeployer(EnvironmentDeployer):
-    DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_test_environment.sh"
+class BaseEnvironmentDeployer(EnvironmentDeployer):
     FILES_USED_IN_DEPLOYMENT = [
         _AGENT_BUILD_DIR / "requirements.txt",
         _AGENT_BUILD_DIR / "monitors_requirements.txt",
@@ -228,8 +228,21 @@ class TestEnvironmentDeployer(EnvironmentDeployer):
     ]
 
 
+class TestEnvironmentDeployer(BaseEnvironmentDeployer):
+    DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_test_environment.sh"
+
+
+class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
+    if platform.system() != "Windows":
+        DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_linux_builder.sh"
+    else:
+        DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_windows_builder.ps1"
+
+
 DEPLOYERS_TO_NAMES = {
-    "test": TestEnvironmentDeployer
+    "test": TestEnvironmentDeployer,
+    "agent_builder": AgentBuilderMachineDeployer
+
 }
 
 
