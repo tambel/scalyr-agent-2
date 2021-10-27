@@ -36,7 +36,7 @@ class EnvironmentDeployer:
             return
         print("11111")
         print(cls.DEPLOYMENT_SCRIPT.suffix)
-        if cls.DEPLOYMENT_SCRIPT.suffix == "ps1":
+        if cls.DEPLOYMENT_SCRIPT.suffix == ".ps1":
             shell = "powershell"
         else:
             shell = shutil.which("bash")
