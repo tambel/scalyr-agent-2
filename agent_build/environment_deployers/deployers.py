@@ -34,7 +34,8 @@ class EnvironmentDeployer:
                 base_image_name=in_docker_base_image
             )
             return
-
+        print("11111")
+        print(cls.DEPLOYMENT_SCRIPT.suffix)
         if cls.DEPLOYMENT_SCRIPT.suffix == "ps1":
             shell = "powershell"
         else:
