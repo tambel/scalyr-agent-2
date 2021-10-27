@@ -11,7 +11,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 
 
 class EnvironmentDeployer:
-    DEPLOYMENT_SCRIPT = None
+    DEPLOYMENT_SCRIPT: pl.Path = None
     FILES_USED_IN_DEPLOYMENT = []
 
 
@@ -34,15 +34,13 @@ class EnvironmentDeployer:
             )
             return
 
-        if platform.system() == "Windows":
+        if cls.DEPLOYMENT_SCRIPT.suffix == "ps1":
             shell = "powershell"
         else:
             shell = "bash"
 
-        shell = "sh"
-
         command = [shell, str(cls.DEPLOYMENT_SCRIPT)]
-        command = [str(cls.DEPLOYMENT_SCRIPT)]
+        #command = [str(cls.DEPLOYMENT_SCRIPT)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
         # 'prepare build environment' script, so it can use the cache too.
