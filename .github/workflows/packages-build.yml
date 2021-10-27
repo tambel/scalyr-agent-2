@@ -26,10 +26,10 @@ jobs:
         with:
           name: 'test'
 
-#      - name: Run unit tests.
-#        shell: bash
-#        run: |
-#          python -m pytest ./tests/unit
+      - name: Run unit tests.
+        shell: bash
+        run: |
+          python -m pytest ./tests/unit
 
 #  build:
 #    runs-on: ${{ matrix.os }}
