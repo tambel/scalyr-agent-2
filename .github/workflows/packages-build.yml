@@ -12,6 +12,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Install python.
+        if: startsWith(runner.os, 'Windows')
+        uses: ./.github/actions/prepare-python
+        with:
+          version: 3.8.10
+
       - run: pwd
       - name: Prepare environment for the tests.
         id: prepare
