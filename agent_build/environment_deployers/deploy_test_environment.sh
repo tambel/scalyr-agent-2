@@ -27,6 +27,7 @@ if [ -n "$CACHE_DIR" ]; then
   fi
 fi
 
+python3 --version
 pip_cache_dir="$(python3 -m pip cache dir)"
 
 echo "PIP CACHE: ${pip_cache_dir}"
@@ -43,6 +44,7 @@ fi
 #python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 python3 -m pip install flask
 
+echo "------"
 ls "$pip_cache_dir"
 echo "-----"
 ls "$CACHE_DIR"
