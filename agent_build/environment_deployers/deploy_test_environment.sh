@@ -27,7 +27,7 @@ if [ -n "$CACHE_DIR" ]; then
   fi
 fi
 
-pip_cache_dir="$(pip cache dir)"
+pip_cache_dir="$(python3 -m pip cache dir)"
 
 echo "PIP CACHE: ${pip_cache_dir}"
 

@@ -26,7 +26,7 @@ runs:
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
       env:
-        cache-version: v5
+        cache-version: v6
       with:
         path: ~/dependencies_cache
         key: ${{ runner.os }}-deployer-${{ env.cache-version }}-${{ hashFiles('checksum.txt') }}
