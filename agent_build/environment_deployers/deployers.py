@@ -40,6 +40,7 @@ class EnvironmentDeployer:
         else:
             shell = "bash"
 
+        print("FFFFF")
         print(shutil.which("bash"))
 
         command = ['C:\\Program Files\\Git\\bin\\bash.exe', str(cls.DEPLOYMENT_SCRIPT)]
