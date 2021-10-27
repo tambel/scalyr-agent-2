@@ -1,6 +1,7 @@
 import argparse
 import pathlib as pl
 import platform
+import shlex
 import subprocess
 import hashlib
 from typing import Union
@@ -40,16 +41,24 @@ class EnvironmentDeployer:
         shell = "sh"
 
         command = [shell, str(cls.DEPLOYMENT_SCRIPT)]
+        command = [str(cls.DEPLOYMENT_SCRIPT)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
         # 'prepare build environment' script, so it can use the cache too.
         if cache_dir:
             command.append(str(pl.Path(cache_dir)))
 
+        print("RUN")
         # Run the 'prepare build environment' script in previously chosen shell.
+
+        command = shlex.quote(command)
         subprocess.check_call(
             command,
+            shell=True
         )
+        # subprocess.check_call(
+        #     command,
+        # )
 
     @classmethod
     def _deploy_in_docker(
