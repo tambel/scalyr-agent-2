@@ -1484,7 +1484,9 @@ def main():
             exit(0)
 
         if args.info_type == "docker-image":
-            print(package_builder_cls.BASE_DOCKER_IMAGE)
+            docker_image_name = package_builder_cls.BASE_DOCKER_IMAGE
+            if docker_image_name:
+                print(docker_image_name)
             exit(0)
 
     if args.command == "build":
