@@ -270,6 +270,7 @@ if __name__ == '__main__':
         exit(0)
 
     if args.command == "deploy":
+        print("deploy!")
         deployer_cls.deploy(
             cache_dir=args.cache_dir,
             in_docker_base_image=args.in_docker_base_image
