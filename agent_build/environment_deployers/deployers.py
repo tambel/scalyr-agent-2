@@ -2,6 +2,7 @@ import argparse
 import pathlib as pl
 import platform
 import shlex
+import shutil
 import subprocess
 import hashlib
 from typing import Union
@@ -38,6 +39,8 @@ class EnvironmentDeployer:
             shell = "powershell"
         else:
             shell = "bash"
+
+        print(shutil.which("bash"))
 
         command = ['C:\\Program Files\\Git\\bin\\bash.exe', str(cls.DEPLOYMENT_SCRIPT)]
         #command = [str(cls.DEPLOYMENT_SCRIPT)]
