@@ -14,6 +14,7 @@ class EnvironmentDeployer:
     DEPLOYMENT_SCRIPT = None
     FILES_USED_IN_DEPLOYMENT = []
 
+
     @classmethod
     def deploy(
         cls,
@@ -51,11 +52,11 @@ class EnvironmentDeployer:
         print("RUN")
         # Run the 'prepare build environment' script in previously chosen shell.
 
-        command = " ".join(command)
+        #command = " ".join(command)
         print(command)
         subprocess.check_call(
             command,
-            shell=True
+            #shell=True
         )
         # subprocess.check_call(
         #     command,
