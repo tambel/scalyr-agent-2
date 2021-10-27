@@ -180,21 +180,30 @@ class ScalyrRequestsHttpConnectionTestCase(ScalyrTestCase):
             socket.getaddrinfo = ORIGINAL_SOCKET_CREATE_CONNECTION
 
     def test_connect_invalid_cert_failure(self):
-        if PY26:
-            # Under Python 2.6, error looks like this:
-            # [Errno 1] _ssl.c:498: error:14090086:SSL
-            # routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed
-            expected_msg = r"certificate verify failed"
-        elif sys.version_info < (3, 7):
-            # The error message is different for Python <= 3.6
-            expected_msg = r"\[SSL: CERTIFICATE_VERIFY_FAILED\]"
+        import requests
+        if requests.__version__ < "2.26.0":
+            if PY26:
+                # Under Python 2.6, error looks like this:
+                # [Errno 1] _ssl.c:498: error:14090086:SSL
+                # routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed
+                expected_msg = r"certificate verify failed"
+            elif sys.version_info < (3, 7):
+                # The error message is different for Python <= 3.6
+                expected_msg = r"\[SSL: CERTIFICATE_VERIFY_FAILED\]"
+            else:
+                expected_msg = re.escape(
+                    "(\"bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')])\",)"
+                )
         else:
+            # The error message is different for requests library v2.26
             expected_msg = re.escape(
-                "(\"bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')])\",)"
+                "HTTPSConnectionPool(host='example.com', port=443): "
+                "Max retries exceeded with url: / "
+                "(Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+                "self signed certificate in certificate chain (_ssl.c:1131)')))"
             )
 
         connection = self._get_connection_cls(server="https://example.com:443")
-
         self.assertRaisesRegex(
             Exception,
             expected_msg,
