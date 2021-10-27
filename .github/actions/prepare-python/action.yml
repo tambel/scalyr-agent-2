@@ -1,0 +1,33 @@
+name: 'Prepare Python'
+description: 'rrr'
+inputs:
+  version:
+    description: 'Name of the environment.'
+    required: true
+
+#outputs:
+#  random-number:
+#    description: "Random number"
+#    value: ${{ steps.random-number-generator.outputs.random-id }}
+runs:
+  using: "composite"
+  steps:
+    - name: Restore cached python installer.
+      uses: actions/cache@v2
+      env:
+        cache-version: v4
+      with:
+        path: ~/python_installer
+        key: ${{ runner.os }}-python-installer-{{ inputs.version }}
+
+    - run: |
+        wget -O ~/python_installer https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe
+      shell: bash
+
+
+    - run: |
+        $python_path = "C:\Python3"
+        Start-Process ~/python_installer -ArgumentList "/quiet /passive TargetDir=$python_path" -wait
+
+        rm ~/python_installer
+      shell: powershell
