@@ -39,11 +39,11 @@ runs:
         # in some cases, the 'prepare-build-environment' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
         # variable to be able to use those tools.
+        echo "trrrr" >> $GITHUB_PATH
+        echo $GITHUB_PATH
         if [ -f ~/dependencies_cache/paths.txt ]; then
 
           cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
-          echo "trrrr" >> $GITHUB_PATH
-          echo $GITHUB_PATH
         fi
 
         # Remove checksum file, it is not needed anymore.
