@@ -23,6 +23,7 @@ import tempfile
 import json
 
 import mock
+import pytest
 
 from scalyr_agent import __scalyr__
 from scalyr_agent.test_base import BaseScalyrLogCaptureTestCase
@@ -45,6 +46,10 @@ CORRECT_INIT_PRAGMA = """
 
 
 class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
+    @pytest.mark.skipif(
+        __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.POSIX,
+        reason="Both ca and intermediate cert files are checked only on Unix"
+    )
     @mock.patch(
         "scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.PACKAGE_INSTALL
     )
