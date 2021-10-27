@@ -50,7 +50,7 @@ class EnvironmentDeployer:
 
         print("RUN")
         # Run the 'prepare build environment' script in previously chosen shell.
-
+        print(command)
         command = shlex.quote(command)
         subprocess.check_call(
             command,
