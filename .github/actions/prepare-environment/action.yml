@@ -8,10 +8,6 @@ inputs:
     description: "Name of the base docker image. If specified, then the deployer has to perform in docker using this image as base."
     required: false
 
-#outputs:
-#  random-number:
-#    description: "Random number"
-#    value: ${{ steps.random-number-generator.outputs.random-id }}
 runs:
   using: "composite"
   steps:
