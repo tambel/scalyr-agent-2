@@ -38,7 +38,7 @@ echo "FFFFF"
 
 if $use_cache ; then
   mkdir -p "$pip_cache_dir"
-  cp -a "$CACHE_DIR/pip" "$pip_cache_dir/."
+  cp -a "$CACHE_DIR/pip/*" "$pip_cache_dir"
 fi
 
 #python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
