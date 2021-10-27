@@ -20,6 +20,7 @@ jobs:
           name: 'test'
 
       - name: Run unit tests.
+        shell: bash
         run: |
           python -m pytest ./tests/unit
 
