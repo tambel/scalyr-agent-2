@@ -41,9 +41,7 @@ if $use_cache ; then
   cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
 fi
 
-#python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
-python3 -m pip install flask
-
+python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
 if $save_cache ; then
   echo "Save pip cache."
