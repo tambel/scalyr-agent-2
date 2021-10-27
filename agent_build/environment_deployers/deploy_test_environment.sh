@@ -40,7 +40,8 @@ if $use_cache ; then
   cp -a "$CACHE_DIR/pip" "$pip_cache_dir"
 fi
 
-python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
+#python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
+python3 -m pip install flask
 
 ls "$pip_cache_dir"
 echo "-----"
