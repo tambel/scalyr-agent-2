@@ -37,4 +37,4 @@ runs:
         echo "RRRRRRR"
         python --version
 
-      shell: bash
+      shell: powershell
