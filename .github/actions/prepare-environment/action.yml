@@ -35,7 +35,7 @@ runs:
         in_docker: ${{ inputs.in-docker }}
       run: |
         echo "$in_docker"
-        variable=$(( $in_docker ? "--in-docker" : "" ))
+        variable=${$in_docker:--in-docker}
         echo "$variable"
         exit 0
 
