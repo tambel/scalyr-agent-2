@@ -15,34 +15,27 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 class EnvironmentDeployer:
     DEPLOYMENT_SCRIPT: pl.Path = None
     FILES_USED_IN_DEPLOYMENT = []
-    DEFAULT_DOCKER_BASE_IMAGE: str = None
+    BASE_DOCKER_IMAGE: str = None
 
 
     @classmethod
     def deploy(
         cls,
-        in_docker: bool,
-        base_image_name: str = None,
         cache_dir: Union[str, pl.Path] = None,
-
-
     ):
         """
         Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
         """
-        # Prepare the build environment on the current system.
 
-        # Choose the shell according to the operation system.
-        if in_docker:
-            if not base_image_name:
-                base_image_name = cls.DEFAULT_DOCKER_BASE_IMAGE
-
+        if cls.BASE_DOCKER_IMAGE:
             cls._deploy_in_docker(
                 cache_dir=cache_dir,
-                base_image_name=base_image_name
             )
             return
 
+        # Prepare the environment on the current system.
+
+        # Choose the shell according to the operation system.
         if cls.DEPLOYMENT_SCRIPT.suffix == ".ps1":
             shell = "powershell"
         else:
@@ -63,7 +56,6 @@ class EnvironmentDeployer:
     @classmethod
     def _deploy_in_docker(
         cls,
-        base_image_name: str,
         cache_dir: Union[str, pl.Path] = None,
 
     ):
@@ -139,9 +131,6 @@ class EnvironmentDeployer:
         # Remove if such container exists.
         subprocess.check_call(["docker", "rm", "-f", container_name])
 
-        if not base_image_name:
-            base_image_name
-
         # Create container and run the 'prepare environment' script in it.
         subprocess.check_call(
             [
@@ -151,7 +140,7 @@ class EnvironmentDeployer:
                 "--name",
                 container_name,
                 *volumes_mappings,
-                base_image_name,
+                cls.BASE_DOCKER_IMAGE,
                 str(container_prepare_env_script_path),
             ]
         )
@@ -229,6 +218,7 @@ class EnvironmentDeployer:
 
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
+
 class BaseEnvironmentDeployer(EnvironmentDeployer):
     FILES_USED_IN_DEPLOYMENT = [
         _AGENT_BUILD_DIR / "requirements.txt",
@@ -244,16 +234,20 @@ class TestEnvironmentDeployer(BaseEnvironmentDeployer):
 
 
 class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
-    DEFAULT_DOCKER_BASE_IMAGE = "centos:7"
     if platform.system() != "Windows":
         DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_linux_builder.sh"
     else:
         DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_windows_builder.ps1"
 
 
+class DockerizedAgentBuilderMachineDeployer(AgentBuilderMachineDeployer):
+    BASE_DOCKER_IMAGE = "centos:7"
+
+
 DEPLOYERS_TO_NAMES = {
     "test": TestEnvironmentDeployer,
-    "agent_builder": AgentBuilderMachineDeployer
+    "agent_builder": AgentBuilderMachineDeployer,
+    "dockerized_agent_builder": DockerizedAgentBuilderMachineDeployer
 
 }
 
@@ -265,19 +259,6 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest="command")
 
     deploy_parser = subparsers.add_parser("deploy")
-    deploy_parser.add_argument(
-        "--in-docker",
-        dest="in_docker",
-        required=False,
-        action="store_true",
-    )
-
-    deploy_parser.add_argument(
-        "--base-docker-image",
-        required=False,
-        dest="base_docker_image",
-        type=str
-    )
 
     deploy_parser.add_argument(
         "--cache-dir",
@@ -310,8 +291,6 @@ if __name__ == '__main__':
         print("deploy!")
         deployer_cls.deploy(
             cache_dir=args.cache_dir,
-            in_docker=args.in_docker,
-            base_image_name=args.base_docker_image
         )
         exit(0)
 
