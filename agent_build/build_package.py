@@ -1436,12 +1436,7 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command")
 
-    deployer_info_parser = subparsers.add_parser("deployer_info")
-
-    deployer_info_parser.add_argument(
-        "info_type",
-        choices=["name", "docker-image"]
-    )
+    deployer_info_parser = subparsers.add_parser("deployer-name")
 
     build_parser = subparsers.add_parser("build")
 
