@@ -5,6 +5,7 @@ import shlex
 import shutil
 import subprocess
 import hashlib
+import sys
 from typing import Union
 
 __PARENT_DIR__ = pl.Path(__file__).parent.absolute()
@@ -258,6 +259,7 @@ DEPLOYERS_TO_NAMES = {
 
 
 if __name__ == '__main__':
+    print(sys.argv)
     parser = argparse.ArgumentParser()
     parser.add_argument("deployer_name", choices=DEPLOYERS_TO_NAMES.keys())
     subparsers = parser.add_subparsers(dest="command")
