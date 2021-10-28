@@ -149,6 +149,7 @@ done
 # NOTE: We need to support this until the Scalyr Jenkins-based builders have buildx
 # installed on the base AMIs.
 HAS_BUILD_X=$(docker buildx > /dev/null 2>&1 && echo "YES")
+echo "$HAS_BUILD_X"
 if [ -z "$HAS_BUILD_X" ]; then
   # Legacy mechanism.
   # TODO: Delete this in favor of the buildx method when we can.  This is duplicated code.  
@@ -178,7 +179,7 @@ else
     report_progress "Adding Docker buildx instance" "$QUIET";
     run_docker_command "buildx create --use" "$QUIET" || die "Failed to create new builder instance"
   else
-    run_docker_command "buildx use $HAS_BUILD_X" "$QUIET" || die "Failed to use $HAS_BUILD_X builder instance"
+    run_docker_command "buildx use $HAS_BUILD_X_INSTANCE" "$QUIET" || die "Failed to use $HAS_BUILD_X_INSTANCE builder instance"
   fi
 
   # If publishing, push all images together; otherwise just put them in local cache
