@@ -146,9 +146,11 @@ class PackageBuilder(abc.ABC):
 
         output_path.mkdir(parents=True)
 
+        deployer_cls = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
+
         # If locally option is specified or builder class is not dockerized by default then just build the package
         # directly on this system.
-        if locally:
+        if locally or not deployer_cls.BASE_DOCKER_IMAGE:
             self._build_output_path = pl.Path(output_path)
             self._package_files_path = self._build_output_path / "package_root"
             self._package_files_path.mkdir()
@@ -159,7 +161,6 @@ class PackageBuilder(abc.ABC):
         # The package has to be build inside the docker.
         else:
             # Make sure that the base image with build environment is built.
-            deployer_cls = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
             deployer_cls.deploy()
 
             dockerfile_path = __PARENT_DIR__ / "Dockerfile"
