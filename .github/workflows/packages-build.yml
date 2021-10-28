@@ -3,32 +3,32 @@ name: Packages build
 on: [push]
 
 jobs:
-  unit-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-20.04, windows-2019, macos-10.15]
-        python: ["3.8"]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install python.
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.10'
-
-      - name: Prepare environment for the tests.
-        id: prepare
-        uses: ./.github/actions/prepare-environment
-        with:
-          name: 'test'
-          in-docker: false
-
-      - name: Run unit tests.
-        shell: bash
-        run: |
-          python -m pytest ./tests/unit
+#  unit-test:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ubuntu-20.04, windows-2019, macos-10.15]
+#        python: ["3.8"]
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#
+#      - name: Install python.
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: '3.8.10'
+#
+#      - name: Prepare environment for the tests.
+#        id: prepare
+#        uses: ./.github/actions/prepare-environment
+#        with:
+#          name: 'test'
+#          in-docker: false
+#
+#      - name: Run unit tests.
+#        shell: bash
+#        run: |
+#          python -m pytest ./tests/unit
 
   build:
     runs-on: ${{ matrix.os }}
@@ -106,8 +106,6 @@ jobs:
         id: prepare
         uses: ./.github/actions/prepare-environment
         with: ${{fromJSON(steps.get-docker-image.outputs.docker-image)}}
-#          name: ${{ steps.get-deployer-name.outputs.deployer-name }}
-#          in_docker_base_image: ${{ steps.get-docker-image.outputs.docker-image }}
 
       - name: Build.
         shell: bash
