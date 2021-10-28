@@ -5,21 +5,14 @@ inputs:
     description: 'Name of the deployer.'
     required: true
 
-  in-docker:
-    description: ""
-
-    required: false
-
-  base-docker-image:
-    description: "Name of the base docker image. If specified, then the deployer has to perform in docker using this image as base."
-    required: false
-
 runs:
   using: "composite"
   steps:
     - name: Calculate the checksum of the files used in deployer.
       shell: bash
       run: |
+        echo "LLLLL"
+        echo "${{ inputs.name }}"
         python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} dump-checksum checksum.txt
 
     - name: Restore cached dependensies of the environment deployer.
