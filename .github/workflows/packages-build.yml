@@ -98,7 +98,7 @@ jobs:
       - id: get-deployer-name
         run: echo "::set-output name=deployer-name::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer-name)"
 
-      - name: Prepare environment for the tests.
+      - name: Prepare build environment by running appropriate deployer.
         id: prepare
         uses: ./.github/actions/prepare-environment
         with:
@@ -125,98 +125,98 @@ jobs:
           name: "package-test-${{ matrix.package_type }}"
           path: |
             agent-build-output/package_test_frozen_binary/package_test_runner*
-#
-#
-#
-#
-#  test:
-#    needs: build
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        package_type: ["deb"]
-#        os: ["ubuntu-20.04"]
-#        docker-image: ["ubuntu:14.04", "ubuntu:16.04", "ubuntu:18.04", "ubuntu:20.04"]
-#        python-version: [3.8]
-#        include:
-#          - package_type: "rpm"
-#            os: ubuntu-20.04
-#            docker-image: "centos:7"
-#            python-version: "3.8"
-#          - package_type: "rpm"
-#            os: ubuntu-20.04
-#            docker-image: "centos:8"
-#            python-version: "3.8"
-#          - package_type: "rpm"
-#            os: ubuntu-20.04
-#            docker-image: "amazonlinux:2"
-#            python-version: "3.8"
-#          - package_type: "tar"
-#            os: ubuntu-20.04
-#            docker-image: "ubuntu:14.04"
-#            python-version: "3.8"
-#          - package_type: "msi"
-#            os: windows-2019
-#            python-version: "3.8"
-#          - package_type: "k8s"
-#            os: ubuntu-20.04
-#            python-version: "3.8"
-#          - package_type: "docker-json"
-#            os: ubuntu-20.04
-#            python-version: "3.8"
-#
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v2
-#
-#      - name: Download package.
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: "package-${{ matrix.package_type }}"
-#          path: ~/package
-#
-#      - name: Download package test (if presented).
-#        uses: actions/download-artifact@v2
-#        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
-#        with:
-#          name: "package-test-${{ matrix.package_type }}"
-#          path: ~/package_test
-#
-#      - name: Start minikube for the test of the kubernetes build.
-#        if: ${{ matrix.package_type == 'k8s' }}
-#        shell: bash
-#        run: |
-#          minikube start
-#
-#      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
-#      - name: Make Kubernetes and docker package builder scripts executable.
-#        if: matrix.package_type == 'k8s' || matrix.package_type == 'docker-json'
-#        run: |
-#          chmod +x ~/package/*
-#
-#      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
-#      - name: Make package test frozen binaries executable.
-#        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
-#        run: |
-#          chmod +x ~/package_test/package_test_runner*
-#
-#      - name: Test.
-#        shell: bash
-#        env:
-#          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-#        run: |
-#          # Define the package_test_path option only if package test file is presented in artifacts.
-#          package_test_path="$(ls ~/package_test/package_test_runner* || true)"
-#          if [ -f "${package_test_path}" ]; then
-#            package_test_path_option="--package-test-path ${package_test_path}"
-#          else
-#            package_test_path_option=""
-#          fi
-#
-#
-#          python3 tests/package_tests/package_test_runner.py \
-#            --package-type ${{ matrix.package_type }} \
-#            --docker-image "${{ matrix.docker-image }}" \
-#            --package-path ~/package/* \
-#            ${package_test_path_option} \
-#            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+
+
+
+
+  test:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        package_type: ["deb"]
+        os: ["ubuntu-20.04"]
+        docker-image: ["ubuntu:14.04", "ubuntu:16.04", "ubuntu:18.04", "ubuntu:20.04"]
+        python-version: [3.8]
+        include:
+          - package_type: "rpm"
+            os: ubuntu-20.04
+            docker-image: "centos:7"
+            python-version: "3.8"
+          - package_type: "rpm"
+            os: ubuntu-20.04
+            docker-image: "centos:8"
+            python-version: "3.8"
+          - package_type: "rpm"
+            os: ubuntu-20.04
+            docker-image: "amazonlinux:2"
+            python-version: "3.8"
+          - package_type: "tar"
+            os: ubuntu-20.04
+            docker-image: "ubuntu:14.04"
+            python-version: "3.8"
+          - package_type: "msi"
+            os: windows-2019
+            python-version: "3.8"
+          - package_type: "k8s"
+            os: ubuntu-20.04
+            python-version: "3.8"
+          - package_type: "docker-json"
+            os: ubuntu-20.04
+            python-version: "3.8"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Download package.
+        uses: actions/download-artifact@v2
+        with:
+          name: "package-${{ matrix.package_type }}"
+          path: ~/package
+
+      - name: Download package test (if presented).
+        uses: actions/download-artifact@v2
+        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
+        with:
+          name: "package-test-${{ matrix.package_type }}"
+          path: ~/package_test
+
+      - name: Start minikube for the test of the kubernetes build.
+        if: ${{ matrix.package_type == 'k8s' }}
+        shell: bash
+        run: |
+          minikube start
+
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+      - name: Make Kubernetes and docker package builder scripts executable.
+        if: matrix.package_type == 'k8s' || matrix.package_type == 'docker-json'
+        run: |
+          chmod +x ~/package/*
+
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+      - name: Make package test frozen binaries executable.
+        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
+        run: |
+          chmod +x ~/package_test/package_test_runner*
+
+      - name: Test.
+        shell: bash
+        env:
+          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+        run: |
+          # Define the package_test_path option only if package test file is presented in artifacts.
+          package_test_path="$(ls ~/package_test/package_test_runner* || true)"
+          if [ -f "${package_test_path}" ]; then
+            package_test_path_option="--package-test-path ${package_test_path}"
+          else
+            package_test_path_option=""
+          fi
+
+
+          python3 tests/package_tests/package_test_runner.py \
+            --package-type ${{ matrix.package_type }} \
+            --docker-image "${{ matrix.docker-image }}" \
+            --package-path ~/package/* \
+            ${package_test_path_option} \
+            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
