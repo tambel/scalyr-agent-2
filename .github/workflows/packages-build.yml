@@ -3,57 +3,57 @@ name: Packages build
 on: [push]
 
 jobs:
-  unit-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-20.04, windows-2019, macos-10.15]
-        python: ["3.8"]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install python.
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.10'
-
-      - name: Prepare environment for the tests.
-        id: prepare
-        uses: ./.github/actions/prepare-environment
-        with:
-          name: 'test'
-
-      - name: Run unit tests.
-        shell: bash
-        run: |
-          python -m pytest ./tests/unit
+#  unit-test:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ubuntu-20.04, windows-2019, macos-10.15]
+#        python: ["3.8"]
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#
+#      - name: Install python.
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: '3.8.10'
+#
+#      - name: Prepare environment for the tests.
+#        id: prepare
+#        uses: ./.github/actions/prepare-environment
+#        with:
+#          name: 'test'
+#
+#      - name: Run unit tests.
+#        shell: bash
+#        run: |
+#          python -m pytest ./tests/unit
 
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - package_type: "deb"
-            package_filename_glob: "scalyr-agent-2_*.*.*_all.deb"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "rpm"
-            package_filename_glob: "scalyr-agent-2-*.*.*-*.noarch.rpm"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "tar"
-            package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "msi"
-            package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
-            os: windows-2019
-            python-version: "3.8"
-          - package_type: "k8s"
-            os: ubuntu-20.04
-            package_filename_glob: "scalyr-agent-k8s-*.*.*"
-            python-version: "3.8"
+#          - package_type: "deb"
+#            package_filename_glob: "scalyr-agent-2_*.*.*_all.deb"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            package_filename_glob: "scalyr-agent-2-*.*.*-*.noarch.rpm"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "tar"
+#            package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "msi"
+#            package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
+#            os: windows-2019
+#            python-version: "3.8"
+#          - package_type: "k8s"
+#            os: ubuntu-20.04
+#            package_filename_glob: "scalyr-agent-k8s-*.*.*"
+#            python-version: "3.8"
           - package_type: "docker-json"
             os: ubuntu-20.04
             package_filename_glob: "scalyr-agent-docker-json-*.*.*"
