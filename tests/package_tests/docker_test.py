@@ -29,6 +29,8 @@ def build_agent_image(builder_path: pl.Path):
         [str(builder_path), "--tags", "docker-test"],
     )
 
+    subprocess.check_call("docker images ls", shell=True)
+
 
 _AGENT_CONTAINER_NAME = "scalyr-agent-docker-test"
 
