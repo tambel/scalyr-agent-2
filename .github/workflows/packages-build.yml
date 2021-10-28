@@ -139,28 +139,28 @@ jobs:
         docker-image: ["ubuntu:14.04", "ubuntu:16.04", "ubuntu:18.04", "ubuntu:20.04"]
         python-version: [3.8]
         include:
-          - package_type: "rpm"
-            os: ubuntu-20.04
-            docker-image: "centos:7"
-            python-version: "3.8"
-          - package_type: "rpm"
-            os: ubuntu-20.04
-            docker-image: "centos:8"
-            python-version: "3.8"
-          - package_type: "rpm"
-            os: ubuntu-20.04
-            docker-image: "amazonlinux:2"
-            python-version: "3.8"
-          - package_type: "tar"
-            os: ubuntu-20.04
-            docker-image: "ubuntu:14.04"
-            python-version: "3.8"
-          - package_type: "msi"
-            os: windows-2019
-            python-version: "3.8"
-          - package_type: "k8s"
-            os: ubuntu-20.04
-            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            docker-image: "centos:7"
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            docker-image: "centos:8"
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            docker-image: "amazonlinux:2"
+#            python-version: "3.8"
+#          - package_type: "tar"
+#            os: ubuntu-20.04
+#            docker-image: "ubuntu:14.04"
+#            python-version: "3.8"
+#          - package_type: "msi"
+#            os: windows-2019
+#            python-version: "3.8"
+#          - package_type: "k8s"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
           - package_type: "docker-json"
             os: ubuntu-20.04
             python-version: "3.8"
