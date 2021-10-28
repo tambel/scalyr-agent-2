@@ -96,18 +96,14 @@ jobs:
 #          # Remove checksum file, it is not needed anymore.
 #          rm checksum.txt
 
-      - id: get-docker-image
-        run: echo "::set-output name=docker-image::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer_info docker-image)"
-
       - id: get-deployer-name
-        run: echo "::set-output name=deployer-name::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer_info name)"
+        run: echo "::set-output name=deployer-name::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer-name)"
 
       - name: Prepare environment for the tests.
         id: prepare
         uses: ./.github/actions/prepare-environment
-        with: ${{fromJSON(steps.get-docker-image.outputs.docker-image)}}
-#          name: ${{ steps.get-deployer-name.outputs.deployer-name }}
-#          in_docker_base_image: ${{ steps.get-docker-image.outputs.docker-image }}
+        with:
+          name: ${{ steps.get-deployer-name.outputs.deployer-name }}
 
       - name: Build.
         shell: bash

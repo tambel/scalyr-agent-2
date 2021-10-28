@@ -1477,7 +1477,7 @@ def main():
     # Find the builder class.
     package_builder_cls = package_types_to_builders[args.package_type]
 
-    if args.command == "deployer_info":
+    if args.command == "deployer-name":
         print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
         #print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
         exit(0)
