@@ -271,9 +271,9 @@ if __name__ == '__main__':
     )
 
     deploy_parser.add_argument(
-        "--docker-base-image",
+        "--base-docker-image",
         required=False,
-        dest="docker_base_image",
+        dest="base_docker_image",
         type=str
     )
 
@@ -309,7 +309,7 @@ if __name__ == '__main__':
         deployer_cls.deploy(
             cache_dir=args.cache_dir,
             in_docker=args.in_docker,
-            base_image_name=args.docker_base_image
+            base_image_name=args.base_docker_image
         )
         exit(0)
 
