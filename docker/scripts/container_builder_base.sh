@@ -152,7 +152,7 @@ HAS_BUILD_X=$(docker buildx > /dev/null 2>&1 && echo "YES")
 if [ -z "$HAS_BUILD_X" ]; then
   # Legacy mechanism.
   # TODO: Delete this in favor of the buildx method when we can.  This is duplicated code.  
-  report_progress "Docker does not support buildx.  Building only for local architecture." "$QUIET";   
+  report_progress "Docker does not support buildx.  Building only for local architecture." "$QUIET";
 
   run_docker_command "build $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
 
@@ -187,7 +187,7 @@ else
     run_docker_command "buildx build --push --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
   else
     report_progress "Building image(s) to local cache." "$QUIET";
-    run_docker_command "buildx build -o type=image --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+    run_docker_command "buildx build -o type=docker --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
   fi
 
   report_progress "Success." "$QUIET";
