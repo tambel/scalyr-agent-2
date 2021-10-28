@@ -4,6 +4,11 @@ inputs:
   name:
     description: 'Name of the deployer.'
     required: true
+
+  in_docker:
+    description: ""
+    required: false
+
   in_docker_base_image:
     description: "Name of the base docker image. If specified, then the deployer has to perform in docker using this image as base."
     required: false

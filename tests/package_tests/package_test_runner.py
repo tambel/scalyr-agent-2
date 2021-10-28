@@ -18,6 +18,7 @@
 
 import pathlib as pl
 import argparse
+import shlex
 import subprocess
 import sys
 import logging
@@ -35,6 +36,8 @@ sys.path.append(str(__SOURCE_ROOT__))
 # Import internal modules only after the PYTHONPATH is tweaked.
 from tests.package_tests import k8s_test, docker_test, package_test
 
+from agent_build.environment_deployers import deployers
+
 
 parser = argparse.ArgumentParser()
 
@@ -43,6 +46,11 @@ parser.add_argument("--package-type", required=True)
 parser.add_argument("--package-test-path")
 parser.add_argument("--docker-image")
 parser.add_argument("--scalyr-api-key", required=True)
+parser.add_argument(
+    "--use-frozen-test-runner",
+    dest="use_frozen_test_runner",
+    action="store_true"
+)
 
 
 args = parser.parse_args()
@@ -54,7 +62,50 @@ if args.package_test_path:
     package_test_path = pl.Path(args.package_test_path)
 
 
+def build_test_executor():
+    deployer_cls = deployers.AgentBuilderMachineDeployer
+
+    deployer_cls.deploy(in_docker=True)
+
+    image_name = "test_runner_builder"
+
+    dockerfile_path = _PARENT_DIR / "Dockerfile"
+
+    test_runner_path = pl.Path(__file__)
+
+    command_args = [
+        "python3", "-m", "PyInstaller", "--onefile", str(test_runner_path)
+    ]
+
+    command = shlex.join(command_args)
+
+    subprocess.check_call(
+        [
+            "docker",
+            "build",
+            "-t",
+            image_name,
+            "--build-arg",
+            f"BASE_IMAGE_NAME={deployer_cls.get_image_name()}",
+            "--build-arg",
+            f"BUILD_COMMAND=python3 {command}",
+            "-f",
+            str(dockerfile_path),
+            str(__SOURCE_ROOT__),
+        ]
+    )
+
+    return ""
+
+
+
+
 if args.docker_image:
+
+    if args.use_frozen_test_runner:
+        test_runner_path = build_test_executor()
+    else:
+        test_runner_path = "/scalyr-agent-2/tests/package_tests/package_test_runner.py"
 
     if args.package_test_path:
         executable_mapping_args = ["-v", f"{args.package_test_path}:/tmp/test_executable"]

@@ -14,13 +14,17 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 class EnvironmentDeployer:
     DEPLOYMENT_SCRIPT: pl.Path = None
     FILES_USED_IN_DEPLOYMENT = []
+    DEFAULT_DOCKER_BASE_IMAGE: str = None
 
 
     @classmethod
     def deploy(
         cls,
+        in_docker: bool,
+        base_image_name: str = None,
         cache_dir: Union[str, pl.Path] = None,
-        in_docker_base_image: str = None
+
+
     ):
         """
         Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
@@ -28,14 +32,16 @@ class EnvironmentDeployer:
         # Prepare the build environment on the current system.
 
         # Choose the shell according to the operation system.
-        if in_docker_base_image:
+        if in_docker:
+            if not base_image_name:
+                base_image_name = cls.DEFAULT_DOCKER_BASE_IMAGE
+
             cls._deploy_in_docker(
                 cache_dir=cache_dir,
-                base_image_name=in_docker_base_image
+                base_image_name=base_image_name
             )
             return
-        print("11111")
-        print(cls.DEPLOYMENT_SCRIPT.suffix)
+
         if cls.DEPLOYMENT_SCRIPT.suffix == ".ps1":
             shell = "powershell"
         else:
@@ -131,6 +137,9 @@ class EnvironmentDeployer:
 
         # Remove if such container exists.
         subprocess.check_call(["docker", "rm", "-f", container_name])
+
+        if not base_image_name:
+            base_image_name
 
         # Create container and run the 'prepare environment' script in it.
         subprocess.check_call(
@@ -234,6 +243,7 @@ class TestEnvironmentDeployer(BaseEnvironmentDeployer):
 
 
 class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
+    DEFAULT_DOCKER_BASE_IMAGE = "centos:7"
     if platform.system() != "Windows":
         DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_linux_builder.sh"
     else:
@@ -254,16 +264,24 @@ if __name__ == '__main__':
 
     deploy_parser = subparsers.add_parser("deploy")
     deploy_parser.add_argument(
+        "--in-docker",
+        dest="in_docker",
+        required=False,
+        action="store_true",
+    )
+
+    deploy_parser.add_argument(
+        "--docker-base-image",
+        required=False,
+        dest="docker_base_image",
+        type=str
+    )
+
+    deploy_parser.add_argument(
         "--cache-dir",
         dest="cache_dir",
         help="Path to the directory which will be considered by the script is a cache. "
         "All 'cachable' intermediate results will be stored in it.",
-    )
-
-    deploy_parser.add_argument(
-        "--in-docker-base-image",
-        dest="in_docker_base_image",
-        type=str
     )
 
     dump_checksum_parser = subparsers.add_parser("dump-checksum")
@@ -290,7 +308,8 @@ if __name__ == '__main__':
         print("deploy!")
         deployer_cls.deploy(
             cache_dir=args.cache_dir,
-            in_docker_base_image=args.in_docker_base_image
+            in_docker=args.in_docker,
+            base_image_name=args.docker_base_image
         )
         exit(0)
 
