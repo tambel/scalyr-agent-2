@@ -35,6 +35,11 @@ runs:
         in_docker: ${{ inputs.in-docker }}
       run: |
         echo "$in_docker"
+        if $in_docker ; then
+          echo "TRUE"
+        else
+          echo "FALSE"
+        fi
         exit 0
 
         python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} deploy --in-docker --in-docker-base-image "${{ inputs.in_docker_base_image }}" --cache-dir ~/dependencies_cache
