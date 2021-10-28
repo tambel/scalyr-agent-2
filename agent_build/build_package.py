@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 import pathlib as pl
 import tarfile
 import abc
@@ -82,7 +82,7 @@ class PackageBuilder(abc.ABC):
     # # which are required by this package builder. See 'prepare-build-environment' action. in the docstring of this
     # # class.
     # PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH: Union[str, pl.Path] = None
-    ENVIRONMENT_DEPLOYER_NAME: str = "agent_builder"
+    ENVIRONMENT_DEPLOYER_NAME: str = None
 
     # # The list of files which are somehow used during the preparation of the build environment. This is needed to
     # # calculate their checksum. (see action 'dump-checksum')
@@ -93,7 +93,7 @@ class PackageBuilder(abc.ABC):
     # ]
 
     # # If this flag True, then the builder will run inside the docker.
-    # DOCKERIZED = False
+    DOCKERIZED = False
 
     # Name of the image in case if build is performed inside the docker. Has to pe specified if 'DOCKERIZED' is True.
     BASE_DOCKER_IMAGE = None
@@ -148,7 +148,7 @@ class PackageBuilder(abc.ABC):
 
         # If locally option is specified or builder class is not dockerized by default then just build the package
         # directly on this system.
-        if locally or not type(self).BASE_DOCKER_IMAGE:
+        if locally:
             self._build_output_path = pl.Path(output_path)
             self._package_files_path = self._build_output_path / "package_root"
             self._package_files_path.mkdir()
@@ -160,9 +160,7 @@ class PackageBuilder(abc.ABC):
         else:
             # Make sure that the base image with build environment is built.
             deployer_cls = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
-            deployer_cls.deploy(
-                in_docker_base_image=self.BASE_DOCKER_IMAGE
-            )
+            deployer_cls.deploy()
 
             dockerfile_path = __PARENT_DIR__ / "Dockerfile"
 
@@ -677,8 +675,9 @@ class LinuxPackageBuilder(PackageBuilder):
     # PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH = (
     #     __PARENT_DIR__ / "linux" / "prepare_build_environment.sh"
     # )
-    BASE_DOCKER_IMAGE = "centos:7"
-    #DOCKERIZED = True
+    # BASE_DOCKER_IMAGE = "centos:7"
+    DOCKERIZED = True
+    ENVIRONMENT_DEPLOYER_NAME = "dockerized_agent_builder"
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
@@ -1195,7 +1194,8 @@ class MsiWindowsPackageBuilder(PackageBuilder):
     # PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH = (
     #     _AGENT_BUILD_PATH / "windows/prepare_build_environment.ps1"
     # )
-    #DOCKERIZED = False
+    DOCKERIZED = False
+    ENVIRONMENT_DEPLOYER_NAME = "agent_builder"
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able
@@ -1478,16 +1478,9 @@ def main():
     package_builder_cls = package_types_to_builders[args.package_type]
 
     if args.command == "deployer_info":
-
-        if args.info_type == "name":
-            print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
-            exit(0)
-
-        if args.info_type == "docker-image":
-            docker_image_name = package_builder_cls.BASE_DOCKER_IMAGE
-            if docker_image_name:
-                print(docker_image_name)
-            exit(0)
+        print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
+        #print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
+        exit(0)
 
     if args.command == "build":
         output_path = pl.Path(args.output_dir)
