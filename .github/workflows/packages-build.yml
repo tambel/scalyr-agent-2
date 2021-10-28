@@ -105,7 +105,7 @@ jobs:
       - name: Prepare environment for the tests.
         id: prepare
         uses: ./.github/actions/prepare-environment
-        with: ${{fromJSON(steps.get-docker-image.outputs.docker-image)}}
+        with: ${{ fromJSON(steps.get-docker-image.outputs.docker-image) }}
 
       - name: Build.
         shell: bash
