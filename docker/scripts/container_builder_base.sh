@@ -149,7 +149,6 @@ done
 # NOTE: We need to support this until the Scalyr Jenkins-based builders have buildx
 # installed on the base AMIs.
 HAS_BUILD_X=$(docker buildx > /dev/null 2>&1 && echo "YES")
-echo "$HAS_BUILD_X"
 if [ -z "$HAS_BUILD_X" ]; then
   # Legacy mechanism.
   # TODO: Delete this in favor of the buildx method when we can.  This is duplicated code.  
@@ -185,12 +184,10 @@ else
   # If publishing, push all images together; otherwise just put them in local cache
   if [ ! -z "$PUBLISH" ]; then
     report_progress "Publishing image(s)." "$QUIET";
-    #run_docker_command "buildx build --push --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
-    run_docker_command "buildx build --push --platform linux/arm64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+    run_docker_command "buildx build --push --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
   else
     report_progress "Building image(s) to local cache." "$QUIET";
-    #run_docker_command "buildx build -o type=image --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
-    run_docker_command "buildx build -o type=image --platform linux/arm64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+    run_docker_command "buildx build -o type=image --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
   fi
 
   report_progress "Success." "$QUIET";
