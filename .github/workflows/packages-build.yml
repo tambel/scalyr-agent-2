@@ -23,7 +23,7 @@ jobs:
         uses: ./.github/actions/prepare-environment
         with:
           name: 'test'
-          in-docker: false
+          in-docker: true
 
       - name: Run unit tests.
         shell: bash
