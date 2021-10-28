@@ -5,11 +5,11 @@ inputs:
     description: 'Name of the deployer.'
     required: true
 
-  in_docker:
+  in-docker:
     description: ""
     required: false
 
-  in_docker_base_image:
+  base-docker-image:
     description: "Name of the base docker image. If specified, then the deployer has to perform in docker using this image as base."
     required: false
 
@@ -31,8 +31,13 @@ runs:
 
     - name: Prepare build environment.
       shell: bash
+      env:
+        in_docker: ${{ inputs.in-docker }}
       run: |
-        python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} deploy --in-docker-base-image "${{ inputs.in_docker_base_image }}" --cache-dir ~/dependencies_cache
+        echo "$in_docker"
+        exit 0
+
+        python3 agent_build/environment_deployers/deployers.py ${{ inputs.name }} deploy --in-docker --in-docker-base-image "${{ inputs.in_docker_base_image }}" --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
