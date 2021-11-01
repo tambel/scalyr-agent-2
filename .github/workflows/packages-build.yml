@@ -137,7 +137,6 @@ jobs:
     strategy:
       matrix:
         package_type: ["deb", "rpm"]
-        #target-os: ["ubuntu:14.04", "ubuntu:16.04", "ubuntu:18.04", "ubuntu:20.04", "centos:7"]
         python-version: [3.8]
         include:
           - package_type: "deb"
@@ -155,6 +154,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - run: echo ${{ matrix.target-os }}
 
 #      - name: Prepare build environment by running appropriate deployer.
 #        id: package-test
