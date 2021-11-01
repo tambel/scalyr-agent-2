@@ -4,4 +4,4 @@ on: [push]
 
 jobs:
   call-workflow-1:
-      uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml/@v1
+      uses: scalyr/scalyr-agent-2/.github/workflows/d/packages.yml/@v1
