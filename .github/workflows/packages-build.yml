@@ -109,7 +109,7 @@ jobs:
         shell: bash
         run: |
           python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
-          echo "::set-output name=package-filename-glob::$(python agent_build/build_package.py ${{ matrix.package_type }} package_filename_glob)"
+          echo "::set-output name=package-filename-glob::$(python agent_build/build_package.py ${{ matrix.package_type }} package-filename-glob)"
 
       - name: Save the package.
         uses: actions/upload-artifact@v2
@@ -152,7 +152,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - run: echo ${{ matrix.target }}
+      - name: "Get package file info"
+        id: get-package-info
+        run: |
+          echo "::set-output name=package-filename-glob::$(python agent_build/build_package.py ${{ matrix.package_type }} package-filename-glob)"
+          echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py ${{ matrix.target }} package-filename-glob)"
+
+#      - name: "Get package type."
+#        id: get-package-type
+#        run: echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py ${{ matrix.target }} package-filename-glob)"
+
+      - name: Download package.
+        uses: actions/download-artifact@v2
+        with:
+          name: "package-${{ steps.get-package-info.output.package-type }}"
+          path: ~/package
 
 #      - name: Prepare build environment by running appropriate deployer.
 #        id: package-test
