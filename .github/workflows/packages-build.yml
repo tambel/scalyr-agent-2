@@ -168,6 +168,17 @@ jobs:
           name: "package-${{ steps.get-package-info.output.package-type }}"
           path: ~/package
 
+      - name: Install python.
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.10'
+
+      - name: Prepare environment for the tests.
+        id: prepare
+        uses: ./.github/actions/prepare-environment
+        with:
+          name: 'test'
+
 #      - name: Prepare build environment by running appropriate deployer.
 #        id: package-test
 #        uses: ./.github/actions/run-package-test
