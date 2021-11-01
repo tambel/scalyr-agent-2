@@ -47,7 +47,7 @@ def build_agent_image(builder_path: pl.Path):
     )
 
     subprocess.check_call(
-        ["minikube", "cache", "add", "scalyr/scalyr-k8s-agent:k8s_test"]
+        ["minikube", "image", "load", "scalyr/scalyr-k8s-agent:k8s_test"]
     )
 
 
