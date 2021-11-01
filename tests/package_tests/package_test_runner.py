@@ -134,6 +134,7 @@ if args.where == "docker":
             docker_image,
             # Command to run the test executable inside the container.
             test_executable_path,
+            target,
             "test",
             "--package-path", f"/tmp/package", "--scalyr-api-key", args.scalyr_api_key
         ]
