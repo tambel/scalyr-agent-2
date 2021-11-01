@@ -95,8 +95,7 @@ target = args.target
 package_type = OS_TO_PACKAGE_TYPE[target]
 
 if args.command == "get":
-    if args.package_type:
-        print(package_type)
+    print(package_type)
     exit(0)
 
 
