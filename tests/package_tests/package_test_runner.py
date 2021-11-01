@@ -41,16 +41,17 @@ UBUNTU_1404 = "ubuntu-1404"
 UBUNTU_1604 = "ubuntu-1604"
 UBUNTU_1804 = "ubuntu-1804"
 UBUNTU_2004 = "ubuntu-2004"
-DOCKER_JSON = "docker-json"
-
 CENTOS_7 = "centos-7"
+CENTOS_8 = "centos-8"
+DOCKER_JSON = "docker-json"
 
 OS_TO_DOCKER_IMAGE = {
     UBUNTU_1404: "ubuntu:14.04",
     UBUNTU_1604: "ubuntu:16.04",
     UBUNTU_1804: "ubuntu:18.04",
     UBUNTU_2004: "ubuntu:20.04",
-    CENTOS_7: "centos:7"
+    CENTOS_7: "centos:7",
+    CENTOS_8: "centos:8",
 }
 
 OS_TO_EC2_AMI_DISTRO = {
@@ -58,7 +59,8 @@ OS_TO_EC2_AMI_DISTRO = {
     UBUNTU_1604: "ubuntu-1604",
     UBUNTU_1804: "ubuntu-1804",
     UBUNTU_2004: "ubuntu-2004",
-    CENTOS_7: "centos-7"
+    CENTOS_7: "centos-7",
+    CENTOS_8: "centos-8",
 }
 
 OS_TO_PACKAGE_TYPE = {
@@ -67,6 +69,7 @@ OS_TO_PACKAGE_TYPE = {
     UBUNTU_1804: "deb",
     UBUNTU_2004: "deb",
     CENTOS_7: "rpm",
+    CENTOS_8: "rpm",
     DOCKER_JSON: "docker-json"
 }
 
