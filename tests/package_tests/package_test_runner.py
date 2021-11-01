@@ -73,6 +73,7 @@ OS_TO_PACKAGE_TYPE = {
     UBUNTU_2004: "deb",
     CENTOS_7: "rpm",
     CENTOS_8: "rpm",
+    AMAZONLINUX_2: "rpm",
     DOCKER_JSON: "docker-json"
 }
 

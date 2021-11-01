@@ -1,0 +1,7 @@
+name: Packages build2
+
+on: [push]
+
+jobs:
+  call-workflow-1:
+      uses: ./github/workflows/packages.yml
