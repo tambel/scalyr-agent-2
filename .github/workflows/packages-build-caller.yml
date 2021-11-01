@@ -9,6 +9,6 @@ jobs:
       - uses: actions/checkout@v2
 
   call-packages:
-      uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@github.ref
+      uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@ref
       with:
         ring: gggg
