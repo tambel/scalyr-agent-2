@@ -29,110 +29,110 @@ jobs:
 #        run: |
 #          python -m pytest ./tests/unit
 
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - package_type: "deb"
-            package_filename_glob: "scalyr-agent-2_*.*.*_all.deb"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "rpm"
-            package_filename_glob: "scalyr-agent-2-*.*.*-*.noarch.rpm"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "tar"
-            package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "msi"
-            package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
-            os: windows-2019
-            python-version: "3.8"
-          - package_type: "k8s"
-            os: ubuntu-20.04
-            package_filename_glob: "scalyr-agent-k8s-*.*.*"
-            python-version: "3.8"
-          - package_type: "docker-json"
-            os: ubuntu-20.04
-            package_filename_glob: "scalyr-agent-docker-json-*.*.*"
-            python-version: "3.8"
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install python.
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.10'
-
-#      - name: Calculate the checksum of the build dependencies.
-#        shell: bash
-#        run: |
-#          python3 agent_build/build_package.py ${{ matrix.package_type }} dump-checksum checksum.txt
+#  build:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        include:
+#          - package_type: "deb"
+#            package_filename_glob: "scalyr-agent-2_*.*.*_all.deb"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            package_filename_glob: "scalyr-agent-2-*.*.*-*.noarch.rpm"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "tar"
+#            package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "msi"
+#            package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
+#            os: windows-2019
+#            python-version: "3.8"
+#          - package_type: "k8s"
+#            os: ubuntu-20.04
+#            package_filename_glob: "scalyr-agent-k8s-*.*.*"
+#            python-version: "3.8"
+#          - package_type: "docker-json"
+#            os: ubuntu-20.04
+#            package_filename_glob: "scalyr-agent-docker-json-*.*.*"
+#            python-version: "3.8"
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
 #
-#      - name: Restore cached dependensies of the build environment if exists.
-#        uses: actions/cache@v2
-#        env:
-#          cache-version: v1
+#      - name: Install python.
+#        uses: actions/setup-python@v2
 #        with:
-#          path: ~/dependencies_cache
-#          key: ${{ runner.os }}-build-dependencies-${{ env.cache-version }}-${{ hashFiles('checksum.txt') }}
+#          python-version: '3.8.10'
 #
-#      - name: Prepare build environment.
+##      - name: Calculate the checksum of the build dependencies.
+##        shell: bash
+##        run: |
+##          python3 agent_build/build_package.py ${{ matrix.package_type }} dump-checksum checksum.txt
+##
+##      - name: Restore cached dependensies of the build environment if exists.
+##        uses: actions/cache@v2
+##        env:
+##          cache-version: v1
+##        with:
+##          path: ~/dependencies_cache
+##          key: ${{ runner.os }}-build-dependencies-${{ env.cache-version }}-${{ hashFiles('checksum.txt') }}
+##
+##      - name: Prepare build environment.
+##        shell: bash
+##        run: |
+##          python3 agent_build/build_package.py ${{ matrix.package_type }} prepare-build-environment --cache-dir ~/dependencies_cache
+##
+##          # in some cases, the 'prepare-build-environment' command also generates file 'paths.txt'. This file contains paths
+##          # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
+##          # variable to be able to use those tools.
+##          if [ -f ~/dependencies_cache/paths.txt ]; then
+##            cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
+##          fi
+##
+##          # Remove checksum file, it is not needed anymore.
+##          rm checksum.txt
+#
+#      - id: get-deployer-name
+#        run: echo "::set-output name=deployer-name::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer-name)"
+#
+#      - name: Prepare build environment by running appropriate deployer.
+#        id: prepare
+#        uses: ./.github/actions/prepare-environment
+#        with:
+#          name: ${{ steps.get-deployer-name.outputs.deployer-name }}
+#
+#      - name: Build.
 #        shell: bash
 #        run: |
-#          python3 agent_build/build_package.py ${{ matrix.package_type }} prepare-build-environment --cache-dir ~/dependencies_cache
+#          python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
 #
-#          # in some cases, the 'prepare-build-environment' command also generates file 'paths.txt'. This file contains paths
-#          # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
-#          # variable to be able to use those tools.
-#          if [ -f ~/dependencies_cache/paths.txt ]; then
-#            cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
-#          fi
+#      - name: Save the package.
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: "package-${{ matrix.package_type }}"
+#          path: |
+#            agent-build-output/${{ matrix.package_filename_glob }}*
 #
-#          # Remove checksum file, it is not needed anymore.
-#          rm checksum.txt
-
-      - id: get-deployer-name
-        run: echo "::set-output name=deployer-name::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer-name)"
-
-      - name: Prepare build environment by running appropriate deployer.
-        id: prepare
-        uses: ./.github/actions/prepare-environment
-        with:
-          name: ${{ steps.get-deployer-name.outputs.deployer-name }}
-
-      - name: Build.
-        shell: bash
-        run: |
-          python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
-
-      - name: Save the package.
-        uses: actions/upload-artifact@v2
-        with:
-          name: "package-${{ matrix.package_type }}"
-          path: |
-            agent-build-output/${{ matrix.package_filename_glob }}*
-
-
-
-      - name: Save the frozen test script.
-        uses: actions/upload-artifact@v2
-        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
-        with:
-          name: "package-test-${{ matrix.package_type }}"
-          path: |
-            agent-build-output/package_test_frozen_binary/package_test_runner*
-
-
-
+#
+#
+#      - name: Save the frozen test script.
+#        uses: actions/upload-artifact@v2
+#        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
+#        with:
+#          name: "package-test-${{ matrix.package_type }}"
+#          path: |
+#            agent-build-output/package_test_frozen_binary/package_test_runner*
+#
+#
+#
 
 
 
   deb-test:
-    needs: build
+    #needs: build
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
