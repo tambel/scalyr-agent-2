@@ -3,5 +3,5 @@ name: Packages build2
 on: [push]
 
 jobs:
-  call-packages-1:
+  call-packages:
       uses: scalyr/scalyr-agent-2/.github/workflows/d/packages.yml/@{{GITHUB_SHA}}
