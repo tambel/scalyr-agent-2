@@ -4,4 +4,4 @@ on: [push]
 
 jobs:
   call-workflow-1:
-      uses: ./github/workflows/packages.yml
+      uses: ./github/workflows/packages.yml@main
