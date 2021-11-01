@@ -138,7 +138,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
-        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux2"]
+        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
         python-version: [3.8]
         where: ["docker"]
         include:
