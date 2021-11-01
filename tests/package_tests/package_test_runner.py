@@ -34,27 +34,82 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 # Import internal modules only after the PYTHONPATH is tweaked.
 from tests.package_tests import k8s_test, docker_test, package_test
+from tests.package_tests import packages_sanity_tests
+
+
+UBUNTU_1404 = "ubuntu-1404"
+UBUNTU_1604 = "ubuntu-1604"
+UBUNTU_1804 = "ubuntu-1804"
+UBUNTU_2004 = "ubuntu-2004"
+
+CENTOS_7 = "centos-7"
+
+OS_TO_DOCKER_IMAGE = {
+    UBUNTU_1404: "ubuntu:14.04",
+    UBUNTU_1604: "ubuntu:16.04",
+    UBUNTU_1804: "ubuntu:18.04",
+    UBUNTU_2004: "ubuntu:20.04",
+    CENTOS_7: "centos:7"
+}
+
+OS_TO_EC2_AMI_DISTRO = {
+    UBUNTU_1404: "ubuntu-1404",
+    UBUNTU_1604: "ubuntu-1604",
+    UBUNTU_1804: "ubuntu-1804",
+    UBUNTU_2004: "ubuntu-2004",
+    CENTOS_7: "centos-7"
+}
+
+OS_TO_PACKAGE_TYPE = {
+    UBUNTU_1404: "deb",
+    UBUNTU_1604: "deb",
+    UBUNTU_1804: "deb",
+    UBUNTU_2004: "deb",
+    CENTOS_7: "rpm",
+}
 
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--package-path", required=True)
-parser.add_argument("--package-type", required=True)
-parser.add_argument("--package-test-path")
-parser.add_argument("--docker-image")
-parser.add_argument("--scalyr-api-key", required=True)
+parser.add_argument("target")
+
+subparsers = parser.add_subparsers(dest="command")
+
+test_parser = subparsers.add_parser("test")
+get_info_parser = subparsers.add_parser("get")
+get_info_parser.add_argument("package_type")
+
+test_parser.add_argument("--package-path", required=True)
+#test_parser.add_argument("--package-type", required=True)
+test_parser.add_argument("--package-test-path")
+test_parser.add_argument("--os", required=True)
+test_parser.add_argument("--in-docker", action="store_true")
+test_parser.add_argument("--in_ec2", action="store_true")
+test_parser.add_argument("--scalyr-api-key", required=True)
 
 
-args = parser.parse_args()
+args = test_parser.parse_args()
+
+target = args.target
+
+package_type = OS_TO_PACKAGE_TYPE[target]
+
+if args.command == "get":
+    if args.package_type:
+        print(package_type)
+    exit(0)
+
 
 package_path = pl.Path(args.package_path)
-package_type = args.package_type
 
 if args.package_test_path:
     package_test_path = pl.Path(args.package_test_path)
 
 
-if args.docker_image:
+if args.in_docker:
+    docker_image = OS_TO_DOCKER_IMAGE.get(args.os)
+    if not docker_image:
+        raise ValueError(f"Can not find docker image for operation system '{args.os}'")
 
     if args.package_test_path:
         executable_mapping_args = ["-v", f"{args.package_test_path}:/tmp/test_executable"]
@@ -72,7 +127,7 @@ if args.docker_image:
             "-v", f"{package_path}:/tmp/package",
             *executable_mapping_args,
             # specify the image.
-            args.docker_image,
+            docker_image,
             # Command to run the test executable inside the container.
             test_executable_path,
             "--package-type", package_type,
@@ -80,6 +135,16 @@ if args.docker_image:
         ]
     )
     # fmt: on
+    exit(0)
+elif args.in_ec2:
+    ami_image = OS_TO_EC2_AMI_DISTRO.get(args.os)
+    if not ami_image:
+        raise ValueError(f"Can not find AMI image for the operation system '{args.os}'")
+
+    packages_sanity_tests.main(
+        distro=ami_image,
+        to_version=str(package_path)
+    )
 else:
 
     if package_type in ["deb", "rpm", "msi", "tar"]:

@@ -156,7 +156,7 @@ jobs:
         id: get-package-info
         run: |
           echo "::set-output name=package-filename-glob::$(python agent_build/build_package.py ${{ matrix.package_type }} package-filename-glob)"
-          echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py ${{ matrix.target }} package-filename-glob)"
+          echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py ${{ matrix.target }} )"
 
 #      - name: "Get package type."
 #        id: get-package-type
