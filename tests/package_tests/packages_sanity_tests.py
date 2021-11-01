@@ -214,27 +214,6 @@ DEFAULT_INSTALLER_SCRIPT_URL = (
     "https://www.scalyr.com/scalyr-repo/stable/latest/install-scalyr-agent-2.sh"
 )
 
-ACCESS_KEY = get_env_throw_if_not_set("ACCESS_KEY")
-SECRET_KEY = get_env_throw_if_not_set("SECRET_KEY")
-REGION = get_env_throw_if_not_set("REGION", "us-east-1")
-
-KEY_NAME = get_env_throw_if_not_set("KEY_NAME")
-PRIVATE_KEY_PATH = get_env_throw_if_not_set("PRIVATE_KEY_PATH")
-PRIVATE_KEY_PATH = os.path.expanduser(PRIVATE_KEY_PATH)
-
-SECURITY_GROUPS_STR = get_env_throw_if_not_set(
-    "SECURITY_GROUPS", "circleci-remote-access"
-)  # sg-075bf2191cf04c821
-SECURITY_GROUPS = SECURITY_GROUPS_STR.split(",")  # type: List[str]
-
-SCALYR_API_KEY = get_env_throw_if_not_set("SCALYR_API_KEY")
-
-VERBOSE = compat.os_environ_unicode.get("VERBOSE", "false").lower() == "true"
-
-# All the instances created by this script will use this string in the name.
-INSTANCE_NAME_STRING = "-automated-agent-tests-"
-assert "-tests-" in INSTANCE_NAME_STRING
-
 
 def _get_source_type(version_string):
     # type: (str) -> Optional[str]
@@ -744,6 +723,26 @@ def get_libcloud_driver():
 
 
 if __name__ == "__main__":
+    ACCESS_KEY = get_env_throw_if_not_set("ACCESS_KEY")
+    SECRET_KEY = get_env_throw_if_not_set("SECRET_KEY")
+    REGION = get_env_throw_if_not_set("REGION", "us-east-1")
+
+    KEY_NAME = get_env_throw_if_not_set("KEY_NAME")
+    PRIVATE_KEY_PATH = get_env_throw_if_not_set("PRIVATE_KEY_PATH")
+    PRIVATE_KEY_PATH = os.path.expanduser(PRIVATE_KEY_PATH)
+
+    SECURITY_GROUPS_STR = get_env_throw_if_not_set(
+        "SECURITY_GROUPS", "circleci-remote-access"
+    )  # sg-075bf2191cf04c821
+    SECURITY_GROUPS = SECURITY_GROUPS_STR.split(",")  # type: List[str]
+
+    SCALYR_API_KEY = get_env_throw_if_not_set("SCALYR_API_KEY")
+
+    VERBOSE = compat.os_environ_unicode.get("VERBOSE", "false").lower() == "true"
+
+    # All the instances created by this script will use this string in the name.
+    INSTANCE_NAME_STRING = "-automated-agent-tests-"
+    assert "-tests-" in INSTANCE_NAME_STRING
     parser = argparse.ArgumentParser(
         description=("Run basic agent installer sanity tests on EC2 instance")
     )
