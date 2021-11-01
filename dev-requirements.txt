@@ -33,3 +33,7 @@ pathlib2==2.3.5; python_version <= '2.7'
 futures==3.3.0; python_version <= '2.7'
 
 udatetime==0.0.16; platform_system != "Windows"
+
+git+https://github.com/apache/libcloud.git@trunk#egg=apache-libcloud
+paramiko==2.7.2
+Jinja2==2.11.3
