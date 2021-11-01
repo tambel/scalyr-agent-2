@@ -223,7 +223,7 @@ jobs:
           fi
 
 
-          python3 tests/package_tests/package_test_runner.py test\
+          python3 tests/package_tests/package_test_runner.py test \
             --where ${{ matrix.where }}
             --package-path ~/package/* \
             ${package_test_path_option} \
