@@ -9,4 +9,4 @@ jobs:
       - uses: actions/checkout@v2
 
   call-packages:
-      uses: ./.github/workflows/packages.yml
+      uses: ./.github/workflows/packages.yml@main
