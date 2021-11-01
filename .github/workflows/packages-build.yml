@@ -140,7 +140,7 @@ jobs:
         python-version: [3.8]
         in-docker: [true]
         in-ec2: [true]
-        exclude:
+        include:
           - target: "docker-json"
             in-docker: false
             in-ec2: false
