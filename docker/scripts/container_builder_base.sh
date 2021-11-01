@@ -187,7 +187,7 @@ else
     run_docker_command "buildx build --push --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
   else
     report_progress "Building image(s) to local cache." "$QUIET";
-    run_docker_command "buildx build -o type=docker --platform linux/arm64,linux/amd64 $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
+    run_docker_command "buildx build -o type=docker $TAG_OPTIONS ." "$QUIET" || die "Failed to build the container image"
   fi
 
   report_progress "Success." "$QUIET";
