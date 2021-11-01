@@ -136,7 +136,6 @@ jobs:
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
-        package_type: ["deb", "rpm"]
         python-version: [3.8]
         include:
           - package_type: "deb"
