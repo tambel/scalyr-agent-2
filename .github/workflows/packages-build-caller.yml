@@ -10,3 +10,5 @@ jobs:
 
   call-packages:
       uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@main
+      with:
+        ring: gggg
