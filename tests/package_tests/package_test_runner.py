@@ -88,7 +88,7 @@ test_parser.add_argument("--in_ec2", action="store_true")
 test_parser.add_argument("--scalyr-api-key", required=True)
 
 
-args = test_parser.parse_args()
+args = parser.parse_args()
 
 target = args.target
 
