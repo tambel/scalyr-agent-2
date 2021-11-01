@@ -133,20 +133,16 @@ jobs:
 
 
 
-  deb-test:
+  package-test:
     needs: build
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
-        target: ["ubuntu-1404", "ubuntu-1604", "centos-7"]
+        target: ["ubuntu-1404", "ubuntu-1604", "centos-7", "centos-8", "amazonlinux2"]
         python-version: [3.8]
         in: ["docker", "ec2"]
-#        in-docker: [true]
-#        in-ec2: [true]
         include:
           - target: "docker-json"
-#            in-docker: false
-#            in-ec2: false
 
 
     steps:
@@ -181,11 +177,57 @@ jobs:
           name: "package-${{ steps.get-package-info.outputs.package-type }}"
           path: ~/package
 
-#      - name: Prepare build environment by running appropriate deployer.
-#        id: package-test
-#        uses: ./.github/actions/run-package-test
+      - name: Download package test (if presented).
+        uses: actions/download-artifact@v2
+        if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
+        with:
+          name: "package-test-${{ steps.get-package-info.outputs.package-type }}"
+          path: ~/package_test
+
+      - name: Start minikube for the test of the kubernetes build.
+        if: ${{ steps.get-package-info.outputs.package-type == 'k8s' }}
+        shell: bash
+        run: |
+          minikube start
+
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+      - name: Make Kubernetes and docker package builder scripts executable.
+        if: steps.get-package-info.outputs.package-type == 'k8s' || steps.get-package-info.outputs.package-type == 'docker-json'
+        run: |
+          chmod +x ~/package/*
+
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+      - name: Make package test frozen binaries executable.
+        if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
+        run: |
+          chmod +x ~/package_test/package_test_runner*
+
+#      - name: Set up QEMU
+#        id: qemu
+#        uses: docker/setup-qemu-action@v1
 #        with:
-#          package-type: deb
+#          platforms: all
+
+      - name: Test.
+        shell: bash
+        env:
+          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+        run: |
+          # Define the package_test_path option only if package test file is presented in artifacts.
+          package_test_path="$(ls ~/package_test/package_test_runner* || true)"
+          if [ -f "${package_test_path}" ]; then
+            package_test_path_option="--package-test-path ${package_test_path}"
+          else
+            package_test_path_option=""
+          fi
+
+
+          python3 tests/package_tests/package_test_runner.py \
+            --package-type ${{ steps.get-package-info.outputs.package-type }} \
+            --package-path ~/package/* \
+            ${package_test_path_option} \
+            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+
 
 #  test:
 #    needs: build
