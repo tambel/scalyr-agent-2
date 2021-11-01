@@ -50,10 +50,10 @@ jobs:
 #            package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
 #            os: windows-2019
 #            python-version: "3.8"
-#          - package_type: "k8s"
-#            os: ubuntu-20.04
-#            package_filename_glob: "scalyr-agent-k8s-*.*.*"
-#            python-version: "3.8"
+          - package_type: "k8s"
+            os: ubuntu-20.04
+            package_filename_glob: "scalyr-agent-k8s-*.*.*"
+            python-version: "3.8"
           - package_type: "docker-json"
             os: ubuntu-20.04
             package_filename_glob: "scalyr-agent-docker-json-*.*.*"
