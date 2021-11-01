@@ -80,6 +80,7 @@ if False:  # NOSONAR
     from typing import Optional
     from typing import Dict
 
+import pathlib as pl
 import os
 import sys
 import time
@@ -112,6 +113,7 @@ from scalyr_agent import compat
 
 from tests.ami.utils import get_env_throw_if_not_set
 
+__SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(BASE_DIR, "scripts/")
 
@@ -323,129 +325,129 @@ def _verify_url_exists(url, use_head=False):
 
 def main(
     distro,
-    test_type,
-    from_version,
+    #test_type,
+    #from_version,
     to_version,
-    python_package,
-    installer_script_url,
-    additional_packages=None,
+    #python_package,
+    #installer_script_url,
+    #additional_packages=None,
     destroy_node=False,
-    verbose=False,
+    #verbose=False,
 ):
     # type: (str, str, str, str, str, str, str, bool, bool) -> None
 
     # deployment objects for package files will be stored here.
     file_upload_steps = []
 
-    # We always upload all the mock test configs from tests/ami/configs/ directory to a remote
-    # server.
-    # Those configs are used during various checks and tests. Uploading the configs is much less
-    # messy compared to manipulating the configs using sed on the server.
-    file_names = os.listdir(MOCK_CONFIGS_DIRECTORY)
-    for file_name in file_names:
-        config_file_path = os.path.join(MOCK_CONFIGS_DIRECTORY, file_name)
-        file_upload_step = _create_config_file_deployment_step(config_file_path)
-        file_upload_steps.append(file_upload_step)
+    # # We always upload all the mock test configs from tests/ami/configs/ directory to a remote
+    # # server.
+    # # Those configs are used during various checks and tests. Uploading the configs is much less
+    # # messy compared to manipulating the configs using sed on the server.
+    # file_names = os.listdir(MOCK_CONFIGS_DIRECTORY)
+    # for file_name in file_names:
+    #     config_file_path = os.path.join(MOCK_CONFIGS_DIRECTORY, file_name)
+    #     file_upload_step = _create_config_file_deployment_step(config_file_path)
+    #     file_upload_steps.append(file_upload_step)
+    #
+    # # Upload auxiliary files from tests/ami/files/
+    # file_names = os.listdir(TEST_FILES_DIRECTORY)
+    # for file_name in file_names:
+    #     file_path = os.path.join(TEST_FILES_DIRECTORY, file_name)
+    #     file_upload_step = _create_file_deployment_step(file_path, "ca_certs")
+    #     file_upload_steps.append(file_upload_step)
 
-    # Upload auxiliary files from tests/ami/files/
-    file_names = os.listdir(TEST_FILES_DIRECTORY)
-    for file_name in file_names:
-        file_path = os.path.join(TEST_FILES_DIRECTORY, file_name)
-        file_upload_step = _create_file_deployment_step(file_path, "ca_certs")
-        file_upload_steps.append(file_upload_step)
+    # if test_type == "install":
+    #     install_package_source = to_version
+    # else:
+    #     # install package is specified in from-version in case of upgrade
+    #     install_package_source = from_version
 
-    if test_type == "install":
-        install_package_source = to_version
-    else:
-        # install package is specified in from-version in case of upgrade
-        install_package_source = from_version
+    # # prepare data for install_package
+    # install_package_source_type = _get_source_type(install_package_source)
 
-    # prepare data for install_package
-    install_package_source_type = _get_source_type(install_package_source)
+    # if install_package_source_type == "file":
+    #     # create install package file deployment object.
+    #     file_upload_steps.append(
+    #         _create_file_deployment_step(install_package_source, "install_package")
+    #     )
 
-    if install_package_source_type == "file":
-        # create install package file deployment object.
-        file_upload_steps.append(
-            _create_file_deployment_step(install_package_source, "install_package")
-        )
-
-    install_package_info = {
-        "type": install_package_source_type,
-        "source": install_package_source,
-    }
+    # install_package_info = {
+    #     "type": install_package_source_type,
+    #     "source": install_package_source,
+    # }
 
     upgrade_package_info = None
 
-    # prepare data for upgrade_package if it is specified.
-    if test_type == "upgrade":
-        upgrade_package_source = to_version
-        upgrade_package_source_type = _get_source_type(upgrade_package_source)
-
-        if upgrade_package_source_type == "file":
-            # create install package file deployment object.
-            file_upload_steps.append(
-                _create_file_deployment_step(to_version, "upgrade_package")
-            )
-
-        upgrade_package_info = {
-            "type": upgrade_package_source_type,
-            "source": upgrade_package_source,
-        }
+    # # prepare data for upgrade_package if it is specified.
+    # if test_type == "upgrade":
+    #     upgrade_package_source = to_version
+    #     upgrade_package_source_type = _get_source_type(upgrade_package_source)
+    #
+    #     if upgrade_package_source_type == "file":
+    #         # create install package file deployment object.
+    #         file_upload_steps.append(
+    #             _create_file_deployment_step(to_version, "upgrade_package")
+    #         )
+    #
+    #     upgrade_package_info = {
+    #         "type": upgrade_package_source_type,
+    #         "source": upgrade_package_source,
+    #     }
 
     distro_details = EC2_DISTRO_DETAILS_MAP[distro]
 
-    if distro.lower().startswith("windows"):
-        package_type = "windows"
-        script_extension = "ps1"
-    else:
-        package_type = (
-            "deb"
-            if distro.startswith("ubuntu") or distro.startswith("debian")
-            else "rpm"
-        )
-        script_extension = "sh"
+    # if distro.lower().startswith("windows"):
+    #     package_type = "windows"
+    #     script_extension = "ps1"
+    # else:
+    #     package_type = (
+    #         "deb"
+    #         if distro.startswith("ubuntu") or distro.startswith("debian")
+    #         else "rpm"
+    #     )
+    #     script_extension = "sh"
+    #
+    # script_filename = "test_%s.%s.j2" % (package_type, script_extension)
+    # script_file_path = os.path.join(SCRIPTS_DIR, script_filename)
 
-    script_filename = "test_%s.%s.j2" % (package_type, script_extension)
-    script_file_path = os.path.join(SCRIPTS_DIR, script_filename)
+    # with open(script_file_path, "r") as fp:
+    #     script_content = fp.read()
 
-    with open(script_file_path, "r") as fp:
-        script_content = fp.read()
+    # cat_logs_script_file_path = os.path.join(
+    #     SCRIPTS_DIR, "cat_logs.%s" % (script_extension)
+    # )
 
-    cat_logs_script_file_path = os.path.join(
-        SCRIPTS_DIR, "cat_logs.%s" % (script_extension)
-    )
+    # with open(cat_logs_script_file_path, "r") as fp:
+    #     cat_logs_script_content = fp.read()
 
-    with open(cat_logs_script_file_path, "r") as fp:
-        cat_logs_script_content = fp.read()
+    # installer_script_info = {
+    #     "source": installer_script_url or DEFAULT_INSTALLER_SCRIPT_URL
+    # }
+    # if os.path.exists(installer_script_url):
+    #     installer_script_info["type"] = "file"
+    #     file_upload_steps.append(
+    #         _create_file_deployment_step(installer_script_url, "install-scalyr-agent-2")
+    #     )
+    # else:
+    #     if not _verify_url_exists(installer_script_url):
+    #         raise ValueError(
+    #             'Failed to retrieve installer script from "%s". Ensure that the URL is correct.'
+    #             % (installer_script_url)
+    #         )
+    #     installer_script_info["type"] = "url"
 
-    installer_script_info = {
-        "source": installer_script_url or DEFAULT_INSTALLER_SCRIPT_URL
-    }
-    if os.path.exists(installer_script_url):
-        installer_script_info["type"] = "file"
-        file_upload_steps.append(
-            _create_file_deployment_step(installer_script_url, "install-scalyr-agent-2")
-        )
-    else:
-        if not _verify_url_exists(installer_script_url):
-            raise ValueError(
-                'Failed to retrieve installer script from "%s". Ensure that the URL is correct.'
-                % (installer_script_url)
-            )
-        installer_script_info["type"] = "url"
-
-    rendered_template = render_script_template(
-        script_template=script_content,
-        distro_name=distro,
-        distro_details=distro_details,
-        python_package=python_package,
-        test_type=test_type,
-        install_package=install_package_info,
-        upgrade_package=upgrade_package_info,
-        installer_script_url=installer_script_info,
-        additional_packages=additional_packages,
-        verbose=verbose,
-    )
+    # rendered_template = render_script_template(
+    #     script_template=script_content,
+    #     distro_name=distro,
+    #     distro_details=distro_details,
+    #     python_package=python_package,
+    #     test_type=test_type,
+    #     install_package=install_package_info,
+    #     upgrade_package=upgrade_package_info,
+    #     installer_script_url=installer_script_info,
+    #     additional_packages=additional_packages,
+    #     verbose=verbose,
+    # )
 
     # TODO: Lower those timeouts when upstream yum related issues or similar start to stabilize.
     # All AMI tests should take less than 5 minutes, but in the last days (dec 1, 2020), they
@@ -461,27 +463,65 @@ def main(
         max_tries = 3
         cat_step_timeout = 5
 
-    remote_script_name = "deploy.{0}".format(script_extension)
-    test_package_step = ScriptDeployment(
-        rendered_template, name=remote_script_name, timeout=deploy_step_timeout
+    test_runner_path = __SOURCE_ROOT__ / "agent-output-build/deb/package_test_frozen_binary/package_test_runner"
+    test_runner_path_remote_path = test_runner_path.name
+
+    package_path =pl.Path(to_version)
+    remote_package_path = package_path.name
+
+    package_upload_step = FileDeployment(
+        source=str(package_path),
+        target=str(remote_package_path)
     )
 
-    if file_upload_steps:
-        # Package files must be uploaded to the instance directly.
-        file_upload_steps.append(test_package_step)  # type: ignore
-        deployment = MultiStepDeployment(add=file_upload_steps)  # type: ignore
-    else:
-        deployment = MultiStepDeployment(add=test_package_step)  # type: ignore
+    test_runner_upload_step = FileDeployment(
+        source=str(test_runner_path),
+        target=str(test_runner_path_remote_path)
+    )
 
-    # Add a step which always cats agent.log file at the end. This helps us troubleshoot failures.
-    if "windows" not in distro.lower():
-        # NOTE: We don't add it on Windows since it tends to time out often
-        cat_logs_step = ScriptDeployment(
-            cat_logs_script_content, timeout=cat_step_timeout
-        )
-        deployment.add(cat_logs_step)
+    if distro.lower().startswith("windows"):
+        package_type = "windows"
+        script_content = f"python3 {test_runner_path_remote_path}"
+        script_extension = "ps1"
     else:
-        cat_logs_step = None  # type: ignore
+        package_type = (
+            "deb"
+            if distro.startswith("ubuntu") or distro.startswith("debian")
+            else "rpm"
+        )
+        script_content = f"~/{test_runner_path_remote_path} --package-type --package-path {remote_package_path}"
+        #script_content = f"ls ~"
+        #script_content = "echo 'HELLO'"
+        script_extension = "sh"
+
+    remote_script_name = "deploy.{0}".format(script_extension)
+
+    test_package_step = ScriptDeployment(
+        script_content, name=remote_script_name, timeout=deploy_step_timeout
+    )
+
+    deployment = MultiStepDeployment([
+        test_runner_upload_step,
+        package_upload_step,
+        test_package_step
+    ])
+
+    # if file_upload_steps:
+    #     # Package files must be uploaded to the instance directly.
+    #     file_upload_steps.append(test_package_step)  # type: ignore
+    #     deployment = MultiStepDeployment(add=file_upload_steps)  # type: ignore
+    # else:
+    #     deployment = MultiStepDeployment(add=test_package_step)  # type: ignore
+
+    # # Add a step which always cats agent.log file at the end. This helps us troubleshoot failures.
+    # if "windows" not in distro.lower():
+    #     # NOTE: We don't add it on Windows since it tends to time out often
+    #     cat_logs_step = ScriptDeployment(
+    #         cat_logs_script_content, timeout=cat_step_timeout
+    #     )
+    #     deployment.add(cat_logs_step)
+    # else:
+    #     cat_logs_step = None  # type: ignore
 
     driver = get_libcloud_driver()
 
@@ -504,9 +544,8 @@ def main(
         "CIRCLE_BUILD_NUM", random.randint(0, 1000)
     )
 
-    name = "%s-automated-agent-tests-%s-branch-%s-build-%s" % (
+    name = "%s-automated-agent-tests-branch-%s-build-%s" % (
         distro,
-        test_type,
         circle_branch_name,
         circle_build_num,
     )
@@ -547,11 +586,11 @@ def main(
         stdout = test_package_step.stdout
         stderr = test_package_step.stderr
 
-        if cat_logs_step and cat_logs_step.stdout:
-            stdout += "\n" + cat_logs_step.stdout
-
-        if cat_logs_step and cat_logs_step.stderr:
-            stdout += "\n" + cat_logs_step.stderr
+        # if cat_logs_step and cat_logs_step.stdout:
+        #     stdout += "\n" + cat_logs_step.stdout
+        #
+        # if cat_logs_step and cat_logs_step.stderr:
+        #     stdout += "\n" + cat_logs_step.stderr
 
     duration = int(time.time()) - start_time
 
@@ -714,12 +753,12 @@ if __name__ == "__main__":
         required=True,
         choices=list(EC2_DISTRO_DETAILS_MAP.keys()),
     )
-    parser.add_argument(
-        "--type",
-        help=("Test type (install / upgrade)."),
-        required=True,
-        choices=["install", "upgrade"],
-    )
+    # parser.add_argument(
+    #     "--type",
+    #     help=("Test type (install / upgrade)."),
+    #     required=True,
+    #     choices=["install", "upgrade"],
+    # )
     parser.add_argument(
         "--from-version",
         help=("Package version or URL to the package to use for upgrade tests."),
@@ -768,21 +807,21 @@ if __name__ == "__main__":
     )
     args = parser.parse_args(sys.argv[1:])
 
-    if args.type == "install" and not args.to_version:
-        raise ValueError("--to-version needs to be provided for install test")
-
-    if args.type == "upgrade" and (not args.from_version or not args.to_version):
-        raise ValueError(
-            "--from-version and to --to-version needs to be provided for upgrade test"
-        )
-
-    if args.type == "upgrade" and (
-        args.from_version == "current" and args.to_version == "current"
-    ):
-        raise ValueError(
-            "--from-version and --to-version options "
-            'can not have the same "current" value.'
-        )
+    # if args.type == "install" and not args.to_version:
+    #     raise ValueError("--to-version needs to be provided for install test")
+    #
+    # if args.type == "upgrade" and (not args.from_version or not args.to_version):
+    #     raise ValueError(
+    #         "--from-version and to --to-version needs to be provided for upgrade test"
+    #     )
+    #
+    # if args.type == "upgrade" and (
+    #     args.from_version == "current" and args.to_version == "current"
+    # ):
+    #     raise ValueError(
+    #         "--from-version and --to-version options "
+    #         'can not have the same "current" value.'
+    #     )
 
     if _get_source_type(args.from_version) == "url" and not _verify_url_exists(
         args.from_version, True
@@ -802,7 +841,7 @@ if __name__ == "__main__":
 
     main(
         distro=args.distro,
-        test_type=args.type,
+        #test_type=args.type,
         from_version=args.from_version,
         to_version=args.to_version,
         python_package=args.python_package,
