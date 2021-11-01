@@ -4,4 +4,4 @@ on: [push]
 
 jobs:
   call-packages:
-      uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@$SHA
+      uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@main
