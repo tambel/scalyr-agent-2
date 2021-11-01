@@ -43,6 +43,7 @@ UBUNTU_1804 = "ubuntu-1804"
 UBUNTU_2004 = "ubuntu-2004"
 CENTOS_7 = "centos-7"
 CENTOS_8 = "centos-8"
+AMAZONLINUX_2 = "amazonlinux-2"
 DOCKER_JSON = "docker-json"
 
 OS_TO_DOCKER_IMAGE = {
@@ -52,6 +53,7 @@ OS_TO_DOCKER_IMAGE = {
     UBUNTU_2004: "ubuntu:20.04",
     CENTOS_7: "centos:7",
     CENTOS_8: "centos:8",
+    AMAZONLINUX_2: "amazonlinux:2"
 }
 
 OS_TO_EC2_AMI_DISTRO = {
@@ -61,6 +63,7 @@ OS_TO_EC2_AMI_DISTRO = {
     UBUNTU_2004: "ubuntu-2004",
     CENTOS_7: "centos-7",
     CENTOS_8: "centos-8",
+    AMAZONLINUX_2: "amazonlinux2"
 }
 
 OS_TO_PACKAGE_TYPE = {
