@@ -7,5 +7,6 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+
   call-packages:
-      uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@main
+      uses: ./.github/workflows/packages.yml
