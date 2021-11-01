@@ -109,7 +109,7 @@ from libcloud.compute.deployment import (
     MultiStepDeployment,
 )
 
-from scalyr_agent import compat
+#from scalyr_agent import compat
 
 from tests.ami.utils import get_env_throw_if_not_set
 
@@ -517,9 +517,9 @@ def main(
         distro_details["image_id"], distro_details["image_name"], driver, None
     )
 
-    circle_branch_name = compat.os_environ_unicode.get("CIRCLE_BRANCH", "unknown")
+    circle_branch_name = os.environ.get("CIRCLE_BRANCH", "unknown")
     circle_branch_name = circle_branch_name.replace("/", "_").replace("-", "_")
-    circle_build_num = compat.os_environ_unicode.get(
+    circle_build_num = os.environ.get(
         "CIRCLE_BUILD_NUM", random.randint(0, 1000)
     )
 
