@@ -140,9 +140,10 @@ jobs:
       matrix:
         target: ["ubuntu-1404", "ubuntu-1604", "centos-7", "centos-8", "amazonlinux2"]
         python-version: [3.8]
-        in: ["docker", "ec2"]
+        where: ["docker", "ec2"]
         include:
           - target: "docker-json"
+            where: "locally"
 
 
     steps:
@@ -222,8 +223,8 @@ jobs:
           fi
 
 
-          python3 tests/package_tests/package_test_runner.py \
-            --package-type ${{ steps.get-package-info.outputs.package-type }} \
+          python3 tests/package_tests/package_test_runner.py test\
+            --where ${{ matrix.where }}
             --package-path ~/package/* \
             ${package_test_path_option} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"

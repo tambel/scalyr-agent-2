@@ -83,6 +83,7 @@ get_info_parser.add_argument("package-type")
 
 test_parser.add_argument("--package-path", required=True)
 #test_parser.add_argument("--package-type", required=True)
+test_parser.add_argument("--where", required=False)
 test_parser.add_argument("--package-test-path")
 test_parser.add_argument("--in-docker", action="store_true")
 test_parser.add_argument("--in_ec2", action="store_true")
@@ -106,7 +107,7 @@ if args.package_test_path:
     package_test_path = pl.Path(args.package_test_path)
 
 
-if args.in_docker:
+if args.where == "docker":
     docker_image = OS_TO_DOCKER_IMAGE.get(args.os)
     if not docker_image:
         raise ValueError(f"Can not find docker image for operation system '{args.os}'")
@@ -130,13 +131,13 @@ if args.in_docker:
             docker_image,
             # Command to run the test executable inside the container.
             test_executable_path,
-            "--package-type", package_type,
+            "test",
             "--package-path", f"/tmp/package", "--scalyr-api-key", args.scalyr_api_key
         ]
     )
     # fmt: on
     exit(0)
-elif args.in_ec2:
+elif args.where == "ec2":
     ami_image = OS_TO_EC2_AMI_DISTRO.get(args.os)
     if not ami_image:
         raise ValueError(f"Can not find AMI image for the operation system '{args.os}'")
