@@ -136,18 +136,10 @@ jobs:
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
+        target-os: ["ubuntu-1404", "ubuntu-1604"]
         python-version: [3.8]
-        include:
-          - package_type: "deb"
-            target-os: "ubuntu-1404"
-          - package_type: "deb"
-            target-os: "ubuntu-1604"
-          - package_type: "deb"
-            target-os: "ubuntu-1804"
-          - package_type: "deb"
-            target-os: "ubuntu-2004"
-          - package_type: "rpm"
-            target-os: "centos:7"
+        in-docker: [true]
+        in-ec2: [true]
 
 
     steps:
