@@ -111,8 +111,6 @@ from libcloud.compute.deployment import (
 
 #from scalyr_agent import compat
 
-from tests.ami.utils import get_env_throw_if_not_set
-
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(BASE_DIR, "scripts/")
@@ -214,6 +212,17 @@ DEFAULT_INSTALLER_SCRIPT_URL = (
     "https://www.scalyr.com/scalyr-repo/stable/latest/install-scalyr-agent-2.sh"
 )
 
+def get_env_throw_if_not_set(name, default_value=None):
+    # type: (str, Optional[str]) -> str
+    """
+    Return provided environment variable value and throw if it's not set.
+    """
+    value = os.environ.get(name, default_value)
+
+    if value is None:
+        raise ValueError("Environment variable '%s' not set" % (name))
+
+    return value
 
 def _get_source_type(version_string):
     # type: (str) -> Optional[str]
