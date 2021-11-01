@@ -134,7 +134,7 @@ jobs:
 
 
   deb-test:
-    #needs: build
+    needs: build
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
@@ -177,7 +177,7 @@ jobs:
       - name: Download package.
         uses: actions/download-artifact@v2
         with:
-          name: "package-${{ steps.get-package-info.output.package-type }}"
+          name: "package-${{ steps.get-package-info.outputs.package-type }}"
           path: ~/package
 
 #      - name: Prepare build environment by running appropriate deployer.
