@@ -77,7 +77,7 @@ subparsers = parser.add_subparsers(dest="command")
 
 test_parser = subparsers.add_parser("test")
 get_info_parser = subparsers.add_parser("get")
-get_info_parser.add_argument("package_type")
+get_info_parser.add_argument("package-type")
 
 test_parser.add_argument("--package-path", required=True)
 #test_parser.add_argument("--package-type", required=True)
