@@ -1325,6 +1325,11 @@ package_types_to_builders = {
     ]
 }
 
+PACKAGE_TYPE_TO_FILENAME_GLOB = {
+    "deb": "scalyr-agent-2_*.*.*_all.deb",
+    "rpm": "scalyr-agent-2-*.*.*-*.noarch.rpm"
+}
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -1438,6 +1443,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
 
     deployer_info_parser = subparsers.add_parser("deployer-name")
+    package_filename_glob = subparsers.add_parser("package-filename-glob")
 
     build_parser = subparsers.add_parser("build")
 
@@ -1475,7 +1481,11 @@ def main():
 
     if args.command == "deployer-name":
         print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
-        #print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
+        exit(0)
+
+    if args.command == "package-filename-glob":
+        glob = PACKAGE_TYPE_TO_FILENAME_GLOB[args.package_type]
+        print(glob)
         exit(0)
 
     if args.command == "build":
