@@ -41,6 +41,7 @@ UBUNTU_1404 = "ubuntu-1404"
 UBUNTU_1604 = "ubuntu-1604"
 UBUNTU_1804 = "ubuntu-1804"
 UBUNTU_2004 = "ubuntu-2004"
+DOCKER_JSON = "docker-json"
 
 CENTOS_7 = "centos-7"
 
@@ -66,6 +67,7 @@ OS_TO_PACKAGE_TYPE = {
     UBUNTU_1804: "deb",
     UBUNTU_2004: "deb",
     CENTOS_7: "rpm",
+    DOCKER_JSON: "docker-json"
 }
 
 
@@ -82,7 +84,6 @@ get_info_parser.add_argument("package-type")
 test_parser.add_argument("--package-path", required=True)
 #test_parser.add_argument("--package-type", required=True)
 test_parser.add_argument("--package-test-path")
-test_parser.add_argument("--os", required=True)
 test_parser.add_argument("--in-docker", action="store_true")
 test_parser.add_argument("--in_ec2", action="store_true")
 test_parser.add_argument("--scalyr-api-key", required=True)
