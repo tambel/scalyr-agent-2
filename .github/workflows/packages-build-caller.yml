@@ -3,5 +3,9 @@ name: Packages build2
 on: [push]
 
 jobs:
+  do-it:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
   call-packages:
       uses: scalyr/scalyr-agent-2/.github/workflows/packages.yml@main
