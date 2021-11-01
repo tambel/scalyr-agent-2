@@ -138,7 +138,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     strategy:
       matrix:
-        target: ["ubuntu-1404", "ubuntu-1604", "centos-7", "centos-8", "amazonlinux2"]
+        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux2"]
         python-version: [3.8]
         where: ["docker", "ec2"]
         include:
@@ -223,7 +223,7 @@ jobs:
           fi
 
 
-          python3 tests/package_tests/package_test_runner.py test ${{ matrix.target }} \
+          python3 tests/package_tests/package_test_runner.py ${{ matrix.target }} test \
             --where ${{ matrix.where }}
             --package-path ~/package/* \
             ${package_test_path_option} \
