@@ -140,7 +140,7 @@ jobs:
       matrix:
         target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux2"]
         python-version: [3.8]
-        where: ["docker", "ec2"]
+        where: ["docker"]
         include:
           - target: "docker-json"
             where: "locally"
