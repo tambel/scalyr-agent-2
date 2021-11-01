@@ -57,12 +57,12 @@ OS_TO_DOCKER_IMAGE = {
 }
 
 OS_TO_EC2_AMI_DISTRO = {
-    UBUNTU_1404: "ubuntu-1404",
-    UBUNTU_1604: "ubuntu-1604",
-    UBUNTU_1804: "ubuntu-1804",
-    UBUNTU_2004: "ubuntu-2004",
-    CENTOS_7: "centos-7",
-    CENTOS_8: "centos-8",
+    UBUNTU_1404: "ubuntu1404",
+    UBUNTU_1604: "ubuntu1604",
+    UBUNTU_1804: "ubuntu1804",
+    UBUNTU_2004: "ubuntu2004",
+    CENTOS_7: "centos7",
+    CENTOS_8: "centos8",
     AMAZONLINUX_2: "amazonlinux2"
 }
 

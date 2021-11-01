@@ -92,8 +92,8 @@ import random
 import argparse
 from io import open
 
-from jinja2 import FileSystemLoader
-from jinja2 import Environment
+# from jinja2 import FileSystemLoader
+# from jinja2 import Environment
 import requests
 
 from libcloud.compute.types import Provider
