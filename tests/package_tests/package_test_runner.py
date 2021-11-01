@@ -111,9 +111,9 @@ if args.package_test_path:
 
 
 if args.where == "docker":
-    docker_image = OS_TO_DOCKER_IMAGE.get(args.os)
+    docker_image = OS_TO_DOCKER_IMAGE.get(target)
     if not docker_image:
-        raise ValueError(f"Can not find docker image for operation system '{args.os}'")
+        raise ValueError(f"Can not find docker image for operation system '{target}'")
 
     if args.package_test_path:
         executable_mapping_args = ["-v", f"{args.package_test_path}:/tmp/test_executable"]
@@ -141,9 +141,9 @@ if args.where == "docker":
     # fmt: on
     exit(0)
 elif args.where == "ec2":
-    ami_image = OS_TO_EC2_AMI_DISTRO.get(args.os)
+    ami_image = OS_TO_EC2_AMI_DISTRO.get(target)
     if not ami_image:
-        raise ValueError(f"Can not find AMI image for the operation system '{args.os}'")
+        raise ValueError(f"Can not find AMI image for the operation system '{target}'")
 
     packages_sanity_tests.main(
         distro=ami_image,
