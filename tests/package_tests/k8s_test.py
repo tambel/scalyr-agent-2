@@ -29,23 +29,12 @@ from tests.package_tests.common import AgentLogRequestStatsLineCheck, AssertAgen
 
 
 def build_agent_image(builder_path: pl.Path):
-    # # Get the information about minikube's docker environment.
-    # output = subprocess.check_output(
-    #     "minikube docker-env", shell=True
-    # ).decode()
-    #
-    # # Parse environment variables from the 'minikube docker-env' output
-    # env = os.environ.copy()
-    # for e in re.findall(r'export (\w+=".+")', output):
-    #     (n, v), = re.findall(r'(\w+)="(.+)"', e)
-    #     env[n] = v
-
-    # Call the image builder script. We also pass previously parsed docker-env variables to build this image
-    # within the minikube's docker, so the result agent's image is available for kubernetes.
+    # Call the image builder script.
     subprocess.check_call(
         [str(builder_path), "--tags", "k8s_test"],
     )
 
+    # Make image visible for the munikube cluster.
     subprocess.check_call(
         ["minikube", "image", "load", "scalyr/scalyr-k8s-agent:k8s_test"]
     )
