@@ -224,7 +224,7 @@ jobs:
 
 
           python3 tests/package_tests/package_test_runner.py ${{ matrix.target }} test \
-            --where ${{ matrix.where }}
+            --where ${{ matrix.where }} \
             --package-path ~/package/* \
             ${package_test_path_option} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
