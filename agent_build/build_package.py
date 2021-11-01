@@ -1327,7 +1327,11 @@ package_types_to_builders = {
 
 PACKAGE_TYPE_TO_FILENAME_GLOB = {
     "deb": "scalyr-agent-2_*.*.*_all.deb",
-    "rpm": "scalyr-agent-2-*.*.*-*.noarch.rpm"
+    "rpm": "scalyr-agent-2-*.*.*-*.noarch.rpm",
+    "tar": "scalyr-agent-*.*.*.tar.gz",
+    "msi": "ScalyrAgentInstaller-*.*.*.msi",
+    "k8s": "scalyr-agent-k8s-*.*.*",
+    "docker-json": "scalyr-agent-docker-json-*.*.*",
 }
 
 
