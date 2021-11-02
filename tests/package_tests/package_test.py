@@ -30,12 +30,13 @@ USER_HOME = pl.Path("~").expanduser()
 
 
 def install_deb_package(package_path: pl.Path):
-    os.environ[
+    env = os.environ.copy()
+    env[
         "LD_LIBRARY_PATH"
     ] = f'/lib/x86_64-linux-gnu:{os.environ["LD_LIBRARY_PATH"]}'
     subprocess.check_call(
         ["dpkg", "-i", package_path],
-        env=os.environ,
+        env=env
     )
 
 
@@ -137,7 +138,14 @@ def configure_agent(package_type: str, api_key: str):
 
 
 def remove_deb_package():
-    subprocess.check_call(f"apt-get remove -y scalyr-agent-2", shell=True)
+    env = os.environ.copy()
+    env[
+        "LD_LIBRARY_PATH"
+    ] = f'/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:{os.environ["LD_LIBRARY_PATH"]}'
+    subprocess.check_call(
+        f"apt-get remove -y scalyr-agent-2", shell=True,
+        env=env
+    )
 
 
 def remove_rpm_package():
