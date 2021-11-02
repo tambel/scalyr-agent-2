@@ -58,7 +58,7 @@ if __name__ == '__main__':
             help="Type of the package to build.",
         )
 
-    build_spec_parser.add_argument("spec", choices=["deployer"])
+    build_spec_parser.add_argument("spec", choices=["deployer", "package-filename-glob"])
 
     build_parser.add_argument("--build-tests", action="store_true")
 

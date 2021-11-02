@@ -42,22 +42,22 @@ jobs:
             #package_filename_glob: "scalyr-agent-2-*.*.*-*.noarch.rpm"
             os: ubuntu-20.04
             python-version: "3.8"
-          - package_type: "tar"
-            #package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "msi"
-            #package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
-            os: windows-2019
-            python-version: "3.8"
-          - package_type: "k8s"
-            os: ubuntu-20.04
-            #package_filename_glob: "scalyr-agent-k8s-*.*.*"
-            python-version: "3.8"
-          - package_type: "docker-json"
-            os: ubuntu-20.04
-            #package_filename_glob: "scalyr-agent-docker-json-*.*.*"
-            python-version: "3.8"
+#          - package_type: "tar"
+#            #package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "msi"
+#            #package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
+#            os: windows-2019
+#            python-version: "3.8"
+#          - package_type: "k8s"
+#            os: ubuntu-20.04
+#            #package_filename_glob: "scalyr-agent-k8s-*.*.*"
+#            python-version: "3.8"
+#          - package_type: "docker-json"
+#            os: ubuntu-20.04
+#            #package_filename_glob: "scalyr-agent-docker-json-*.*.*"
+#            python-version: "3.8"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -96,7 +96,7 @@ jobs:
 #          rm checksum.txt
 
       - id: get-deployer-name
-        run: echo "::set-output name=deployer-name::$(python build_package.py ${{ matrix.package_type }} deployer-name)"
+        run: echo "::set-output name=deployer-name::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployer)"
 
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
@@ -109,7 +109,7 @@ jobs:
         shell: bash
         run: |
           python build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
-          echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
+          echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
 
       - name: Build tests frozen binaries.
         if: matrix.package_type == 'deb' || matrix.package_type == 'rpm' || matrix.package_type == 'tar' || matrix.package_type == 'msi'
