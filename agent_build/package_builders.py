@@ -1356,14 +1356,24 @@ DEB_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     dockerized=True
 )
 
+RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+    name="DOCKERIZED_RPM",
+    package_builder_cls=RpmPackageBuilder,
+    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    filename_glob="scalyr-agent-2-*.*.*-*.noarch.rpm",
+    dockerized=True
+)
+
 PACKAGE_BUILD_SPECS = {
     spec.name: spec for spec in [
-        DEB_PACKAGE_BUILD_SPEC
+        DEB_PACKAGE_BUILD_SPEC,
+        RPM_PACKAGE_BUILD_SPEC
     ]
 }
 
 PACKAGE_TYPES_TO_BUILD_SPECS = {
-    "deb": DEB_PACKAGE_BUILD_SPEC
+    "deb": DEB_PACKAGE_BUILD_SPEC,
+    "rpm": RPM_PACKAGE_BUILD_SPEC
 }
 
 def build_package(
