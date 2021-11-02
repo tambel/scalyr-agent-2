@@ -4,7 +4,7 @@
 
 Here is a small example of how to build a package:
 ```bash
-python3 agent_build/build_package.py <PACKAGE_TYPE> build --output-dir <OUTPUT_PATH>
+python3 build_package.py <PACKAGE_TYPE> build --output-dir <OUTPUT_PATH>
 ```
 
 Here is a list of available package types:
@@ -27,5 +27,5 @@ environment without any additional installations (for example CI/CD environment)
 on your machine to prevent bad things._
 
 ```bash
-python3 agent_build/build_package.py msi prepare-build-environment --output-dir <OUTPUT_PATH>
+python3 build_package.py msi prepare-build-environment --output-dir <OUTPUT_PATH>
 ```

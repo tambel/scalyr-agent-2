@@ -1,6 +1,7 @@
 ARG BASE_IMAGE_NAME
-FROM $BASE_IMAGE_NAME
+ARG BUILD_STAGE
 
+FROM $BASE_IMAGE_NAME as stage-build
 # Add all files that are involved in the package build process.
 RUN rm -rf /scalyr-agent-2
 RUN mkdir /scalyr-agent-2
@@ -12,10 +13,22 @@ ADD ./monitors /scalyr-agent-2/monitors
 ADD ./VERSION /scalyr-agent-2/VERSION
 ADD ./CHANGELOG.md /scalyr-agent-2/CHANGELOG.md
 ADD ./certs /scalyr-agent-2/certs
+ADD ./build_package.py /scalyr-agent-2/build_package.py
 
+
+FROM $BASE_IMAGE_NAME as stage-test
 # Also add the package test module, so the packager also can make the frozen binary for the package tests.
 # This frozen binary later can be used to run package tests on systems without python.
+RUN rm -rf /scalyr-agent-2
+RUN mkdir /scalyr-agent-2
+ADD ./agent_build /scalyr-agent-2/agent_build
 ADD ./tests/package_tests/ /scalyr-agent-2/tests/package_tests/
+ADD ./build_package.py /scalyr-agent-2/build_package.py
+
+
+
+
+FROM stage-$BUILD_STAGE
 
 ARG BUILD_COMMAND
 

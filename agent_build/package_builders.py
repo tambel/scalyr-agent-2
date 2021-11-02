@@ -1384,7 +1384,7 @@ def build_package(
             output_path=output_path,
         )
     else:
-        build_package_script_path = pl.Path("/scalyr-agent-2/agent_build/build_packagee_s.py")
+        build_package_script_path = pl.Path("/scalyr-agent-2/build_package.py")
         command_argv = [
             str(build_package_script_path),
             "build",
@@ -1434,7 +1434,7 @@ def build_test_runner_frozen_binary(
 
     else:
 
-        build_package_script_path = pl.Path("/scalyr-agent-2/agent_build/build_packagee_s.py")
+        build_package_script_path = pl.Path("/scalyr-agent-2/build_package.py")
         command_argv = [
             str(build_package_script_path),
             "build",

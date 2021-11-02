@@ -96,7 +96,7 @@ jobs:
 #          rm checksum.txt
 
       - id: get-deployer-name
-        run: echo "::set-output name=deployer-name::$(python agent_build/build_package.py ${{ matrix.package_type }} deployer-name)"
+        run: echo "::set-output name=deployer-name::$(python build_package.py ${{ matrix.package_type }} deployer-name)"
 
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
@@ -108,8 +108,16 @@ jobs:
         id: build
         shell: bash
         run: |
-          python agent_build/build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
-          echo "::set-output name=package-filename-glob::$(python agent_build/build_package.py ${{ matrix.package_type }} package-filename-glob)"
+          python build_package.py ${{ matrix.package_type }} build --output-dir agent-build-output
+          echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
+
+      - name: Build tests frozen binaries.
+        if: package_type == "deb" || package_type == "rpm" || package_type == "tar" || package_type == "msi"
+        id: build-tests
+        shell: bash
+        run: |
+          python build_package.py build ${{ matrix.package_type }} --build-tests --output-dir tests-build-output
+          #echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
 
       - name: Save the package.
         uses: actions/upload-artifact@v2
@@ -126,7 +134,7 @@ jobs:
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: |
-            agent-build-output/package_test_frozen_binary/package_test_runner*
+            tests-build-output/package_test_runner*
 
 
 
@@ -165,7 +173,7 @@ jobs:
       - name: "Get package file info"
         id: get-package-info
         run: |
-          #echo "::set-output name=package-filename-glob::$(python agent_build/build_package.py ${{ matrix.package_type }} package-filename-glob)"
+          #echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
           echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py ${{ matrix.target }} get package-type)"
 
 #      - name: "Get package type."
@@ -214,16 +222,16 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          # Define the package_test_path option only if package test file is presented in artifacts.
-          package_test_path="$(ls ~/package_test/package_test_runner* || true)"
-          if [ -f "${package_test_path}" ]; then
-            package_test_path_option="--package-test-path ${package_test_path}"
+          # Define the frozen-test-runner-path option only if frozen test runner file is presented in artifacts.
+          frozen_test_runner_path="$(ls ~/package_test/package_test_runner* || true)"
+          if [ -f "${frozen_test_runner_path}" ]; then
+            package_test_path_option="--frozen-test-runner-path ${package_test_path}"
           else
             package_test_path_option=""
           fi
 
 
-          python3 tests/package_tests/package_test_runner.py ${{ matrix.target }} test \
+          python3 tests/package_tests/package_test_runner.py test ${{ matrix.target }} \
             --where ${{ matrix.where }} \
             --package-path ~/package/* \
             ${package_test_path_option} \
