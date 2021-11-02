@@ -163,18 +163,12 @@ else:
     build_dir_path = pl.Path(tmp_dir.name)
 
 
-if args.package_path:
-    package_path = pl.Path(args.package_path)
-else:
-
+if not args.package_path:
     package_output_path = build_dir_path / "package"
     if package_output_path.exists():
         shutil.rmtree(package_output_path)
 
     package_output_path.mkdir(parents=True)
-
-
-
 
     package_builders.build_package(
         package_type=package_type,
@@ -191,28 +185,28 @@ else:
         )
 
     package_path = found_files[0]
+else:
+    package_path = pl.Path(args.package_path)
 
-if args.where:
-    if args.frozen_test_runner_path:
-        frozen_test_runner_path = pl.Path(args.frozen_test_runner_path)
-    else:
+if not args.frozen_test_runner_path and not hasattr(sys, "frozen"):
+    frozen_binary_output_path = build_dir_path / "test_runner_frozen_binary"
+    if frozen_binary_output_path.exists():
+        shutil.rmtree(frozen_binary_output_path)
 
-        frozen_binary_output_path = build_dir_path / "test_runner_frozen_binary"
-        if frozen_binary_output_path.exists():
-            shutil.rmtree(frozen_binary_output_path)
+    frozen_binary_output_path.mkdir(parents=True)
 
-        frozen_binary_output_path.mkdir(parents=True)
+    package_builders.build_test_runner_frozen_binary(
+        package_type=package_type,
+        package_build_spec=package_build_spec,
+        output_path=frozen_binary_output_path,
 
-        package_builders.build_test_runner_frozen_binary(
-            package_type=package_type,
-            package_build_spec=package_build_spec,
-            output_path=frozen_binary_output_path,
+    )
 
-        )
-
-        filepath = pl.Path(__file__)
-        filename = pl.Path(__file__).stem
-        frozen_test_runner_path = list(frozen_binary_output_path.glob(f"{filename}*"))[0]
+    filepath = pl.Path(__file__)
+    filename = pl.Path(__file__).stem
+    frozen_test_runner_path = list(frozen_binary_output_path.glob(f"{filename}*"))[0]
+else:
+    frozen_test_runner_path = pl.Path(args.frozen_test_runner_path)
 
 
 scalyr_api_key = get_option("scalyr_api_key")
