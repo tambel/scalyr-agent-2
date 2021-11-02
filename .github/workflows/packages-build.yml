@@ -209,7 +209,7 @@ jobs:
 
       # All downloaded artifacts lose their permissions, so we have to make script executable once more.
       - name: Make package test frozen binaries executable.
-        id: precess-frozen-test-runner-path
+        id: process-frozen-test-runner-path
         if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
         run: |
           chmod +x ~/package_test/package_test_runner*
@@ -227,7 +227,7 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          echo "${{ steps.precess-frozen-test-runner-path.outputs.frozen_test_runner_path }}"
+          echo "${{ steps.process-frozen-test-runner-path.outputs.frozen_test_runner_path }}"
           python3 tests/package_tests/package_test_runner.py test ${{ matrix.target }} \
             --where ${{ matrix.where }} \
             --package-path ~/package/* \
