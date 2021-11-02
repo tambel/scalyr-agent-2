@@ -169,8 +169,6 @@ else:
 if args.package_path:
     package_path = pl.Path(args.package_path)
 else:
-    deployer_cls = package_build_spec.deployer_cls
-    deployer_cls.deploy()
 
     package_output_path = build_dir_path / "package"
     if package_output_path.exists():
@@ -248,8 +246,8 @@ if args.where == "docker":
             docker_image,
             # Command to run the test executable inside the container.
             test_executable_path,
-            target,
             "test",
+            target,
             "--package-path", f"/tmp/package", "--scalyr-api-key", scalyr_api_key
         ]
     )
