@@ -97,10 +97,13 @@ for p in [test_parser, get_info_parser]:
 
 get_info_parser.add_argument("package-type")
 
-test_parser.add_argument("--package-path", required=False)
+
 
 test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
+
+test_parser.add_argument("--package-path", required=False)
 test_parser.add_argument("--frozen-test-runner-path", dest="frozen_test_runner_path")
+test_parser.add_argument("--build-missing", dest="build_missing", action="store_true")
 
 test_parser.add_argument("--where", required=False)
 test_parser.add_argument("--in-docker", action="store_true")
@@ -162,54 +165,62 @@ else:
     tmp_dir = tempfile.TemporaryDirectory(prefix="scalyr-agent-package-test-")
     build_dir_path = pl.Path(tmp_dir.name)
 
-
+# Build package if it is not specified and build-missing option is enabled.
 if not args.package_path:
-    package_output_path = build_dir_path / "package"
-    if package_output_path.exists():
-        shutil.rmtree(package_output_path)
+    if args.build_missing:
+        package_output_path = build_dir_path / "package"
+        if package_output_path.exists():
+            shutil.rmtree(package_output_path)
 
-    package_output_path.mkdir(parents=True)
+        package_output_path.mkdir(parents=True)
 
-    package_builders.build_package(
-        package_type=package_type,
-        package_build_spec=package_build_spec,
-        output_path=package_output_path
-    )
-
-    filename_glob = package_build_spec.filename_glob
-    found_files = list(package_output_path.glob(filename_glob))
-
-    if len(found_files) != 1:
-        raise FileNotFoundError(
-            f"Can not find built package in the '{package_output_path}' directory with glob '{filename_glob}'"
+        package_builders.build_package(
+            package_type=package_type,
+            package_build_spec=package_build_spec,
+            output_path=package_output_path
         )
 
-    package_path = found_files[0]
+        filename_glob = package_build_spec.filename_glob
+        found_files = list(package_output_path.glob(filename_glob))
+
+        if len(found_files) != 1:
+            raise FileNotFoundError(
+                f"Can not find built package in the '{package_output_path}' directory with glob '{filename_glob}'"
+            )
+
+        package_path = found_files[0]
+    else:
+        raise ValueError("Option --package-path is required if it is not used with --build-missing")
 else:
     package_path = pl.Path(args.package_path)
 
-if not args.frozen_test_runner_path and not hasattr(sys, "frozen"):
-    frozen_binary_output_path = build_dir_path / "test_runner_frozen_binary"
-    if frozen_binary_output_path.exists():
-        shutil.rmtree(frozen_binary_output_path)
-
-    frozen_binary_output_path.mkdir(parents=True)
-
-    package_builders.build_test_runner_frozen_binary(
-        package_type=package_type,
-        package_build_spec=package_build_spec,
-        output_path=frozen_binary_output_path,
-
-    )
-
-    filepath = pl.Path(__file__)
-    filename = pl.Path(__file__).stem
-    frozen_test_runner_path = list(frozen_binary_output_path.glob(f"{filename}*"))[0]
-else:
-    frozen_test_runner_path = pl.Path(args.frozen_test_runner_path)
-
-
 scalyr_api_key = get_option("scalyr_api_key")
+
+frozen_test_runner_path = None
+
+# If test has to run in docker or ec2, then the frozen test runner is required.
+# Build it if it is not specified and build-missing option is set.
+if args.where in ["docker", "ec2"]:
+    if not args.frozen_test_runner_path and args.build_missing:
+        frozen_binary_output_path = build_dir_path / "test_runner_frozen_binary"
+        if frozen_binary_output_path.exists():
+            shutil.rmtree(frozen_binary_output_path)
+
+        frozen_binary_output_path.mkdir(parents=True)
+
+        package_builders.build_test_runner_frozen_binary(
+            package_type=package_type,
+            package_build_spec=package_build_spec,
+            output_path=frozen_binary_output_path,
+
+        )
+
+        filename = pl.Path(__file__).stem
+        frozen_test_runner_path = list(frozen_binary_output_path.glob(f"{filename}*"))[0]
+    else:
+        raise ValueError(
+            "Option --frozen-test-runner-path is required with --where=='docker' or 'ec2' and if it is not used with --build-missing"
+        )
 
 
 if args.where == "docker":
@@ -217,13 +228,14 @@ if args.where == "docker":
     if not docker_image:
         raise ValueError(f"Can not find docker image for operation system '{target}'")
 
-    if args.frozen_test_runner_path:
-        frozen_test_runner_path = pl.Path(args.frozen_test_runner_path)
-        executable_mapping_args = ["-v", f"{frozen_test_runner_path}:/tmp/test_executable"]
-        test_executable_path = "/tmp/test_executable"
-    else:
-        executable_mapping_args = []
-        test_executable_path = "/scalyr-agent-2/tests/package_tests/package_test_runner.py"
+    if not frozen_test_runner_path:
+        raise ValueError(
+            "Option --frozen-test-runner-path is required with --where=='docker' and if it is not used with --build-missing"
+        )
+
+    frozen_test_runner_path = pl.Path(frozen_test_runner_path)
+    executable_mapping_args = ["-v", f"{frozen_test_runner_path}:/tmp/test_executable"]
+    test_executable_path = "/tmp/test_executable"
 
     # Run the test inside the docker.
     # fmt: off
@@ -256,6 +268,11 @@ elif args.where == "ec2":
     ami_image = TARGET_SYSTEM_TO_EC2_AMI_DISTRO.get(target)
     if not ami_image:
         raise ValueError(f"Can not find AMI image for the operation system '{target}'")
+
+    if not frozen_test_runner_path:
+        raise ValueError(
+            "Option --frozen-test-runner-path is required with --where=='ec2' and if it is not used with --build-missing"
+        )
 
     def create_command(test_runner_path_remote_path: str, package_remote_path: str):
         command = [
