@@ -231,6 +231,7 @@ if args.where == "docker":
         )
 
     print("FFF")
+    print(args.frozen_test_runner_path)
     print(frozen_test_runner_path)
     executable_mapping_args = ["-v", f"{frozen_test_runner_path}:/tmp/test_executable"]
     test_executable_path = "/tmp/test_executable"
