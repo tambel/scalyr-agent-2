@@ -211,7 +211,7 @@ jobs:
         if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
         run: |
           chmod +x ~/package_test/package_test_runner*
-          echo "::set-output name=frozen_test_runner_path::$(ls package_test_runner*)"
+          echo "::set-output name=frozen_test_runner_path::$(ls ~/package_test/package_test_runner*)"
 
 
 #      - name: Set up QEMU
