@@ -149,9 +149,9 @@ jobs:
         target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
         python-version: [3.8]
         where: ["docker"]
-        include:
-          - target: "docker-json"
-            where: "locally"
+#        include:
+#          - target: "docker-json"
+#            where: "locally"
 
 
     steps:
@@ -207,9 +207,12 @@ jobs:
 
       # All downloaded artifacts lose their permissions, so we have to make script executable once more.
       - name: Make package test frozen binaries executable.
+        id: precess-frozen-test-runner-path
         if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
         run: |
           chmod +x ~/package_test/package_test_runner*
+          echo "::set-output name=frozen_test_runner_path::$(ls package_test_runner*)"
+
 
 #      - name: Set up QEMU
 #        id: qemu
@@ -222,19 +225,19 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          # Define the frozen-test-runner-path option only if frozen test runner file is presented in artifacts.
-          frozen_test_runner_path="$(ls ~/package_test/package_test_runner* || true)"
-          if [ -f "${frozen_test_runner_path}" ]; then
-            package_test_path_option="--frozen-test-runner-path ${package_test_path}"
-          else
-            package_test_path_option=""
-          fi
+#          # Define the frozen-test-runner-path option only if frozen test runner file is presented in artifacts.
+#          frozen_test_runner_path="$(ls ~/package_test/package_test_runner* || true)"
+#          if [ -f "${frozen_test_runner_path}" ]; then
+#            package_test_path_option="--frozen-test-runner-path ${package_test_path}"
+#          else
+#            package_test_path_option=""
+#          fi
 
 
           python3 tests/package_tests/package_test_runner.py ${{ matrix.target }} test \
             --where ${{ matrix.where }} \
             --package-path ~/package/* \
-            ${package_test_path_option} \
+            --frozen-test-runner-path ${{ steps.precess-frozen-test-runner-path.outputs.frozen_test_runner_path }}
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
 
