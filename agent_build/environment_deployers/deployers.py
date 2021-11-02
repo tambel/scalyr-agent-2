@@ -13,6 +13,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 
 
 class EnvironmentDeployer:
+    NAME: str = None
     DEPLOYMENT_SCRIPT: pl.Path = None
     FILES_USED_IN_DEPLOYMENT = []
     BASE_DOCKER_IMAGE: str = None
@@ -230,10 +231,12 @@ class BaseEnvironmentDeployer(EnvironmentDeployer):
 
 
 class TestEnvironmentDeployer(BaseEnvironmentDeployer):
+    NAME = "test"
     DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_test_environment.sh"
 
 
 class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
+    NAME = "agent_builder"
     if platform.system() != "Windows":
         DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_linux_builder.sh"
     else:
@@ -241,24 +244,35 @@ class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
 
 
 class DockerizedAgentBuilderMachineDeployer(AgentBuilderMachineDeployer):
+    NAME = "dockerized_agent_builder"
     BASE_DOCKER_IMAGE = "centos:7"
 
 
-DEPLOYERS_TO_NAMES = {
-    "test": TestEnvironmentDeployer,
-    "agent_builder": AgentBuilderMachineDeployer,
-    "dockerized_agent_builder": DockerizedAgentBuilderMachineDeployer
+# DEPLOYERS_TO_NAMES = {
+#     "test": TestEnvironmentDeployer,
+#     "agent_builder": AgentBuilderMachineDeployer,
+#     "dockerized_agent_builder": DockerizedAgentBuilderMachineDeployer
+#
+# }
 
+DEPLOYERS_TO_NAMES = {
+    dep.NAME: dep for dep in [
+        TestEnvironmentDeployer,
+        AgentBuilderMachineDeployer
+    ]
 }
 
 
 if __name__ == '__main__':
     print(sys.argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument("deployer_name", choices=DEPLOYERS_TO_NAMES.keys())
     subparsers = parser.add_subparsers(dest="command")
 
     deploy_parser = subparsers.add_parser("deploy")
+    dump_checksum_parser = subparsers.add_parser("dump-checksum")
+
+    for p in [deploy_parser, dump_checksum_parser]:
+        p.add_argument("deployer_name", choices=DEPLOYERS_TO_NAMES.keys())
 
     deploy_parser.add_argument(
         "--cache-dir",
@@ -267,11 +281,13 @@ if __name__ == '__main__':
         "All 'cachable' intermediate results will be stored in it.",
     )
 
-    dump_checksum_parser = subparsers.add_parser("dump-checksum")
+
     dump_checksum_parser.add_argument(
         "checksum_file_path",
         help="The path of the output file with the checksum in it.",
     )
+
+
 
     args = parser.parse_args()
 
