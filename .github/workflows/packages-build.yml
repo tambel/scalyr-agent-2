@@ -231,7 +231,7 @@ jobs:
           python3 tests/package_tests/package_test_runner.py test ${{ matrix.target }} \
             --where ${{ matrix.where }} \
             --package-path ~/package/* \
-            --frozen-test-runner-path "${{ steps.precess-frozen-test-runner-path.outputs.frozen_test_runner_path }}" \
+            --frozen-test-runner-path "${{ steps.process-frozen-test-runner-path.outputs.frozen_test_runner_path }}" \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
 
