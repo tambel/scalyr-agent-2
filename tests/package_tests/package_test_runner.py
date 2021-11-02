@@ -53,6 +53,7 @@ CENTOS_7 = "centos-7"
 CENTOS_8 = "centos-8"
 AMAZONLINUX_2 = "amazonlinux-2"
 DOCKER_JSON = "docker-json"
+WINDOWS_SERVER_2012 = "windows-server-2012"
 
 TARGET_SYSTEM_TO_DOCKER_IMAGE = {
     UBUNTU_1404: "ubuntu:14.04",
@@ -71,7 +72,8 @@ TARGET_SYSTEM_TO_EC2_AMI_DISTRO = {
     UBUNTU_2004: "ubuntu2004",
     CENTOS_7: "centos7",
     CENTOS_8: "centos8",
-    AMAZONLINUX_2: "amazonlinux2"
+    AMAZONLINUX_2: "amazonlinux2",
+    WINDOWS_SERVER_2012: "WindowsServer2012"
 }
 
 TARGET_SYSTEM_TO_PACKAGE_TYPE = {
@@ -82,7 +84,8 @@ TARGET_SYSTEM_TO_PACKAGE_TYPE = {
     CENTOS_7: "rpm",
     CENTOS_8: "rpm",
     AMAZONLINUX_2: "rpm",
-    DOCKER_JSON: "docker-json"
+    DOCKER_JSON: "docker-json",
+    WINDOWS_SERVER_2012: "msi"
 }
 
 parser = argparse.ArgumentParser()

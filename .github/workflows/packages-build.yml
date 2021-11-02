@@ -154,6 +154,7 @@ jobs:
         include:
           - target: "docker-json"
             where: "locally"
+          - target: "windows-server-2012"
 
 
     steps:
