@@ -258,7 +258,8 @@ class DockerizedAgentBuilderMachineDeployer(AgentBuilderMachineDeployer):
 DEPLOYERS_TO_NAMES = {
     dep.NAME: dep for dep in [
         TestEnvironmentDeployer,
-        AgentBuilderMachineDeployer
+        AgentBuilderMachineDeployer,
+        DockerizedAgentBuilderMachineDeployer
     ]
 }
 
