@@ -36,30 +36,24 @@ jobs:
     strategy:
       matrix:
         include:
-          - package_type: "deb"
-            #package_filename_glob: "scalyr-agent-2_*.*.*_all.deb"
-            os: ubuntu-20.04
-            python-version: "3.8"
-          - package_type: "rpm"
-            #package_filename_glob: "scalyr-agent-2-*.*.*-*.noarch.rpm"
-            os: ubuntu-20.04
-            python-version: "3.8"
+#          - package_type: "deb"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
+#          - package_type: "rpm"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
 #          - package_type: "tar"
-#            #package_filename_glob: "scalyr-agent-*.*.*.tar.gz"
 #            os: ubuntu-20.04
 #            python-version: "3.8"
           - package_type: "msi"
-            #package_filename_glob: "ScalyrAgentInstaller-*.*.*.msi"
             os: windows-2019
             python-version: "3.8"
 #          - package_type: "k8s"
 #            os: ubuntu-20.04
-#            #package_filename_glob: "scalyr-agent-k8s-*.*.*"
 #            python-version: "3.8"
-          - package_type: "docker-json"
-            os: ubuntu-20.04
-            #package_filename_glob: "scalyr-agent-docker-json-*.*.*"
-            python-version: "3.8"
+#          - package_type: "docker-json"
+#            os: ubuntu-20.04
+#            python-version: "3.8"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -148,14 +142,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
-        os: ["ubuntu-20.04"]
-        python-version: [3.8]
-        where: ["docker"]
+#        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
+#        os: ["ubuntu-20.04"]
+#        python-version: [3.8]
+#        where: ["docker"]
         include:
-          - target: "docker-json"
-            where: "locally"
-            os: "ubuntu-20.04"
+#          - target: docker-json
+#            where: locally
+#            os: ubuntu-20.04
           - target: windows-server-2019
             where: locally
             os: windows-2019
