@@ -112,7 +112,7 @@ jobs:
           echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
 
       - name: Build tests frozen binaries.
-        if: matrix.package_type == "deb" || matrix.package_type == "rpm" || matrix.package_type == "tar" || matrix.package_type == "msi"
+        if: matrix.package_type == 'deb' || matrix.package_type == 'rpm' || matrix.package_type == 'tar' || matrix.package_type == 'msi'
         id: build-tests
         shell: bash
         run: |
