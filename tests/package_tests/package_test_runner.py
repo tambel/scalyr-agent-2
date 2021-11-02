@@ -212,13 +212,12 @@ if args.where in ["docker", "ec2"]:
             package_type=package_type,
             package_build_spec=package_build_spec,
             output_path=frozen_binary_output_path,
-
         )
 
         filename = pl.Path(__file__).stem
         frozen_test_runner_path = list(frozen_binary_output_path.glob(f"{filename}*"))[0]
     else:
-        frozen_test_runner_path = pl.Path(args.frozen_test_runner_path)
+        frozen_test_runner_path = pl.Path(args.frozen_test_runner_path).absolute()
 
 
 if args.where == "docker":
@@ -231,6 +230,8 @@ if args.where == "docker":
             "Option --frozen-test-runner-path is required with --where=='docker' and if it is not used with --build-missing"
         )
 
+    print("FFF")
+    print(frozen_test_runner_path)
     executable_mapping_args = ["-v", f"{frozen_test_runner_path}:/tmp/test_executable"]
     test_executable_path = "/tmp/test_executable"
 
