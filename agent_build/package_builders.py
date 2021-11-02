@@ -1364,16 +1364,26 @@ RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     dockerized=True
 )
 
-PACKAGE_BUILD_SPECS = {
-    spec.name: spec for spec in [
-        DEB_PACKAGE_BUILD_SPEC,
-        RPM_PACKAGE_BUILD_SPEC
-    ]
-}
+DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
+    name="DOCKERIZED_DOCKER_JSON",
+    package_builder_cls=DockerJsonPackageBuilder,
+    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    filename_glob="scalyr-agent-docker-json-*.*.*",
+    dockerized=True,
+)
+
+# PACKAGE_BUILD_SPECS = {
+#     spec.name: spec for spec in [
+#         DEB_PACKAGE_BUILD_SPEC,
+#         RPM_PACKAGE_BUILD_SPEC,
+#         DOCKER_JSON_BUILD_SPEC
+#     ]
+# }
 
 PACKAGE_TYPES_TO_BUILD_SPECS = {
     "deb": DEB_PACKAGE_BUILD_SPEC,
-    "rpm": RPM_PACKAGE_BUILD_SPEC
+    "rpm": RPM_PACKAGE_BUILD_SPEC,
+    "docker-json": DOCKER_JSON_BUILD_SPEC
 }
 
 def build_package(

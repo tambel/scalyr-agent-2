@@ -54,7 +54,7 @@ CENTOS_8 = "centos-8"
 AMAZONLINUX_2 = "amazonlinux-2"
 DOCKER_JSON = "docker-json"
 
-OS_TO_DOCKER_IMAGE = {
+TARGET_SYSTEM_TO_DOCKER_IMAGE = {
     UBUNTU_1404: "ubuntu:14.04",
     UBUNTU_1604: "ubuntu:16.04",
     UBUNTU_1804: "ubuntu:18.04",
@@ -64,7 +64,7 @@ OS_TO_DOCKER_IMAGE = {
     AMAZONLINUX_2: "amazonlinux:2"
 }
 
-OS_TO_EC2_AMI_DISTRO = {
+TARGET_SYSTEM_TO_EC2_AMI_DISTRO = {
     UBUNTU_1404: "ubuntu1404",
     UBUNTU_1604: "ubuntu1604",
     UBUNTU_1804: "ubuntu1804",
@@ -74,7 +74,7 @@ OS_TO_EC2_AMI_DISTRO = {
     AMAZONLINUX_2: "amazonlinux2"
 }
 
-OS_TO_PACKAGE_TYPE = {
+TARGET_SYSTEM_TO_PACKAGE_TYPE = {
     UBUNTU_1404: "deb",
     UBUNTU_1604: "deb",
     UBUNTU_1804: "deb",
@@ -84,9 +84,6 @@ OS_TO_PACKAGE_TYPE = {
     AMAZONLINUX_2: "rpm",
     DOCKER_JSON: "docker-json"
 }
-
-
-
 
 parser = argparse.ArgumentParser()
 
@@ -150,7 +147,7 @@ def get_option(name: str, default: str = None, type_=str, ):
 
 target = args.target
 
-package_type = OS_TO_PACKAGE_TYPE[target]
+package_type = TARGET_SYSTEM_TO_PACKAGE_TYPE[target]
 
 if args.command == "get":
     print(package_type)
@@ -222,7 +219,7 @@ scalyr_api_key = get_option("scalyr_api_key")
 
 
 if args.where == "docker":
-    docker_image = OS_TO_DOCKER_IMAGE.get(target)
+    docker_image = TARGET_SYSTEM_TO_DOCKER_IMAGE.get(target)
     if not docker_image:
         raise ValueError(f"Can not find docker image for operation system '{target}'")
 
@@ -262,7 +259,7 @@ elif args.where == "ec2":
     aws_region = get_option("aws_region", "us-east-1")
     scalyr_api_key = get_option("scalyr_api_key")
 
-    ami_image = OS_TO_EC2_AMI_DISTRO.get(target)
+    ami_image = TARGET_SYSTEM_TO_EC2_AMI_DISTRO.get(target)
     if not ami_image:
         raise ValueError(f"Can not find AMI image for the operation system '{target}'")
 

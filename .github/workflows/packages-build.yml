@@ -54,10 +54,10 @@ jobs:
 #            os: ubuntu-20.04
 #            #package_filename_glob: "scalyr-agent-k8s-*.*.*"
 #            python-version: "3.8"
-#          - package_type: "docker-json"
-#            os: ubuntu-20.04
-#            #package_filename_glob: "scalyr-agent-docker-json-*.*.*"
-#            python-version: "3.8"
+          - package_type: "docker-json"
+            os: ubuntu-20.04
+            #package_filename_glob: "scalyr-agent-docker-json-*.*.*"
+            python-version: "3.8"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -149,9 +149,9 @@ jobs:
         target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
         python-version: [3.8]
         where: ["docker"]
-#        include:
-#          - target: "docker-json"
-#            where: "locally"
+        include:
+          - target: "docker-json"
+            where: "locally"
 
 
     steps:
