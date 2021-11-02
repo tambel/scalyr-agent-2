@@ -162,7 +162,15 @@ def remove_deb_package():
 
 
 def remove_rpm_package():
-    subprocess.check_call(f"yum remove -y scalyr-agent-2", shell=True)
+    env = os.environ.copy()
+
+    if __frozen__:
+        env["LD_LIBRARY_PATH"] = "/libx64"
+
+    subprocess.check_call(
+        f"yum remove -y scalyr-agent-2", shell=True,
+        env=env
+    )
 
 
 def remove_package(package_type: str):
