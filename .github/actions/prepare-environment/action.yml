@@ -8,6 +8,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+
+    - name: Prepare environment for the tests.
+      id: prepare
+      uses: ./.github/actions/prepare-environment
+      with:
+        name: 'test'
+
     - name: Calculate the checksum of the files used in deployer.
       shell: bash
       run: |
