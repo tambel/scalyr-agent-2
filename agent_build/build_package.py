@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import dataclasses
+import enum
 import json
 import pathlib as pl
 import tarfile
@@ -27,7 +29,8 @@ import uuid
 import os
 import re
 import io
-from typing import Union, Optional
+import shlex
+from typing import Union, Optional, Type
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
@@ -132,7 +135,7 @@ class PackageBuilder(abc.ABC):
         self._variant = variant
         self._no_versioned_file_name = no_versioned_file_name
 
-    def build(self, output_path: Union[str, pl.Path], locally: bool = False):
+    def build(self, output_path: Union[str, pl.Path]):
         """
         The function where the actual build of the package happens.
         :param output_path: Path to the directory where the resulting output has to be stored.
@@ -146,19 +149,20 @@ class PackageBuilder(abc.ABC):
 
         output_path.mkdir(parents=True)
 
-        deployer_cls = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
+        #deployer_cls = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
 
         # If locally option is specified or builder class is not dockerized by default then just build the package
         # directly on this system.
-        if locally or not deployer_cls.BASE_DOCKER_IMAGE:
-            self._build_output_path = pl.Path(output_path)
-            self._package_files_path = self._build_output_path / "package_root"
-            self._package_files_path.mkdir()
-            self._intermediate_results_path = self._build_output_path / "intermediate_results"
-            self._intermediate_results_path.mkdir()
-            self._build(output_path=output_path)
+        self._build_output_path = pl.Path(output_path)
+        self._package_files_path = self._build_output_path / "package_root"
+        self._package_files_path.mkdir()
+        self._intermediate_results_path = self._build_output_path / "intermediate_results"
+        self._intermediate_results_path.mkdir()
+        self._build(output_path=output_path)
 
         # The package has to be build inside the docker.
+        if True:
+            pass
         else:
             # Make sure that the base image with build environment is built.
             deployer_cls.deploy()
@@ -570,28 +574,28 @@ class PackageBuilder(abc.ABC):
             child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
             shutil.copy2(child_path, output_path)
 
-        # Also build the frozen binary for the package test script, they will be used to test the packages later.
-        package_test_pyinstaller_output = self._build_output_path / "package_test_frozen_binary"
-
-        package_test_script_path = (
-            __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test_runner.py"
-        )
-
-        subprocess.check_call(
-            [
-                sys.executable,
-                "-m",
-                "PyInstaller",
-                str(package_test_script_path),
-                "--distpath",
-                str(package_test_pyinstaller_output),
-                "--onefile",
-            ]
-        )
-
-        # Make the package test frozen binaries executable.
-        for child_path in package_test_pyinstaller_output.iterdir():
-            child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
+        # # Also build the frozen binary for the package test script, they will be used to test the packages later.
+        # package_test_pyinstaller_output = self._build_output_path / "package_test_frozen_binary"
+        #
+        # package_test_script_path = (
+        #     __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test_runner.py"
+        # )
+        #
+        # subprocess.check_call(
+        #     [
+        #         sys.executable,
+        #         "-m",
+        #         "PyInstaller",
+        #         str(package_test_script_path),
+        #         "--distpath",
+        #         str(package_test_pyinstaller_output),
+        #         "--onefile",
+        #     ]
+        # )
+        #
+        # # Make the package test frozen binaries executable.
+        # for child_path in package_test_pyinstaller_output.iterdir():
+        #     child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
@@ -1335,174 +1339,218 @@ PACKAGE_TYPE_TO_FILENAME_GLOB = {
 }
 
 
-def main():
-    parser = argparse.ArgumentParser()
+@dataclasses.dataclass
+class PackageBuildSpec:
+    name: str
+    package_builder_cls: Type[PackageBuilder]
+    deployer_cls: Type[deployers.EnvironmentDeployer]
+    filename_glob: str
+    dockerized: bool
 
-    parser.add_argument(
-        "package_type",
-        type=str,
-        choices=list(package_types_to_builders.keys()),
-        help="Type of the package to build.",
+
+DEB_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+    name="DOCKERIZED_DEB",
+    package_builder_cls=DebPackageBuilder,
+    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    filename_glob="scalyr-agent-2_*.*.*_all.deb",
+    dockerized=True
+)
+
+PACKAGE_BUILD_SPECS = {
+    spec.name: spec for spec in [
+        DEB_PACKAGE_BUILD_SPEC
+    ]
+}
+
+PACKAGE_TYPES_TO_BUILD_SPECS = {
+    "deb": DEB_PACKAGE_BUILD_SPEC
+}
+
+def build_package(
+        package_type: str,
+        package_build_spec: PackageBuildSpec,
+        output_path: Union[str, pl.Path],
+        locally: bool = False,
+        variant: str = None,
+        no_versioned_file_name: bool = False
+):
+
+    package_builder_cls = package_build_spec.package_builder_cls
+    package_builder = package_builder_cls(
+        variant=variant, no_versioned_file_name=no_versioned_file_name
     )
-
-    parser.add_argument(
-        "--locally",
-        action="store_true",
-        help="Perform the build on the current system which runs the script. Without that, some packages may be built "
-        "by default inside the docker.",
-    )
-
-    subparsers = parser.add_subparsers(dest="command")
-
-    prepare_environment_parser = subparsers.add_parser("prepare-build-environment")
-    prepare_environment_parser.add_argument(
-        "--cache-dir",
-        dest="cache_dir",
-        help="Path to the directory which will be considered by the script is a cache. "
-        "All 'cachable' intermediate results will be stored in it.",
-    )
-
-    dump_checksum_parser = subparsers.add_parser("dump-checksum")
-    dump_checksum_parser.add_argument(
-        "checksum_file_path",
-        help="The path of the output file with the checksum in it.",
-    )
-
-    build_parser = subparsers.add_parser("build")
-
-    build_parser.add_argument(
-        "--output-dir",
-        required=True,
-        type=str,
-        dest="output_dir",
-        help="The directory where the result package has to be stored.",
-    )
-
-    build_parser.add_argument(
-        "--no-versioned-file-name",
-        action="store_true",
-        dest="no_versioned_file_name",
-        default=False,
-        help="If true, will not embed the version number in the artifact's file name.  This only "
-        "applies to the `tarball` and container builders artifacts.",
-    )
-
-    build_parser.add_argument(
-        "-v",
-        "--variant",
-        dest="variant",
-        default=None,
-        help="An optional string that is included in the package name to identify a variant "
-        "of the main release created by a different packager.  "
-        "Most users do not need to use this option.",
-    )
-
-    args = parser.parse_args()
-
-    # Find the builder class.
-    package_builder_cls = package_types_to_builders[args.package_type]
-
-    if args.command == "dump-checksum":
-        package_builder_cls.dump_build_environment_files_content_checksum(
-            checksum_output_path=args.checksum_file_path
-        )
-        exit(0)
-
-    if args.command == "prepare-build-environment":
-        package_builder_cls.prepare_build_environment(
-            cache_dir=args.cache_dir,
-            locally=args.locally,
-        )
-        exit(0)
-
-    if args.command == "build":
-        output_path = pl.Path(args.output_dir)
-        builder = package_builder_cls(
-            variant=args.variant, no_versioned_file_name=args.no_versioned_file_name
-        )
-
-        builder.build(
+    if locally or not package_build_spec.dockerized:
+        package_builder.build(
             output_path=output_path,
-            locally=args.locally,
         )
+    else:
+        build_package_script_path = pl.Path("/scalyr-agent-2/agent_build/build_packagee_s.py")
+        command_argv = [
+            str(build_package_script_path),
+            "build",
+            package_type,
+            "--locally",
+            "--output-dir",
+            "/tmp/build",
+        ]
 
-
-def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "package_type",
-        type=str,
-        choices=list(package_types_to_builders.keys()),
-        help="Type of the package to build.",
-    )
-
-    parser.add_argument(
-        "--locally",
-        action="store_true",
-        help="Perform the build on the current system which runs the script. Without that, some packages may be built "
-        "by default inside the docker.",
-    )
-
-    subparsers = parser.add_subparsers(dest="command")
-
-    deployer_info_parser = subparsers.add_parser("deployer-name")
-    package_filename_glob = subparsers.add_parser("package-filename-glob")
-
-    build_parser = subparsers.add_parser("build")
-
-    build_parser.add_argument(
-        "--output-dir",
-        required=True,
-        type=str,
-        dest="output_dir",
-        help="The directory where the result package has to be stored.",
-    )
-
-    build_parser.add_argument(
-        "--no-versioned-file-name",
-        action="store_true",
-        dest="no_versioned_file_name",
-        default=False,
-        help="If true, will not embed the version number in the artifact's file name.  This only "
-        "applies to the `tarball` and container builders artifacts.",
-    )
-
-    build_parser.add_argument(
-        "-v",
-        "--variant",
-        dest="variant",
-        default=None,
-        help="An optional string that is included in the package name to identify a variant "
-        "of the main release created by a different packager.  "
-        "Most users do not need to use this option.",
-    )
-
-    args = parser.parse_args()
-
-    # Find the builder class.
-    package_builder_cls = package_types_to_builders[args.package_type]
-
-    if args.command == "deployer-name":
-        print(package_builder_cls.ENVIRONMENT_DEPLOYER_NAME)
-        exit(0)
-
-    if args.command == "package-filename-glob":
-        glob = PACKAGE_TYPE_TO_FILENAME_GLOB[args.package_type]
-        print(glob)
-        exit(0)
-
-    if args.command == "build":
-        output_path = pl.Path(args.output_dir)
-        builder = package_builder_cls(
-            variant=args.variant, no_versioned_file_name=args.no_versioned_file_name
-        )
-
-        builder.build(
+        command = shlex.join(command_argv)
+        build_in_docker(
+            package_build_spec=package_build_spec,
+            command=command,
             output_path=output_path,
-            locally=args.locally,
+            build_stage="build"
         )
 
 
-if __name__ == "__main__":
-    main()
+def build_test_runner_frozen_binary(
+        package_type: str,
+        package_build_spec: PackageBuildSpec,
+        output_path: Union[str, pl.Path],
+        locally: bool = False,
+):
+    # Also build the frozen binary for the package test script, they will be used to test the packages later.
+
+    if locally or not package_build_spec.dockerized:
+        package_test_script_path = (
+            __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test_runner.py"
+        )
+
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-m",
+                "PyInstaller",
+                str(package_test_script_path),
+                "--distpath",
+                str(output_path),
+                "--onefile",
+            ]
+        )
+
+        # Make the package test frozen binaries executable.
+        for child_path in output_path.iterdir():
+            child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
+
+    else:
+
+        build_package_script_path = pl.Path("/scalyr-agent-2/agent_build/build_packagee_s.py")
+        command_argv = [
+            str(build_package_script_path),
+            "build",
+            package_type,
+            "--build-tests",
+            "--locally",
+            "--output-dir",
+            "/tmp/build",
+        ]
+
+        command = shlex.join(command_argv)
+
+        build_in_docker(
+            package_build_spec=package_build_spec,
+            command=command,
+            output_path=output_path,
+            build_stage="test"
+        )
+
+
+def build_in_docker(
+        package_build_spec: PackageBuildSpec,
+        command: str,
+        output_path: Union[str, pl.Path],
+        build_stage: str
+):
+    # Make sure that the base image with build environment is built.
+    deployer_cls = package_build_spec.deployer_cls
+    deployer_cls.deploy()
+
+    dockerfile_path = __PARENT_DIR__ / "Dockerfile"
+
+    # # Make changes to the existing command line arguments to pass them to the docker builder.
+    # command_argv = sys.argv[:]
+    #
+    # # Create the path for the current script file which will be used inside the docker.
+    # build_package_script_path = pl.Path(command_argv[0]).absolute()
+    #
+    # container_builder_module_path = pl.Path(
+    #     "/scalyr-agent-2",
+    #     pl.Path(build_package_script_path).relative_to(__SOURCE_ROOT__),
+    # )
+    #
+    # # Replace the 'host-specific' path of this script with 'docker-specific' path
+    # command_argv[0] = str(container_builder_module_path)
+    #
+    # # Since the builder can be configured to run inside the docker by default, then we have to tell it to not to
+    # # do so when it is already inside the docker.
+    # command_argv.insert(1, "--locally")
+    #
+    # # Also change the 'host-specific' output path.
+    # output_dir_index = command_argv.index("--output-dir")
+    # command_argv[output_dir_index + 1] = "/tmp/build"
+    #
+    # # Join everything into one command string.
+    # command = shlex.join(command_argv)
+
+    # build_package_script_path = pl.Path("/scalyr-agent-2/agent_build/build_packagee_s.py")
+    # command_argv = [
+    #     str(build_package_script_path),
+    #     "build",
+    #     package_type,
+    #     "--locally",
+    #     "--output-dir",
+    #     "/tmp/build",
+    # ]
+    #
+    # command = shlex.join(command_argv)
+
+    image_name = f"scalyr-agent-builder-{package_build_spec.name}-{build_stage}".lower()
+
+    # Run the image build. The package also has to be build during that.
+    # Building the package during the image build is more convenient than building it in the container
+    # because the the docker build caching mechanism will save out time when nothing in agent source is changed.
+    # This can save time during the local debugging.
+
+    subprocess.check_call(
+        [
+            "docker",
+            "build",
+            "-t",
+            image_name,
+            "--build-arg",
+            f"BASE_IMAGE_NAME={deployer_cls.get_image_name()}",
+            "--build-arg",
+            f"BUILD_COMMAND=python3 {command}",
+            "--build-arg",
+            f"BUILD_STAGE={build_stage}",
+            "-f",
+            str(dockerfile_path),
+            str(__SOURCE_ROOT__),
+        ]
+    )
+
+    # The image is build and package has to be fetched from it, so create the container...
+
+    # Remove the container with the same name if exists.
+
+    container_name = image_name
+    subprocess.check_call(["docker", "rm", "-f", container_name])
+
+    # Create the container.
+    subprocess.check_call(
+        ["docker", "create", "--name", container_name, image_name]
+    )
+
+    # Copy package output from the container.
+    subprocess.check_call(
+        [
+            "docker",
+            "cp",
+            "-a",
+            f"{container_name}:/tmp/build/.",
+            str(output_path),
+        ],
+    )
+
+    # Remove the container.
+    subprocess.check_call(["docker", "rm", "-f", container_name])
