@@ -22,29 +22,39 @@ import time
 import os
 import tarfile
 import logging
+import sys
 
 from tests.package_tests.common import LogVerifier, AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck
 
 
 USER_HOME = pl.Path("~").expanduser()
 
+# Flag that indicates that this test script is executed as frozen binary.
+__frozen__ = hasattr(sys, "frozen")
+
 
 def install_deb_package(package_path: pl.Path):
     env = os.environ.copy()
-    env[
-        "LD_LIBRARY_PATH"
-    ] = f'/lib/x86_64-linux-gnu:{os.environ["LD_LIBRARY_PATH"]}'
+    if __frozen__:
+        env[
+            "LD_LIBRARY_PATH"
+        ] = f'/lib/x86_64-linux-gnu:{os.environ["LD_LIBRARY_PATH"]}'
+
     subprocess.check_call(
-        ["dpkg", "-i", package_path],
+        ["dpkg", "-i", str(package_path)],
         env=env
     )
 
 
 def install_rpm_package(package_path: pl.Path):
-    os.environ["LD_LIBRARY_PATH"] = "/libx64"
+    env = os.environ.copy()
+
+    if __frozen__:
+        env["LD_LIBRARY_PATH"] = "/libx64"
+
     subprocess.check_call(
-        ["rpm", "-i", package_path],
-        env=os.environ,
+        ["rpm", "-i", str(package_path)],
+        env=env
     )
 
 
@@ -79,6 +89,7 @@ def install_package(package_type: str, package_path: pl.Path):
 
 def _get_msi_install_path() -> pl.Path:
     return pl.Path(os.environ["programfiles(x86)"]) / "Scalyr"
+
 
 def start_agent(package_type: str):
     if package_type in ["deb", "rpm", "msi"]:
@@ -139,9 +150,11 @@ def configure_agent(package_type: str, api_key: str):
 
 def remove_deb_package():
     env = os.environ.copy()
-    env[
-        "LD_LIBRARY_PATH"
-    ] = f'/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:{os.environ["LD_LIBRARY_PATH"]}'
+
+    if __frozen__:
+        env[
+            "LD_LIBRARY_PATH"
+        ] = f'/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:{os.environ["LD_LIBRARY_PATH"]}'
     subprocess.check_call(
         f"apt-get remove -y scalyr-agent-2", shell=True,
         env=env
@@ -169,7 +182,6 @@ def _get_logs_path(package_type: str) -> pl.Path:
         return _get_tarball_install_path() / "log"
     elif package_type == "msi":
         return _get_msi_install_path() / "log"
-
 
 
 def run(
