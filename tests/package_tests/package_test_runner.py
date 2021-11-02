@@ -40,7 +40,6 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 # Import internal modules only after the PYTHONPATH is tweaked.
 from tests.package_tests import k8s_test, docker_test, package_test
-from tests.package_tests import packages_sanity_tests
 from agent_build.environment_deployers import deployers
 from agent_build import package_builders
 
@@ -262,6 +261,8 @@ if args.where == "docker":
     # fmt: on
     exit(0)
 elif args.where == "ec2":
+    from tests.package_tests import packages_sanity_tests
+
     aws_access_key = get_option("aws_access_key")
     aws_secret_key = get_option("aws_secret_key")
     aws_keypair_name = get_option("aws_keypair_name")
