@@ -75,11 +75,6 @@ combination of both.
 from __future__ import absolute_import
 from __future__ import print_function
 
-if False:  # NOSONAR
-    from typing import List
-    from typing import Optional
-    from typing import Dict
-
 import pathlib as pl
 import os
 import sys
@@ -87,6 +82,10 @@ import time
 import re
 import tempfile
 import shutil
+
+from typing import Optional
+from typing import Union
+from typing import Callable
 
 import random
 import argparse
@@ -142,6 +141,13 @@ EC2_DISTRO_DETAILS_MAP = {
     "ubuntu1804": {
         "image_id": "ami-07ebfd5b3428b6f4d",
         "image_name": "Ubuntu Server 18.04 LTS (HVM), SSD Volume Type",
+        "size_id": "m1.small",
+        "ssh_username": "ubuntu",
+        "default_python_package_name": "python",
+    },
+    "ubuntu2004": {
+        "image_id": "ami-09e67e426f25ce0d7",
+        "image_name": "Ubuntu Server 20.04 LTS (HVM), SSD Volume Type",
         "size_id": "m1.small",
         "ssh_username": "ubuntu",
         "default_python_package_name": "python",
@@ -211,6 +217,10 @@ EC2_DISTRO_DETAILS_MAP = {
 DEFAULT_INSTALLER_SCRIPT_URL = (
     "https://www.scalyr.com/scalyr-repo/stable/latest/install-scalyr-agent-2.sh"
 )
+
+# All the instances created by this script will use this string in the name.
+INSTANCE_NAME_STRING = "-automated-agent-tests-"
+assert "-tests-" in INSTANCE_NAME_STRING
 
 def get_env_throw_if_not_set(name, default_value=None):
     # type: (str, Optional[str]) -> str
@@ -316,11 +326,22 @@ def main(
     #test_type,
     #from_version,
     to_version,
+    create_remote_test_command: Callable[[str, str], str],
+    test_runner_path: Union[str, pl.Path],
     #python_package,
     #installer_script_url,
     #additional_packages=None,
-    destroy_node=False,
+
     #verbose=False,
+    access_key: str,
+    secret_key: str,
+    region: str,
+    keypair_name: str,
+    private_key_path: str,
+    security_groups,
+    destroy_node=False,
+
+
 ):
     # type: (str, str, str, str, str, str, str, bool, bool) -> None
 
@@ -451,8 +472,7 @@ def main(
         max_tries = 3
         cat_step_timeout = 5
 
-    test_runner_path = __SOURCE_ROOT__ / "agent-output-build/deb/package_test_frozen_binary/package_test_runner"
-    test_runner_path_remote_path = test_runner_path.name
+    test_runner_remote_path = test_runner_path.name
 
     package_path =pl.Path(to_version)
     remote_package_path = package_path.name
@@ -464,22 +484,19 @@ def main(
 
     test_runner_upload_step = FileDeployment(
         source=str(test_runner_path),
-        target=str(test_runner_path_remote_path)
+        target=str(test_runner_remote_path)
     )
 
     if distro.lower().startswith("windows"):
-        package_type = "windows"
-        script_content = f"python3 {test_runner_path_remote_path}"
+        script_content = f"python3 {test_runner_remote_path}"
         script_extension = "ps1"
     else:
-        package_type = (
-            "deb"
-            if distro.startswith("ubuntu") or distro.startswith("debian")
-            else "rpm"
+
+        start_test_runner_command = create_remote_test_command(
+            f"./{test_runner_remote_path}", str(remote_package_path),
         )
-        script_content = f"~/{test_runner_path_remote_path} --package-type --package-path {remote_package_path}"
-        #script_content = f"ls ~"
-        #script_content = "echo 'HELLO'"
+        script_content = f"sudo {start_test_runner_command}"
+        print(script_content)
         script_extension = "sh"
 
     remote_script_name = "deploy.{0}".format(script_extension)
@@ -511,7 +528,11 @@ def main(
     # else:
     #     cat_logs_step = None  # type: ignore
 
-    driver = get_libcloud_driver()
+    driver = get_libcloud_driver(
+        access_key=access_key,
+        secret_key=secret_key,
+        region=region
+    )
 
     size = NodeSize(
         distro_details["size_id"],
@@ -551,9 +572,9 @@ def main(
             name=name,
             image=image,
             size=size,
-            ssh_key=PRIVATE_KEY_PATH,
-            ex_keyname=KEY_NAME,
-            ex_security_groups=SECURITY_GROUPS,
+            ssh_key=private_key_path,
+            ex_keyname=keypair_name,
+            ex_security_groups=security_groups,
             ssh_username=distro_details["ssh_username"],
             ssh_timeout=20,
             max_tries=max_tries,
@@ -602,49 +623,49 @@ def main(
         sys.exit(1)
 
 
-def render_script_template(
-    script_template,
-    distro_name,
-    distro_details,
-    python_package,
-    test_type,
-    install_package=None,
-    upgrade_package=None,
-    installer_script_url=None,
-    additional_packages=None,
-    verbose=False,
-):
-    # type: (str, str, dict, str, str, Optional[Dict], Optional[Dict], Optional[Dict], Optional[str], bool) -> str
-    """
-    Render the provided script template with common context.
-    """
-    # from_version = from_version or ""
-    # to_version = to_version or ""
-    template_context = distro_details.copy()
-    template_context["distro_name"] = distro_name
-
-    template_context["test_type"] = test_type
-
-    template_context["installer_script_info"] = (
-        installer_script_url or DEFAULT_INSTALLER_SCRIPT_URL
-    )
-    template_context["scalyr_api_key"] = SCALYR_API_KEY
-    template_context["python_package"] = (
-        python_package or distro_details["default_python_package_name"]
-    )
-
-    template_context["install_package"] = install_package
-    template_context["upgrade_package"] = upgrade_package
-    template_context["additional_packages"] = additional_packages
-
-    template_context["verbose"] = verbose
-
-    env = Environment(
-        loader=FileSystemLoader(SCRIPTS_DIR), extensions=["jinja2.ext.with_"]
-    )
-    template = env.from_string(script_template)
-    rendered_template = template.render(**template_context)
-    return rendered_template
+# def render_script_template(
+#     script_template,
+#     distro_name,
+#     distro_details,
+#     python_package,
+#     test_type,
+#     install_package=None,
+#     upgrade_package=None,
+#     installer_script_url=None,
+#     additional_packages=None,
+#     verbose=False,
+# ):
+#     # type: (str, str, dict, str, str, Optional[Dict], Optional[Dict], Optional[Dict], Optional[str], bool) -> str
+#     """
+#     Render the provided script template with common context.
+#     """
+#     # from_version = from_version or ""
+#     # to_version = to_version or ""
+#     template_context = distro_details.copy()
+#     template_context["distro_name"] = distro_name
+#
+#     template_context["test_type"] = test_type
+#
+#     template_context["installer_script_info"] = (
+#         installer_script_url or DEFAULT_INSTALLER_SCRIPT_URL
+#     )
+#     template_context["scalyr_api_key"] = SCALYR_API_KEY
+#     template_context["python_package"] = (
+#         python_package or distro_details["default_python_package_name"]
+#     )
+#
+#     template_context["install_package"] = install_package
+#     template_context["upgrade_package"] = upgrade_package
+#     template_context["additional_packages"] = additional_packages
+#
+#     template_context["verbose"] = verbose
+#
+#     env = Environment(
+#         loader=FileSystemLoader(SCRIPTS_DIR), extensions=["jinja2.ext.with_"]
+#     )
+#     template = env.from_string(script_template)
+#     rendered_template = template.render(**template_context)
+#     return rendered_template
 
 
 def destroy_node_and_cleanup(driver, node):
@@ -722,36 +743,36 @@ def destroy_volume_with_retry(driver, volume, max_retries=12, retry_sleep_delay=
     return True
 
 
-def get_libcloud_driver():
+def get_libcloud_driver(access_key, secret_key, region):
     """
     Return Libcloud driver instance.
     """
     cls = get_driver(Provider.EC2)
-    driver = cls(ACCESS_KEY, SECRET_KEY, region=REGION)
+    driver = cls(access_key, secret_key, region=region)
     return driver
 
 
 if __name__ == "__main__":
-    ACCESS_KEY = get_env_throw_if_not_set("ACCESS_KEY")
-    SECRET_KEY = get_env_throw_if_not_set("SECRET_KEY")
-    REGION = get_env_throw_if_not_set("REGION", "us-east-1")
-
-    KEY_NAME = get_env_throw_if_not_set("KEY_NAME")
-    PRIVATE_KEY_PATH = get_env_throw_if_not_set("PRIVATE_KEY_PATH")
-    PRIVATE_KEY_PATH = os.path.expanduser(PRIVATE_KEY_PATH)
-
-    SECURITY_GROUPS_STR = get_env_throw_if_not_set(
-        "SECURITY_GROUPS", "circleci-remote-access"
-    )  # sg-075bf2191cf04c821
-    SECURITY_GROUPS = SECURITY_GROUPS_STR.split(",")  # type: List[str]
-
-    SCALYR_API_KEY = get_env_throw_if_not_set("SCALYR_API_KEY")
+    # ACCESS_KEY = get_env_throw_if_not_set("ACCESS_KEY")
+    # SECRET_KEY = get_env_throw_if_not_set("SECRET_KEY")
+    # REGION = get_env_throw_if_not_set("REGION", "us-east-1")
+    #
+    # KEY_NAME = get_env_throw_if_not_set("KEY_NAME")
+    # PRIVATE_KEY_PATH = get_env_throw_if_not_set("PRIVATE_KEY_PATH")
+    # PRIVATE_KEY_PATH = os.path.expanduser(PRIVATE_KEY_PATH)
+    #
+    # SECURITY_GROUPS_STR = get_env_throw_if_not_set(
+    #     "SECURITY_GROUPS", "circleci-remote-access"
+    # )  # sg-075bf2191cf04c821
+    # SECURITY_GROUPS = SECURITY_GROUPS_STR.split(",")  # type: List[str]
+    #
+    # SCALYR_API_KEY = get_env_throw_if_not_set("SCALYR_API_KEY")
 
     VERBOSE = compat.os_environ_unicode.get("VERBOSE", "false").lower() == "true"
 
-    # All the instances created by this script will use this string in the name.
-    INSTANCE_NAME_STRING = "-automated-agent-tests-"
-    assert "-tests-" in INSTANCE_NAME_STRING
+
+
+
     parser = argparse.ArgumentParser(
         description=("Run basic agent installer sanity tests on EC2 instance")
     )

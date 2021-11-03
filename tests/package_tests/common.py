@@ -186,7 +186,7 @@ class LogVerifier:
                         error_message = message
                     raise TestFail(error_message)
 
-                # Leave the check for the next iteration to retry in once more.
+                # Leave the check for the next iteration to retry it once more.
                 elif result == LogVerifierCheckResult.RETRY:
                     if message:
                         logging.info(f"Retry check '{line_check.description}'. Reason: {message}")
