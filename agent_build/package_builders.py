@@ -1383,6 +1383,7 @@ DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
 TAR_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_TAR",
     package_builder_cls=TarballPackageBuilder,
+    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
     filename_glob="scalyr-agent-*.*.*.tar.gz",
     dockerized=True
 )
