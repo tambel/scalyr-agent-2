@@ -5,7 +5,6 @@ build
 .run
 #tests
 agent-build-output
-tests/package_tests/credentials.json
 
 #.git
 

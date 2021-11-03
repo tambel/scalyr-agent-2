@@ -25,6 +25,7 @@ var/
 *.egg
 scalyr-agent-2-*/
 /tests/config.yml
+tests/package_tests/credentials.json
 
 # Installer logs
 pip-log.txt
