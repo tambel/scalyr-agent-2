@@ -1380,6 +1380,13 @@ DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
     dockerized=True,
 )
 
+TAR_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+    name="DOCKERIZED_TAR",
+    package_builder_cls=TarballPackageBuilder,
+    filename_glob="scalyr-agent-*.*.*.tar.gz",
+    dockerized=True
+)
+
 
 
 # PACKAGE_BUILD_SPECS = {
@@ -1394,6 +1401,7 @@ PACKAGE_TYPES_TO_BUILD_SPECS = {
     "deb": DEB_PACKAGE_BUILD_SPEC,
     "rpm": RPM_PACKAGE_BUILD_SPEC,
     "msi": MSI_PACKAGE_BUILD_SPEC,
+    "tar": TAR_PACKAGE_BUILD_SPEC,
     "docker-json": DOCKER_JSON_BUILD_SPEC
 }
 
