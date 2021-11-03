@@ -39,9 +39,9 @@ jobs:
 #          - package_type: "deb"
 #            os: ubuntu-20.04
 #            python-version: "3.8"
-#          - package_type: "rpm"
-#            os: ubuntu-20.04
-#            python-version: "3.8"
+          - package_type: "rpm"
+            os: ubuntu-20.04
+            python-version: "3.8"
           - package_type: "tar"
             os: ubuntu-20.04
             python-version: "3.8"
@@ -142,10 +142,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-#        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
-#        os: ["ubuntu-20.04"]
-#        python-version: [3.8]
-#        where: ["docker"]
+        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
+        os: ["ubuntu-20.04"]
+        python-version: [3.8]
+        where: ["docker"]
         include:
           - target: ubuntu-2004-tar
             where: docker
