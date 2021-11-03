@@ -54,6 +54,7 @@ AMAZONLINUX_2 = "amazonlinux-2"
 DOCKER_JSON = "docker-json"
 WINDOWS_SERVER_2012 = "windows-server-2012"
 WINDOWS_SERVER_2019 = "windows-server-2019"
+UBUNTU_2004_TAR = "ubuntu-2004-tar"
 
 TARGET_SYSTEM_TO_DOCKER_IMAGE = {
     UBUNTU_1404: "ubuntu:14.04",
@@ -62,7 +63,8 @@ TARGET_SYSTEM_TO_DOCKER_IMAGE = {
     UBUNTU_2004: "ubuntu:20.04",
     CENTOS_7: "centos:7",
     CENTOS_8: "centos:8",
-    AMAZONLINUX_2: "amazonlinux:2"
+    AMAZONLINUX_2: "amazonlinux:2",
+    UBUNTU_2004_TAR: "ubuntu:20.04"
 }
 
 TARGET_SYSTEM_TO_EC2_AMI_DISTRO = {
@@ -74,7 +76,8 @@ TARGET_SYSTEM_TO_EC2_AMI_DISTRO = {
     CENTOS_8: "centos8",
     AMAZONLINUX_2: "amazonlinux2",
     WINDOWS_SERVER_2012: "WindowsServer2012",
-    WINDOWS_SERVER_2019: "WindowsServer2019"
+    WINDOWS_SERVER_2019: "WindowsServer2019",
+    UBUNTU_2004_TAR: "ubuntu2004"
 }
 
 TARGET_SYSTEM_TO_PACKAGE_TYPE = {
@@ -87,7 +90,8 @@ TARGET_SYSTEM_TO_PACKAGE_TYPE = {
     AMAZONLINUX_2: "rpm",
     DOCKER_JSON: "docker-json",
     WINDOWS_SERVER_2012: "msi",
-    WINDOWS_SERVER_2019: "msi"
+    WINDOWS_SERVER_2019: "msi",
+    UBUNTU_2004_TAR: "tar"
 }
 
 parser = argparse.ArgumentParser()

@@ -42,9 +42,9 @@ jobs:
 #          - package_type: "rpm"
 #            os: ubuntu-20.04
 #            python-version: "3.8"
-#          - package_type: "tar"
-#            os: ubuntu-20.04
-#            python-version: "3.8"
+          - package_type: "tar"
+            os: ubuntu-20.04
+            python-version: "3.8"
           - package_type: "msi"
             os: windows-2019
             python-version: "3.8"
@@ -147,6 +147,9 @@ jobs:
 #        python-version: [3.8]
 #        where: ["docker"]
         include:
+          - target: ubuntu-2004-tar
+            where: docker
+            os: ubuntu-20.04
 #          - target: docker-json
 #            where: locally
 #            os: ubuntu-20.04
