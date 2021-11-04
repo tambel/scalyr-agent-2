@@ -125,6 +125,7 @@ if __name__ == '__main__':
         exit(0)
 
     if args.command == "build":
+        logging.info(f"Build package '{args.package_type}'...")
         output_path = pl.Path(args.output_dir)
 
         # Build only frozen binary tests instead of package.

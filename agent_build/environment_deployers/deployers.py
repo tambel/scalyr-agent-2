@@ -371,7 +371,7 @@ if __name__ == '__main__':
     for p in [deploy_parser, get_info_parser]:
         p.add_argument("deployer_name", choices=DEPLOYERS.keys())
 
-    get_info_parser.add_argument("info", choices=["checksum"])
+    get_info_parser.add_argument("info", choices=["checksum", "base-deployer"])
 
     deploy_parser.add_argument("--base-docker-image", dest="base_docker_image")
 

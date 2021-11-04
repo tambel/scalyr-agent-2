@@ -14,6 +14,7 @@
 import dataclasses
 import enum
 import json
+import logging
 import pathlib as pl
 import tarfile
 import abc
@@ -1428,7 +1429,7 @@ def build_package(
         ]
 
         command = shlex.join(command_argv)
-        build_in_docker(
+        run_command_in_docker_and_get_output(
             package_build_spec=package_build_spec,
             command=command,
             output_path=output_path,
@@ -1480,7 +1481,7 @@ def build_test_runner_frozen_binary(
 
         command = shlex.join(command_argv)
 
-        build_in_docker(
+        run_command_in_docker_and_get_output(
             package_build_spec=package_build_spec,
             command=command,
             output_path=output_path,
@@ -1488,12 +1489,15 @@ def build_test_runner_frozen_binary(
         )
 
 
-def build_in_docker(
+def run_command_in_docker_and_get_output(
         package_build_spec: PackageBuildSpec,
         command: str,
         output_path: Union[str, pl.Path],
         build_stage: str
 ):
+    """
+    Run command in the special Dockerfile which is located with this module in the same directory.
+    """
     # Make sure that the base image with build environment is built.
     deployer = package_build_spec.deployer
     deployer.deploy_in_docker(
@@ -1502,50 +1506,12 @@ def build_in_docker(
 
     dockerfile_path = __PARENT_DIR__ / "Dockerfile"
 
-    # # Make changes to the existing command line arguments to pass them to the docker builder.
-    # command_argv = sys.argv[:]
-    #
-    # # Create the path for the current script file which will be used inside the docker.
-    # build_package_script_path = pl.Path(command_argv[0]).absolute()
-    #
-    # container_builder_module_path = pl.Path(
-    #     "/scalyr-agent-2",
-    #     pl.Path(build_package_script_path).relative_to(__SOURCE_ROOT__),
-    # )
-    #
-    # # Replace the 'host-specific' path of this script with 'docker-specific' path
-    # command_argv[0] = str(container_builder_module_path)
-    #
-    # # Since the builder can be configured to run inside the docker by default, then we have to tell it to not to
-    # # do so when it is already inside the docker.
-    # command_argv.insert(1, "--locally")
-    #
-    # # Also change the 'host-specific' output path.
-    # output_dir_index = command_argv.index("--output-dir")
-    # command_argv[output_dir_index + 1] = "/tmp/build"
-    #
-    # # Join everything into one command string.
-    # command = shlex.join(command_argv)
-
-    # build_package_script_path = pl.Path("/scalyr-agent-2/agent_build/build_packagee_s.py")
-    # command_argv = [
-    #     str(build_package_script_path),
-    #     "build",
-    #     package_type,
-    #     "--locally",
-    #     "--output-dir",
-    #     "/tmp/build",
-    # ]
-    #
-    # command = shlex.join(command_argv)
-
     deployer_image_name = deployer.get_image_name(base_docker_image=package_build_spec.base_docker_image)
-    #image_name = f"scalyr-agent-builder-{package_build_spec.name}-{build_stage}".lower()
     image_name = f"{package_build_spec.name}-{deployer_image_name}".lower()
 
     # Run the image build. The package also has to be build during that.
     # Building the package during the image build is more convenient than building it in the container
-    # because the the docker build caching mechanism will save out time when nothing in agent source is changed.
+    # because the the docker build caching mechanism will save our time when nothing in agent source is changed.
     # This can save time during the local debugging.
 
     env = os.environ.copy()
@@ -1573,8 +1539,8 @@ def build_in_docker(
     # The image is build and package has to be fetched from it, so create the container...
 
     # Remove the container with the same name if exists.
-
     container_name = image_name
+
     subprocess.check_call(["docker", "rm", "-f", container_name])
 
     # Create the container.
