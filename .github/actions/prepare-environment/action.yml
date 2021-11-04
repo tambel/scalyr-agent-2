@@ -18,11 +18,18 @@ runs:
           echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} checksum)
           echo "::set-output name=base-deployer-name::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} base-deployer)
 
+    - name: Calculate the checksum of the files used in deployer.
+      id: deployer-info2
+      shell: bash
+      run: |
+        #echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} checksum)
+        echo "::set-output name=base-deployer-name::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} base-deployer)
+
     - name: Run base deployer if specified.
       if: steps.deployer-info.outputs.base-deployer-name
       uses: ./.github/actions/prepare-environment
       with:
-        name: ${{ steps.deployer-info.outputs.base-deployer-name }}
+        name: ${{ steps.deployer-info2.outputs.base-deployer-name }}
 
 #    - name: Calculate the checksum of the files used in deployer.
 #      shell: bash
