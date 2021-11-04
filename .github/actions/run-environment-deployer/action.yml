@@ -51,7 +51,7 @@ runs:
         fi
 
         echo "RRRR"
-        echo "steps.deployer-info.outputs.other-deployer-names"
+        echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
         ## Remove checksum file, it is not needed anymore.
         #rm checksum.txt
 
