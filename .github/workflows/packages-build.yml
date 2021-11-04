@@ -102,7 +102,7 @@ jobs:
 
       - name: Save the frozen test script.
         uses: actions/upload-artifact@v2
-        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, "docker-")
+        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, 'docker-')
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: |
