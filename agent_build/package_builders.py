@@ -149,7 +149,7 @@ class PackageBuilder(abc.ABC):
 
         output_path.mkdir(parents=True)
 
-        #deployer_cls = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
+        #deployer = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
 
         # If locally option is specified or builder class is not dockerized by default then just build the package
         # directly on this system.
@@ -1343,49 +1343,51 @@ PACKAGE_TYPE_TO_FILENAME_GLOB = {
 class PackageBuildSpec:
     name: str
     package_builder_cls: Type[PackageBuilder]
-    deployer_cls: Type[deployers.EnvironmentDeployer]
+    deployer: deployers.EnvironmentDeployer
     filename_glob: str
-    dockerized: bool
+    base_docker_image: str
 
+
+_DOCKERIZED_SPECS_BASE_IMAGE = "centos:7"
 
 DEB_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_DEB",
     package_builder_cls=DebPackageBuilder,
-    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
     filename_glob="scalyr-agent-2_*.*.*_all.deb",
-    dockerized=True
+    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
 )
 
 RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_RPM",
     package_builder_cls=RpmPackageBuilder,
-    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
     filename_glob="scalyr-agent-2-*.*.*-*.noarch.rpm",
-    dockerized=True
+    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
 )
 
 MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="MSI",
     package_builder_cls=MsiWindowsPackageBuilder,
-    deployer_cls=deployers.AgentBuilderMachineDeployer,
+    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
     filename_glob="ScalyrAgentInstaller-*.*.*.msi",
-    dockerized=False
+    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
 )
 
 DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_DOCKER_JSON",
     package_builder_cls=DockerJsonPackageBuilder,
-    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
     filename_glob="scalyr-agent-docker-json-*.*.*",
-    dockerized=True,
+    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE,
 )
 
 TAR_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_TAR",
     package_builder_cls=TarballPackageBuilder,
-    deployer_cls=deployers.DockerizedAgentBuilderMachineDeployer,
+    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
     filename_glob="scalyr-agent-*.*.*.tar.gz",
-    dockerized=True
+    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
 )
 
 
@@ -1396,6 +1398,7 @@ PACKAGE_TYPES_TO_BUILD_SPECS = {
     "tar": TAR_PACKAGE_BUILD_SPEC,
     "docker-json": DOCKER_JSON_BUILD_SPEC
 }
+
 
 def build_package(
         package_type: str,
@@ -1410,7 +1413,7 @@ def build_package(
     package_builder = package_builder_cls(
         variant=variant, no_versioned_file_name=no_versioned_file_name
     )
-    if locally or not package_build_spec.dockerized:
+    if locally or not package_build_spec.base_docker_image:
         package_builder.build(
             output_path=output_path,
         )
@@ -1442,7 +1445,7 @@ def build_test_runner_frozen_binary(
 ):
     # Also build the frozen binary for the package test script, they will be used to test the packages later.
 
-    if locally or not package_build_spec.dockerized:
+    if locally or not package_build_spec.base_docker_image:
         package_test_script_path = (
             __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test_runner.py"
         )
@@ -1493,8 +1496,10 @@ def build_in_docker(
         build_stage: str
 ):
     # Make sure that the base image with build environment is built.
-    deployer_cls = package_build_spec.deployer_cls
-    deployer_cls.deploy()
+    deployer = package_build_spec.deployer
+    deployer.deploy_in_docker(
+        base_docker_image=package_build_spec.base_docker_image
+    )
 
     dockerfile_path = __PARENT_DIR__ / "Dockerfile"
 
@@ -1535,12 +1540,17 @@ def build_in_docker(
     #
     # command = shlex.join(command_argv)
 
-    image_name = f"scalyr-agent-builder-{package_build_spec.name}-{build_stage}".lower()
+    deployer_image_name = deployer.get_image_name(base_docker_image=package_build_spec.base_docker_image)
+    #image_name = f"scalyr-agent-builder-{package_build_spec.name}-{build_stage}".lower()
+    image_name = f"{package_build_spec.name}-{deployer_image_name}".lower()
 
     # Run the image build. The package also has to be build during that.
     # Building the package during the image build is more convenient than building it in the container
     # because the the docker build caching mechanism will save out time when nothing in agent source is changed.
     # This can save time during the local debugging.
+
+    env = os.environ.copy()
+    env["DOCKER_BUILDKIT"] = "1"
 
     subprocess.check_call(
         [
@@ -1549,7 +1559,7 @@ def build_in_docker(
             "-t",
             image_name,
             "--build-arg",
-            f"BASE_IMAGE_NAME={deployer_cls.get_image_name()}",
+            f"BASE_IMAGE_NAME={deployer_image_name}",
             "--build-arg",
             f"BUILD_COMMAND=python3 {command}",
             "--build-arg",
@@ -1557,7 +1567,8 @@ def build_in_docker(
             "-f",
             str(dockerfile_path),
             str(__SOURCE_ROOT__),
-        ]
+        ],
+        env=env
     )
 
     # The image is build and package has to be fetched from it, so create the container...

@@ -4,7 +4,7 @@ build
 .idea
 .run
 #tests
-agent-build-output
+agent-build-outputs
 
 #.git
 

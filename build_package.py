@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     if args.command == "get-build-spec":
         if args.spec == "deployer":
-            deployer = package_builder_spec.deployer_cls
+            deployer = package_builder_spec.deployer
             print(deployer.NAME)
 
         if args.spec == "package-filename-glob":
