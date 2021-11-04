@@ -357,7 +357,8 @@ BASE_WINDOWS_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
 DEPLOYERS: Dict[str, EnvironmentDeployer] = {
     dep.name: dep for dep in [
         PYTHON_ENVIRONMENT_DEPLOYER,
-        BASE_ENVIRONMENT_DEPLOYER
+        BASE_ENVIRONMENT_DEPLOYER,
+        BASE_WINDOWS_ENVIRONMENT_DEPLOYER
     ]
 }
 
