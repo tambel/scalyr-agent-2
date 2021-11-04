@@ -175,7 +175,7 @@ jobs:
         id: prepare
         uses: ./.github/actions/prepare-environment
         with:
-          name: 'test'
+          name: 'base_environment'
 
 
       - name: "Get package file info"
