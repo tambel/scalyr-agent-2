@@ -15,14 +15,6 @@
 
 set -e
 
-#if [ -n '' ] ; then
-#  echo "1"
-#else
-#  echo "2"
-#fi
-#
-#exit 0
-
 
 SOURCE_ROOT=$(dirname "$(dirname "$(dirname "$0")")")
 
@@ -40,16 +32,10 @@ if [ -n "$CACHE_DIR" ]; then
   fi
 fi
 
-python3 --version
 pip_cache_dir="$(python3 -m pip cache dir)"
 
-echo "PIP CACHE: ${pip_cache_dir}"
-
-ls "$CACHE_DIR"
-
-echo "FFFFF"
-
 if $use_cache ; then
+  echo "Use pip cache."
   mkdir -p "$pip_cache_dir"
   cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
 fi
@@ -58,10 +44,5 @@ python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
 if $save_cache ; then
   echo "Save pip cache."
-  ls "$pip_cache_dir"
   cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
-  echo "-------"
-  ls "$CACHE_DIR"
-  echo "-----"
-  ls "$CACHE_DIR/pip"
 fi
