@@ -70,10 +70,11 @@ jobs:
           echo "::set-output name=deployer-base-image::$(python build_package.py get-build-spec ${{ matrix.package_type }} base-docker-image)"
 
       - name: Prepare build environment by running appropriate deployer.
+        if: ${{ steps.get-deployer-info.outputs.deployer-names }}
         id: prepare
         uses: ./.github/actions/run-environment-deployer
         with:
-          name: ${{ steps.get-deployer-info.outputs.deployer-names }}
+          names: ${{ steps.get-deployer-info.outputs.deployer-names }}
           base-docker-image: ${{ steps.get-deployer-info.outputs.deployer-base-image }}
 
       - name: Build.
