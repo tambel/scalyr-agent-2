@@ -119,7 +119,8 @@ if __name__ == '__main__':
             print(package_builder_spec.filename_glob)
 
         if args.spec == "base-docker-image":
-            print(package_builder_spec.base_docker_image)
+            if package_builder_spec.base_docker_image:
+                print(package_builder_spec.base_docker_image)
 
         exit(0)
 
