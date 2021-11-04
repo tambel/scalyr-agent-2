@@ -1,5 +1,5 @@
 name: 'Prepare environment'
-description: "Prepares current machine with running one of the 'Deployers', which are defined in the 'agent_build/environment_deployers' folder"
+description: "Prepares current machine by running one of the 'Deployers', which are defined in the 'agent_build/environment_deployers' folder"
 inputs:
   name:
     description: 'Name of the deployer.'
@@ -11,8 +11,6 @@ runs:
     - name: Calculate the checksum of the files used in deployer.
       shell: bash
       run: |
-        echo "LLLLL"
-        echo "${{ inputs.name }}"
         python3 agent_build/environment_deployers/deployers.py dump-checksum ${{ inputs.name }} checksum.txt
 
     - name: Restore cached dependensies of the environment deployer.
@@ -26,7 +24,6 @@ runs:
     - name: Prepare build environment.
       shell: bash
       run: |
-
         python3 agent_build/environment_deployers/deployers.py deploy ${{ inputs.name }} --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
