@@ -77,38 +77,38 @@ jobs:
           names: ${{ steps.get-deployers-info.outputs.deployer-names }}
           base-docker-image: ${{ steps.get-deployers-info.outputs.deployer-base-image }}
 
-      - name: Build.
-        id: build
-        shell: bash
-        run: |
-          python build_package.py build ${{ matrix.package_type }} --output-dir agent-build-output
-          echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
-
-      - name: Build frozen tests runner (if needed).
-        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, 'docker-')
-        id: build-tests
-        shell: bash
-        run: |
-          python build_package.py build ${{ matrix.package_type }} --build-tests --output-dir tests-build-output
-          #echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
-
-      - name: Save the package.
-        uses: actions/upload-artifact@v2
-        with:
-          name: "package-${{ matrix.package_type }}"
-          path: |
-            agent-build-output/${{ steps.build.outputs.package-filename-glob }}*
-
-
-
-      - name: Save the frozen test script.
-        uses: actions/upload-artifact@v2
-        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, 'docker-')
-        with:
-          name: "package-test-${{ matrix.package_type }}"
-          path: |
-            tests-build-output/package_test_runner*
-
+#      - name: Build.
+#        id: build
+#        shell: bash
+#        run: |
+#          python build_package.py build ${{ matrix.package_type }} --output-dir agent-build-output
+#          echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
+#
+#      - name: Build frozen tests runner (if needed).
+#        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, 'docker-')
+#        id: build-tests
+#        shell: bash
+#        run: |
+#          python build_package.py build ${{ matrix.package_type }} --build-tests --output-dir tests-build-output
+#          #echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
+#
+#      - name: Save the package.
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: "package-${{ matrix.package_type }}"
+#          path: |
+#            agent-build-output/${{ steps.build.outputs.package-filename-glob }}*
+#
+#
+#
+#      - name: Save the frozen test script.
+#        uses: actions/upload-artifact@v2
+#        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, 'docker-')
+#        with:
+#          name: "package-test-${{ matrix.package_type }}"
+#          path: |
+#            tests-build-output/package_test_runner*
+#
 
 
 
