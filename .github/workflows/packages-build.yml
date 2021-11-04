@@ -149,7 +149,7 @@ jobs:
         id: prepare
         uses: ./.github/actions/run-environment-deployer
         with:
-          name: 'base_environment'
+          names: 'base_environment'
 
 
       - name: "Get package file info"
