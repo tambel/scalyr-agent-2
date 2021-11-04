@@ -1347,6 +1347,7 @@ class PackageBuildSpec:
     deployers: List[deployers.EnvironmentDeployer]
     filename_glob: str
     base_docker_image: str = None
+    architecture: str = "amd64"
 
 
 _LINUX_SPECS_BASE_IMAGE = "centos:7"
@@ -1362,6 +1363,15 @@ DEB_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     deployers=_LINUX_SPECS_DEPLOYERS,
     filename_glob="scalyr-agent-2_*.*.*_all.deb",
     base_docker_image=_LINUX_SPECS_BASE_IMAGE
+)
+
+DEB_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+    name="DOCKERIZED_DEB",
+    package_builder_cls=DebPackageBuilder,
+    deployers=_LINUX_SPECS_DEPLOYERS,
+    filename_glob="scalyr-agent-2_*.*.*_all.deb",
+    base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+    architecture="arm64"
 )
 
 RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
@@ -1529,6 +1539,8 @@ def run_command_in_docker_and_get_output(
         [
             "docker",
             "build",
+            "--platform",
+            package_build_spec.architecture,
             "-t",
             image_name,
             "--build-arg",
