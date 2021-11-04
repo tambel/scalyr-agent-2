@@ -91,14 +91,17 @@ jobs:
 #          # Remove checksum file, it is not needed anymore.
 #          rm checksum.txt
 
-      - id: get-deployer-name
-        run: echo "::set-output name=deployer-name::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployer)"
+      - id: get-deployer-info
+        run: |
+          echo "::set-output name=deployer-name::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployer)"
+          echo "::set-output name=deployer-base-image::$(python build_package.py get-build-spec ${{ matrix.package_type }} base-docker-image)"
 
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
         uses: ./.github/actions/prepare-environment
         with:
           name: ${{ steps.get-deployer-name.outputs.deployer-name }}
+          base-docker-image: ${{ steps.get-deployer-name.outputs.deployer-base-image }}
 
       - name: Build.
         id: build

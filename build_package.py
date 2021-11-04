@@ -60,7 +60,14 @@ if __name__ == '__main__':
             help="Type of the package to build.",
         )
 
-    build_spec_parser.add_argument("spec", choices=["deployer", "package-filename-glob"])
+    build_spec_parser.add_argument(
+        "spec",
+        choices=[
+            "deployer",
+            "package-filename-glob",
+            "base-docker-image"
+        ]
+    )
 
     build_parser.add_argument("--build-tests", action="store_true")
 
@@ -110,6 +117,9 @@ if __name__ == '__main__':
 
         if args.spec == "package-filename-glob":
             print(package_builder_spec.filename_glob)
+
+        if args.spec == "base-docker-image":
+            print(package_builder_spec.base_docker_image)
 
         exit(0)
 
