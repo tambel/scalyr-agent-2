@@ -84,7 +84,7 @@ jobs:
           echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
 
       - name: Build frozen tests runner (if needed).
-        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, "docker-")
+        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, 'docker-')
         id: build-tests
         shell: bash
         run: |
