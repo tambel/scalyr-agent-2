@@ -164,7 +164,7 @@ class EnvironmentDeployer:
             cached_image_path = cache_dir / image_name
             if cached_image_path.is_file():
                 logging.info(
-                    "Cached image file has been found, loading and reusing it instead of building."
+                    f"Cached image {image_name} file for the deployer '{self._name}' has been found, loading and reusing it instead of building."
                 )
                 subprocess.check_call(
                     ["docker", "load", "-i", str(cached_image_path)]
@@ -175,7 +175,7 @@ class EnvironmentDeployer:
                 # image has to be saved to the cache.
                 save_to_cache = True
 
-        logging.info(f"Build image '{image_name}'")
+        logging.info(f"Build image '{image_name}' for the deployer '{self._name}'.")
 
         # Create the builder image.
         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
@@ -362,7 +362,7 @@ DEPLOYERS: Dict[str, EnvironmentDeployer] = {
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s][%(message)s]")
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
