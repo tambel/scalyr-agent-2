@@ -45,7 +45,7 @@ _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
 
 if __name__ == '__main__':
 
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s][%(message)s]")
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
 
     parser = argparse.ArgumentParser()
 

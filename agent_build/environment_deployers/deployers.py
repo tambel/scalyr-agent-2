@@ -362,7 +362,7 @@ DEPLOYERS: Dict[str, EnvironmentDeployer] = {
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s][%(message)s]")
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")

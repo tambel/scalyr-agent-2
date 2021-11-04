@@ -35,7 +35,7 @@ runs:
         cache-version: v8
       with:
         path: ~/dependencies_cache
-        key: ${{ runner.os }}-deployer-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+        key: deployer-${{ steps.deployer-info.outputs.base-deployer-name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
