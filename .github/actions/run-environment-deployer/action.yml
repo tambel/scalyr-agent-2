@@ -20,6 +20,7 @@ runs:
           current_deployer_name=$(cut -d "," -f -1 <<< "${{ inputs.names }}")
           other_deployer_names=$(cut -d "," -f 2- <<< "${{ inputs.names }}")
           echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info "$current_deployer_name" checksum)"
+          echo "::set-output name=current-deployer-name::$current_deployer_names"
           echo "::set-output name=other-deployer-names::$other_deployer_names"
 
     - name: Restore cached dependensies of the environment deployer.
@@ -33,7 +34,10 @@ runs:
     - name: Prepare build environment.
       shell: bash
       run: |
-        python3 agent_build/environment_deployers/deployers.py deploy ${{ inputs.name }} --base-docker-image  "${{ inputs.base-docker-image }}" --cache-dir ~/dependencies_cache
+        echo "FFF"
+        echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
+        echo "${{ steps.deployer-info.outputs.current-deployer-name }}"
+        python3 agent_build/environment_deployers/deployers.py deploy ${{ steps.deployer-info.outputs.current-deployer-name }} --base-docker-image  "${{ inputs.base-docker-image }}" --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
