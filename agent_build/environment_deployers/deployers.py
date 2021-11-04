@@ -309,11 +309,6 @@ class BaseEnvironmentDeployer(EnvironmentDeployer):
     ]
 
 
-if platform.system() != "Windows":
-    base_environment_script_path = __PARENT_DIR__ / "deploy_base_environment.sh"
-else:
-    base_environment_script_path = __PARENT_DIR__ / "deploy_agent_windows_builder.ps1"
-
 base_environment_used_files = [
     _AGENT_BUILD_DIR / "requirements.txt",
     _AGENT_BUILD_DIR / "monitors_requirements.txt",
@@ -328,9 +323,15 @@ PYTHON_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
 
 BASE_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
     name="base_environment",
-    deployment_script_path=base_environment_script_path,
+    deployment_script_path=__PARENT_DIR__ / "deploy_base_environment.sh",
     used_files=base_environment_used_files,
     base_deployer=PYTHON_ENVIRONMENT_DEPLOYER,
+)
+
+BASE_WINDOWS_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
+    name="base_windows_environment",
+    deployment_script_path=__PARENT_DIR__ / "deploy_agent_windows_builder.ps1",
+    used_files=base_environment_used_files,
 )
 
 

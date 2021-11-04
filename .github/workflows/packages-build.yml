@@ -22,7 +22,7 @@ jobs:
 #
 #      - name: Prepare environment for the tests.
 #        id: prepare
-#        uses: ./.github/actions/prepare-environment
+#        uses: ./.github/actions/run-environment-deployer
 #        with:
 #          name: 'test'
 #
@@ -98,7 +98,7 @@ jobs:
 
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
-        uses: ./.github/actions/prepare-environment
+        uses: ./.github/actions/run-environment-deployer
         with:
           name: ${{ steps.get-deployer-info.outputs.deployer-name }}
           base-docker-image: ${{ steps.get-deployer-info.outputs.deployer-base-image }}
@@ -173,7 +173,7 @@ jobs:
 
       - name: Prepare environment for the tests.
         id: prepare
-        uses: ./.github/actions/prepare-environment
+        uses: ./.github/actions/run-environment-deployer
         with:
           name: 'base_environment'
 

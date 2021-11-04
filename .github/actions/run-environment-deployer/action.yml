@@ -20,7 +20,7 @@ runs:
 
     - name: Run base deployer if specified.
       if: steps.deployer-info.outputs.base-deployer-name
-      uses: ./.github/actions/prepare-environment
+      uses: ./.github/actions/run-environment-deployer
       with:
         name: ${{ steps.deployer-info.outputs.base-deployer-name }}
         base-docker-image: ${{ inputs.base-docker-image }}
