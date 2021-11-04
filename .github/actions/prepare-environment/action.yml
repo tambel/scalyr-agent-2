@@ -42,7 +42,7 @@ runs:
         cache-version: v8
       with:
         path: ~/dependencies_cache
-        key: deployer-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+        key: deployer-${{ inputs.name }}-${{ inputs.base-docker-image }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
