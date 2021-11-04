@@ -29,6 +29,8 @@ import uuid
 import os
 import re
 import io
+import logging
+
 from typing import Union, Optional, Type
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
@@ -104,7 +106,7 @@ if __name__ == '__main__':
     if args.command == "get-build-spec":
         if args.spec == "deployer":
             deployer = package_builder_spec.deployer
-            print(deployer.NAME)
+            print(deployer.name)
 
         if args.spec == "package-filename-glob":
             print(package_builder_spec.filename_glob)
