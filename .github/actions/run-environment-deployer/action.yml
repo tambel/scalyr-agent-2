@@ -1,10 +1,10 @@
 name: 'Prepare environment'
 description: |
-  Prepares current machine by running one of the 'deployers', which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
+  Prepares current machine by running set of the 'deployers', which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
   For more info, please look at the docs in the same file.
 inputs:
   names:
-    description: 'Name of the deployer.'
+    description: 'Names of the deployers.'
     required: true
   base-docker-image:
     description: "Name of the base docker image. If specified, then the deployer will be executed inside this image."
@@ -20,7 +20,7 @@ runs:
           current_deployer_name=$(cut -d "," -f -1 <<< "${{ inputs.names }}")
           other_deployer_names=$(cut -d "," -f 2- <<< "${{ inputs.names }}")
           echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info "$current_deployer_name" checksum)"
-          echo "::set-output name=current-deployer-name::$current_deployer_names"
+          echo "::set-output name=current-deployer-name::$current_deployer_name"
           echo "::set-output name=other-deployer-names::$other_deployer_names"
 
     - name: Restore cached dependensies of the environment deployer.
