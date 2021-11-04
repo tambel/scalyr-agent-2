@@ -53,5 +53,5 @@ runs:
       if: steps.deployer-info.outputs.other-deployer-names
       uses: ./.github/actions/run-environment-deployer
       with:
-        name: ${{ steps.deployer-info.outputs.other-deployer-names }}
+        names: ${{ steps.deployer-info.outputs.other-deployer-names }}
         base-docker-image: ${{ inputs.base-docker-image }}
