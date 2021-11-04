@@ -100,8 +100,8 @@ jobs:
         id: prepare
         uses: ./.github/actions/prepare-environment
         with:
-          name: ${{ steps.get-deployer-name.outputs.deployer-name }}
-          base-docker-image: ${{ steps.get-deployer-name.outputs.deployer-base-image }}
+          name: ${{ steps.get-deployer-info.outputs.deployer-name }}
+          base-docker-image: ${{ steps.get-deployer-info.outputs.deployer-base-image }}
 
       - name: Build.
         id: build
