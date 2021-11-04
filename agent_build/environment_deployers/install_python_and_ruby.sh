@@ -15,7 +15,6 @@
 
 set -e
 
-exit 0
 yum install -y tar wget perl git rpm-build
 yum groupinstall -y 'Development Tools'
 
