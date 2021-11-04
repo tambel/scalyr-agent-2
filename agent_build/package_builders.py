@@ -1353,7 +1353,7 @@ class PackageBuildSpec:
 _LINUX_SPECS_BASE_IMAGE = "centos:7"
 _LINUX_SPECS_DEPLOYERS = [
     deployers.PYTHON_ENVIRONMENT_DEPLOYER,
-    #deployers.BASE_ENVIRONMENT_DEPLOYER
+    deployers.BASE_ENVIRONMENT_DEPLOYER
 ]
 
 
