@@ -27,7 +27,7 @@ runs:
     - name: Prepare build environment.
       shell: bash
       run: |
-        python3 agent_build/environment_deployers/deployers.py deploy ${{ inputs.name }} --base-docker-image  ${{ inputs.base-docker-image }}--cache-dir ~/dependencies_cache
+        python3 agent_build/environment_deployers/deployers.py deploy ${{ inputs.name }} --base-docker-image  ${{ inputs.base-docker-image }} --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
