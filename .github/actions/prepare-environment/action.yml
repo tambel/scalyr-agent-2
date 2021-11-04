@@ -19,6 +19,7 @@ runs:
           echo "::set-output name=base-deployer-name::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} base-deployer)
 
     - name: Prepare environment for the tests.
+      if: steps.deployer-info.outputs.base-deployer-name
       id: prepare
       uses: ./.github/actions/prepare-environment
       with:
