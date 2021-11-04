@@ -6,6 +6,9 @@
 -r agent_build/monitors_requirements.txt
 -r benchmarks/micro/requirements-compression-algorithms.txt
 
+
+pyinstaller==4.3
+
 # Testing tools and libraries
 mock==3.0.5
 psutil==5.7.0

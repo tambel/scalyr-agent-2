@@ -81,7 +81,6 @@ if (Test-Path $pip_cache_path -PathType Container) {
 }
 
 python -m pip install -r "$source_root\agent_build\requirements.txt"
-python -m pip install -r "$source_root\agent_build\frozen-binary-builder-requirements.txt"
 
 if (!(Test-Path $pip_cache_path -PathType Container)) {
     Copy-Item -Path "$(python -m pip cache dir)" -Destination "$pip_cache_path" -Recurse

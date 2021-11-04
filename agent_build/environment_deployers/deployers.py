@@ -500,7 +500,6 @@ class BaseEnvironmentDeployer(EnvironmentDeployer):
     FILES_USED_IN_DEPLOYMENT = [
         _AGENT_BUILD_DIR / "requirements.txt",
         _AGENT_BUILD_DIR / "monitors_requirements.txt",
-        _AGENT_BUILD_DIR / "frozen-binary-builder-requirements.txt",
         __SOURCE_ROOT__ / "dev-requirements.txt",
         __SOURCE_ROOT__ / "benchmarks/micro/requirements-compression-algorithms.txt",
     ]
@@ -514,7 +513,6 @@ else:
 base_environment_used_files = [
     _AGENT_BUILD_DIR / "requirements.txt",
     _AGENT_BUILD_DIR / "monitors_requirements.txt",
-    _AGENT_BUILD_DIR / "frozen-binary-builder-requirements.txt",
     __SOURCE_ROOT__ / "dev-requirements.txt",
     __SOURCE_ROOT__ / "benchmarks/micro/requirements-compression-algorithms.txt",
 ]
