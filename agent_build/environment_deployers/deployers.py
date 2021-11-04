@@ -285,6 +285,11 @@ class EnvironmentDeployer:
     def name(self):
         return self._name
 
+    @property
+    def base_deployer(self) -> Optional['EnvironmentDeployer']:
+        return self._base_deployer
+
+
     def deploy(
         self,
         cache_dir: Union[str, pl.Path] = None,
@@ -506,7 +511,7 @@ class BaseEnvironmentDeployer(EnvironmentDeployer):
 
 
 if platform.system() != "Windows":
-    base_environment_script_path = __PARENT_DIR__ / "deploy_agent_linux_builder.sh"
+    base_environment_script_path = __PARENT_DIR__ / "deploy_test_environment.sh"
 else:
     base_environment_script_path = __PARENT_DIR__ / "deploy_agent_windows_builder.ps1"
 
@@ -562,10 +567,12 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest="command")
 
     deploy_parser = subparsers.add_parser("deploy")
-    dump_checksum_parser = subparsers.add_parser("dump-checksum")
+    get_info_parser = subparsers.add_parser("get-info")
 
-    for p in [deploy_parser, dump_checksum_parser]:
+    for p in [deploy_parser, get_info_parser]:
         p.add_argument("deployer_name", choices=DEPLOYERS.keys())
+
+    get_info_parser.add_argument("info", choices=["checksum"])
 
     deploy_parser.add_argument("--base-docker-image", dest="base_docker_image")
 
@@ -581,9 +588,13 @@ if __name__ == '__main__':
     # Find the deployer.
     deployer = DEPLOYERS[args.deployer_name]
 
-    if args.command == "dump-checksum":
-        checksum = deployer.get_used_files_checksum()
-        print(checksum)
+    if args.command == "get-info":
+        if args.info == "checksum":
+            checksum = deployer.get_used_files_checksum()
+            print(checksum)
+        if args.info == "base-deployer":
+            if deployer.base_deployer:
+                print(deployer.base_deployer.name)
 
         exit(0)
 
