@@ -1345,7 +1345,7 @@ class PackageBuildSpec:
     package_builder_cls: Type[PackageBuilder]
     deployer: deployers.EnvironmentDeployer
     filename_glob: str
-    base_docker_image: str
+    base_docker_image: str = None
 
 
 _DOCKERIZED_SPECS_BASE_IMAGE = "centos:7"
@@ -1370,8 +1370,7 @@ MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="MSI",
     package_builder_cls=MsiWindowsPackageBuilder,
     deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
-    filename_glob="ScalyrAgentInstaller-*.*.*.msi",
-    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
+    filename_glob="ScalyrAgentInstaller-*.*.*.msi"
 )
 
 DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
