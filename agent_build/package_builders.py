@@ -1375,7 +1375,7 @@ RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
 MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="MSI",
     package_builder_cls=MsiWindowsPackageBuilder,
-    deployers=_LINUX_SPECS_DEPLOYERS,
+    deployers=[deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
     filename_glob="ScalyrAgentInstaller-*.*.*.msi"
 )
 
