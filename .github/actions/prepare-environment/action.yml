@@ -11,7 +11,7 @@ runs:
     - name: Calculate the checksum of the files used in deployer.
       shell: bash
       run: |
-        python3 agent_build/environment_deployers/deployers.py dump-checksum ${{ inputs.name }} checksum.txt
+        python3 agent_build/environment_deployers/deployers.py dump-checksum ${{ inputs.name }} > checksum.txt
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
