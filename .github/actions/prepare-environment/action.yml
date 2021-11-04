@@ -50,5 +50,5 @@ runs:
           cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
         fi
 
-        # Remove checksum file, it is not needed anymore.
-        rm checksum.txt
+        ## Remove checksum file, it is not needed anymore.
+        #rm checksum.txt
