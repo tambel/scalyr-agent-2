@@ -17,8 +17,12 @@ runs:
       id: deployer-info
       shell: bash
       run: |
-          current_deployer_name=$(cut -d "," -f -1 <<< "${{ inputs.names }}")
-          other_deployer_names=$(cut -d "," -f 2- <<< "${{ inputs.names }}")
+          names="${{ inputs.names }}"
+          if [[ $names != *, ]]:
+            names="$names,"
+          fi
+          current_deployer_name=$(cut -d "," -f -1 <<< $names)
+          other_deployer_names=$(cut -d "," -f 2- <<< $names)
           echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info "$current_deployer_name" checksum)"
           echo "::set-output name=current-deployer-name::$current_deployer_name"
           echo "::set-output name=other-deployer-names::$other_deployer_names"
