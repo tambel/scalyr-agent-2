@@ -91,7 +91,8 @@ jobs:
 #          # Remove checksum file, it is not needed anymore.
 #          rm checksum.txt
 
-      - id: get-deployer-info
+      - name: Get information about deployer which is used to build package ${{ matrix.package_type }}.
+        id: get-deployer-info
         run: |
           echo "::set-output name=deployer-name::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployer)"
           echo "::set-output name=deployer-base-image::$(python build_package.py get-build-spec ${{ matrix.package_type }} base-docker-image)"
