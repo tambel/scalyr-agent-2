@@ -14,17 +14,13 @@
 
 # This is a helper library/script which can be used to deploy needed tools and programs.
 # It contains a set of pre-defined "deployers" which are, basically, wrappers of a shell scripts, and
-# when those deployers are executed, they run their shell scripts.
+# when those deployers are executed, they run their shell scripts. The whole purpose of deployers is to
+# provide unified and also "CI/CD platform agnostic" way of creating environments where agent packages are built.
 
 # Usage as script:
 #   Run some deployer directly on the current system:
 #       python3 deployers.py <deployer_name> deploy
 #
-#   Run some deployer inside of the docker:
-#       python3 deployers.py <deployer_name> deploy --base-docker-image <image_name>
-#
-#       Specify base docker image, and the deployer will be executed inside it. The result of the deployment will
-#           be in the new image.
 #
 #   Run deployer with using caching:
 #       python3 deployers.py <deployer_name> deploy --cache-dir <cache_dir_path>
@@ -32,8 +28,17 @@
 #       The cache directory is passed to the shell script, so the shell script can save some intermediate results to
 #           it, or, in opposite, reuse them. This, as a result, should help to decrease overall time of the deployment.
 #
+#
+#   Run some deployer inside of the docker:
+#       python3 deployers.py <deployer_name> deploy --base-docker-image <image_name>
+#
+#       Specify base docker image, and the deployer will be executed inside it. The result of the deployment will
+#           be in the new image. If the --cache-dir option is also specified, then the new image will be saved in the
+#           cache directory as tar file (by using docker save).
+#
+#
 #   Get checksum of the deployer:
-#       python3 deployers.py <deployer_name> dump-checksum
+#       python3 deployers.py <deployer_name> get-info checksum
 #
 #       This dumps the checksum to the standard output. The checksum is calculated using all files (including shell
 #           script) that are used during the deployment, so it can be used as a cache key to store cached files which
@@ -48,218 +53,12 @@ import platform
 import shutil
 import subprocess
 import hashlib
+import logging
 from typing import Union, Optional, List, Dict
 
 __PARENT_DIR__ = pl.Path(__file__).parent.absolute()
 __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
-
-#
-# class EnvironmentDeployer:
-#     """
-#     Base abstraction of the deployer.
-#     """
-#     NAME: str = None
-#     DEPLOYMENT_SCRIPT: pl.Path = None
-#     FILES_USED_IN_DEPLOYMENT = []
-#     BASE_DOCKER_IMAGE: str = None
-#
-#     @classmethod
-#     def deploy(
-#         cls,
-#         cache_dir: Union[str, pl.Path] = None,
-#     ):
-#         """
-#         Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
-#         """
-#
-#         if cls.BASE_DOCKER_IMAGE:
-#             cls.deploy_in_docker(
-#                 cache_dir=cache_dir,
-#             )
-#             return
-#
-#         # Prepare the environment on the current system.
-#
-#         # Choose the shell according to the operation system.
-#         if cls.DEPLOYMENT_SCRIPT.suffix == ".ps1":
-#             shell = "powershell"
-#         else:
-#             shell = shutil.which("bash")
-#
-#         command = [shell, str(cls.DEPLOYMENT_SCRIPT)]
-#
-#         # If cache directory is presented, then we pass it as an additional argument to the
-#         # 'prepare build environment' script, so it can use the cache too.
-#         if cache_dir:
-#             command.append(str(pl.Path(cache_dir)))
-#
-#         # Run the 'prepare build environment' script in previously chosen shell.
-#         subprocess.check_call(
-#             command,
-#         )
-#
-#     @classmethod
-#     def deploy_in_docker(
-#         cls,
-#         cache_dir: Union[str, pl.Path] = None,
-#
-#     ):
-#         """
-#         Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
-#         """
-#         # Instead of preparing the build environment on the current system, create the docker image and prepare the
-#         # build environment there. If cache directory is specified, then the docker image will be serialized to the
-#         # file and that file will be stored in the cache.
-#
-#         # Get the name of the builder image.
-#         image_name = cls.get_image_name()
-#
-#         # Before the build, check if there is already an image with the same name. The name contains the checksum
-#         # of all files which are used in it, so the name identity also guarantees the content identity.
-#         output = (
-#             subprocess.check_output(["docker", "images", "-q", image_name])
-#             .decode()
-#             .strip()
-#         )
-#
-#         if output:
-#             # The image already exists, skip the build.
-#             print(
-#                 f"Image '{image_name}' already exists, skip the build and reuse it."
-#             )
-#             return
-#
-#         save_to_cache = False
-#
-#         # If cache directory is specified, then check if the image file is already there and we can reuse it.
-#         if cache_dir:
-#             cache_dir = pl.Path(cache_dir)
-#             cached_image_path = cache_dir / image_name
-#             if cached_image_path.is_file():
-#                 print(
-#                     "Cached image file has been found, loading and reusing it instead of building."
-#                 )
-#                 subprocess.check_call(
-#                     ["docker", "load", "-i", str(cached_image_path)]
-#                 )
-#                 return
-#             else:
-#                 # Cache is used but there is no suitable image file. Set the flag to signal that the built
-#                 # image has to be saved to the cache.
-#                 save_to_cache = True
-#
-#         print(f"Build image '{image_name}'")
-#
-#         # Create the builder image.
-#         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
-#
-#         container_root_path = pl.Path("/scalyr-agent-2")
-#
-#         # All files, which are used in the build have to be mapped to the docker container.
-#         volumes_mappings = []
-#         for used_path in cls._get_files_used_in_build_environment():
-#             rel_used_path = pl.Path(used_path).relative_to(__SOURCE_ROOT__)
-#             abs_host_path = __SOURCE_ROOT__ / rel_used_path
-#             abs_container_path = container_root_path / rel_used_path
-#             volumes_mappings.extend(["-v", f"{abs_host_path}:{abs_container_path}"])
-#
-#         # Map the 'prepare environment' script's path to the docker.
-#         container_prepare_env_script_path = pl.Path(
-#             container_root_path,
-#             pl.Path(cls.DEPLOYMENT_SCRIPT).relative_to(
-#                 __SOURCE_ROOT__
-#             ),
-#         )
-#
-#         container_name = cls.__name__
-#
-#         # Remove if such container exists.
-#         subprocess.check_call(["docker", "rm", "-f", container_name])
-#
-#         # Create container and run the 'prepare environment' script in it.
-#         subprocess.check_call(
-#             [
-#                 "docker",
-#                 "run",
-#                 "-i",
-#                 "--name",
-#                 container_name,
-#                 *volumes_mappings,
-#                 cls.BASE_DOCKER_IMAGE,
-#                 str(container_prepare_env_script_path),
-#             ]
-#         )
-#
-#         # Save the current state of the container into image.
-#         subprocess.check_call(["docker", "commit", container_name, image_name])
-#
-#         # Save image if caching is enabled.
-#         if cache_dir and save_to_cache:
-#             cache_dir.mkdir(parents=True, exist_ok=True)
-#             cached_image_path = cache_dir / image_name
-#             print(f"Saving '{image_name}' image file into cache.")
-#             with cached_image_path.open("wb") as f:
-#                 subprocess.check_call(["docker", "save", image_name], stdout=f)
-#
-#     @classmethod
-#     def get_image_name(cls):
-#         return f"scalyr-build-environment-base-{cls.get_used_files_checksum()}".lower()
-#
-#     @classmethod
-#     def _get_files_used_in_build_environment(cls):
-#         """
-#         Get the list of all files which are used in the 'prepare-build-environment action.
-#
-#         """
-#
-#         def get_dir_files(dir_path: pl.Path):
-#             # ignore those directories.
-#             if dir_path.name == "__pycache__":
-#                 return []
-#
-#             result = []
-#             for child_path in dir_path.iterdir():
-#                 if child_path.is_dir():
-#                     result.extend(get_dir_files(child_path))
-#                 else:
-#                     result.append(child_path)
-#
-#             return result
-#
-#         used_files = []
-#
-#         # The build environment preparation script is also has to be included.
-#         used_files.append(cls.DEPLOYMENT_SCRIPT)
-#
-#         # Since the 'FILES_USED_IN_BUILD_ENVIRONMENT' class attribute can also contain directories, look for them and
-#         # include all files inside them recursively.
-#         for path in cls.FILES_USED_IN_DEPLOYMENT:
-#             path = pl.Path(path)
-#             if path.is_dir():
-#                 used_files.extend(get_dir_files(path))
-#             else:
-#                 used_files.append(path)
-#
-#         return used_files
-#
-#     @classmethod
-#     def get_used_files_checksum(cls):
-#         """
-#         Calculate the sha256 checksum of all files which are used in the "prepare-build-environment" action.
-#         """
-#         used_files = cls._get_files_used_in_build_environment()
-#
-#         # Calculate the sha256 for each file's content, filename and permissions.
-#         sha256 = hashlib.sha256()
-#         for file_path in used_files:
-#             file_path = pl.Path(file_path)
-#             sha256.update(str(file_path).encode())
-#             sha256.update(str(file_path.stat().st_mode).encode())
-#             sha256.update(file_path.read_bytes())
-#
-#         checksum = sha256.hexdigest()
-#         return checksum
 
 
 class EnvironmentDeployer:
@@ -352,7 +151,7 @@ class EnvironmentDeployer:
 
         if output:
             # The image already exists, skip the build.
-            print(
+            logging.info(
                 f"Image '{image_name}' already exists, skip the build and reuse it."
             )
             return
@@ -364,7 +163,7 @@ class EnvironmentDeployer:
             cache_dir = pl.Path(cache_dir)
             cached_image_path = cache_dir / image_name
             if cached_image_path.is_file():
-                print(
+                logging.info(
                     "Cached image file has been found, loading and reusing it instead of building."
                 )
                 subprocess.check_call(
@@ -376,7 +175,7 @@ class EnvironmentDeployer:
                 # image has to be saved to the cache.
                 save_to_cache = True
 
-        print(f"Build image '{image_name}'")
+        logging.info(f"Build image '{image_name}'")
 
         # Create the builder image.
         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
@@ -432,7 +231,7 @@ class EnvironmentDeployer:
         if cache_dir and save_to_cache:
             cache_dir.mkdir(parents=True, exist_ok=True)
             cached_image_path = cache_dir / image_name
-            print(f"Saving '{image_name}' image file into cache.")
+            logging.info(f"Saving '{image_name}' image file into cache.")
             with cached_image_path.open("wb") as f:
                 subprocess.check_call(["docker", "save", image_name], stdout=f)
 
@@ -511,7 +310,7 @@ class BaseEnvironmentDeployer(EnvironmentDeployer):
 
 
 if platform.system() != "Windows":
-    base_environment_script_path = __PARENT_DIR__ / "deploy_test_environment.sh"
+    base_environment_script_path = __PARENT_DIR__ / "deploy_base_environment.sh"
 else:
     base_environment_script_path = __PARENT_DIR__ / "deploy_agent_windows_builder.ps1"
 
@@ -537,7 +336,7 @@ BASE_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
 
 # class TestEnvironmentDeployer(BaseEnvironmentDeployer):
 #     NAME = "test"
-#     DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_test_environment.sh"
+#     DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_base_environment.sh"
 #
 #
 # class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
@@ -599,11 +398,10 @@ if __name__ == '__main__':
         exit(0)
 
     if args.command == "deploy":
-        print("deploy!")
-
         if args.base_docker_image:
             deployer.deploy_in_docker(
-                base_docker_image=args.base_docker_image
+                base_docker_image=args.base_docker_image,
+                cache_dir=args.cache_dir
             )
         else:
             deployer.deploy(

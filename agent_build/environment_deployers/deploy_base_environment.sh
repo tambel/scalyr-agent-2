@@ -35,7 +35,6 @@ fi
 pip_cache_dir="$(python3 -m pip cache dir)"
 
 if $use_cache ; then
-  echo "Use pip cache."
   mkdir -p "$pip_cache_dir"
   cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
 fi
@@ -43,6 +42,5 @@ fi
 python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
 if $save_cache ; then
-  echo "Save pip cache."
   cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
 fi
