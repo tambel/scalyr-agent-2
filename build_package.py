@@ -65,7 +65,7 @@ if __name__ == '__main__':
     build_spec_parser.add_argument(
         "spec",
         choices=[
-            "deployer",
+            "deployers",
             "package-filename-glob",
             "base-docker-image"
         ]
@@ -113,9 +113,11 @@ if __name__ == '__main__':
     package_builder_spec = package_builders.PACKAGE_TYPES_TO_BUILD_SPECS[args.package_type]
 
     if args.command == "get-build-spec":
-        if args.spec == "deployer":
-            deployer = package_builder_spec.deployer
-            print(deployer.name)
+        if args.spec == "deployers":
+            deployers = package_builder_spec.deployers
+            if deployers:
+                deployer_names = [d.name for d in deployers]
+                print(",".join(deployer_names))
 
         if args.spec == "package-filename-glob":
             print(package_builder_spec.filename_glob)

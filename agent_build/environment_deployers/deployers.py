@@ -238,8 +238,7 @@ class EnvironmentDeployer:
 
     def get_image_name(self, base_docker_image: str):
 
-        image_name = base_docker_image.replace(":", "_")
-        return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}-{image_name}".lower()
+        return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}".lower()
 
 
     def _get_used_files(self) -> List[pl.Path]:
@@ -325,11 +324,10 @@ BASE_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
     name="base_environment",
     deployment_script_path=__PARENT_DIR__ / "deploy_base_environment.sh",
     used_files=base_environment_used_files,
-    base_deployer=PYTHON_ENVIRONMENT_DEPLOYER,
 )
 
 BASE_WINDOWS_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
-    name="base_windows_environment",
+    name="windows_agent_builder",
     deployment_script_path=__PARENT_DIR__ / "deploy_agent_windows_builder.ps1",
     used_files=base_environment_used_files,
 )

@@ -63,45 +63,17 @@ jobs:
         with:
           python-version: '3.8.10'
 
-#      - name: Calculate the checksum of the build dependencies.
-#        shell: bash
-#        run: |
-#          python3 agent_build/build_package.py ${{ matrix.package_type }} dump-checksum checksum.txt
-#
-#      - name: Restore cached dependensies of the build environment if exists.
-#        uses: actions/cache@v2
-#        env:
-#          cache-version: v1
-#        with:
-#          path: ~/dependencies_cache
-#          key: ${{ runner.os }}-build-dependencies-${{ env.cache-version }}-${{ hashFiles('checksum.txt') }}
-#
-#      - name: Prepare build environment.
-#        shell: bash
-#        run: |
-#          python3 agent_build/build_package.py ${{ matrix.package_type }} prepare-build-environment --cache-dir ~/dependencies_cache
-#
-#          # in some cases, the 'prepare-build-environment' command also generates file 'paths.txt'. This file contains paths
-#          # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
-#          # variable to be able to use those tools.
-#          if [ -f ~/dependencies_cache/paths.txt ]; then
-#            cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
-#          fi
-#
-#          # Remove checksum file, it is not needed anymore.
-#          rm checksum.txt
-
-      - name: Get information about deployer which is used to build package ${{ matrix.package_type }}.
-        id: get-deployer-info
+      - name: Get information about deployers which are used to build '${{ matrix.package_type }}' package.
+        id: get-deployers-info
         run: |
-          echo "::set-output name=deployer-name::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployer)"
+          echo "::set-output name=deployer-names::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployers)"
           echo "::set-output name=deployer-base-image::$(python build_package.py get-build-spec ${{ matrix.package_type }} base-docker-image)"
 
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
         uses: ./.github/actions/run-environment-deployer
         with:
-          name: ${{ steps.get-deployer-info.outputs.deployer-name }}
+          name: ${{ steps.get-deployer-info.outputs.deployer-names }}
           base-docker-image: ${{ steps.get-deployer-info.outputs.deployer-base-image }}
 
       - name: Build.
@@ -111,8 +83,8 @@ jobs:
           python build_package.py build ${{ matrix.package_type }} --output-dir agent-build-output
           echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
 
-      - name: Build tests frozen binaries.
-        if: matrix.package_type == 'deb' || matrix.package_type == 'rpm' || matrix.package_type == 'tar' || matrix.package_type == 'msi'
+      - name: Build frozen tests runner (if needed).
+        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, "docker-")
         id: build-tests
         shell: bash
         run: |
@@ -130,7 +102,7 @@ jobs:
 
       - name: Save the frozen test script.
         uses: actions/upload-artifact@v2
-        if: matrix.package_type != 'k8s' && matrix.package_type != 'docker-json'
+        if: matrix.package_type != 'k8s' && !startsWith(matrix.package_type, "docker-")
         with:
           name: "package-test-${{ matrix.package_type }}"
           path: |

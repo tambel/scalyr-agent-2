@@ -1,35 +1,26 @@
 name: 'Prepare environment'
-description: "Prepares current machine by running one of the 'Deployers', which are defined in the 'agent_build/environment_deployers' folder"
+description: |
+  Prepares current machine by running one of the 'deployers', which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
+  For more info, please look at the docs in the same file.
 inputs:
-  name:
+  names:
     description: 'Name of the deployer.'
     required: true
   base-docker-image:
-    description: ""
+    description: "Name of the base docker image. If specified, then the deployer will be executed inside this image."
     required: false
 
 runs:
   using: "composite"
   steps:
-    - name: Calculate the checksum of the files used in deployer.
+    - name: Get checksum of the deployer and its base deployer (if exists).
       id: deployer-info
       shell: bash
       run: |
-          echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} checksum)"
-          echo "::set-output name=base-deployer-name::$(python3 agent_build/environment_deployers/deployers.py get-info ${{ inputs.name }} base-deployer)"
-
-    - name: Run base deployer if specified.
-      if: steps.deployer-info.outputs.base-deployer-name
-      uses: ./.github/actions/run-environment-deployer
-      with:
-        name: ${{ steps.deployer-info.outputs.base-deployer-name }}
-        base-docker-image: ${{ inputs.base-docker-image }}
-
-
-#    - name: Calculate the checksum of the files used in deployer.
-#      shell: bash
-#      run: |
-#        python3 agent_build/environment_deployers/deployers.py dump-checksum ${{ inputs.name }} > checksum.txt
+          current_deployer_name=$(cut -d "," -f -1 <<< "${{ inputs.names }}")
+          other_deployer_names=$(cut -d "," -f 2- <<< "${{ inputs.names }}")
+          echo "::set-output name=checksum::$(python3 agent_build/environment_deployers/deployers.py get-info "$current_deployer_name" checksum)"
+          echo "::set-output name=other-deployer-names::$other_deployer_names"
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
@@ -53,3 +44,10 @@ runs:
 
         ## Remove checksum file, it is not needed anymore.
         #rm checksum.txt
+
+    - name: Run base deployer if specified.
+      if: steps.deployer-info.outputs.other-deployer-names
+      uses: ./.github/actions/run-environment-deployer
+      with:
+        name: ${{ steps.deployer-info.outputs.other-deployer-names }}
+        base-docker-image: ${{ inputs.base-docker-image }}

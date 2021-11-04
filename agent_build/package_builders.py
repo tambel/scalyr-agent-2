@@ -31,7 +31,7 @@ import os
 import re
 import io
 import shlex
-from typing import Union, Optional, Type
+from typing import Union, Optional, Type, List
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
@@ -1344,50 +1344,55 @@ PACKAGE_TYPE_TO_FILENAME_GLOB = {
 class PackageBuildSpec:
     name: str
     package_builder_cls: Type[PackageBuilder]
-    deployer: deployers.EnvironmentDeployer
+    deployers: List[deployers.EnvironmentDeployer]
     filename_glob: str
     base_docker_image: str = None
 
 
-_DOCKERIZED_SPECS_BASE_IMAGE = "centos:7"
+_LINUX_SPECS_BASE_IMAGE = "centos:7"
+_LINUX_SPECS_DEPLOYERS = [
+    deployers.PYTHON_ENVIRONMENT_DEPLOYER,
+    deployers.BASE_ENVIRONMENT_DEPLOYER
+]
+
 
 DEB_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_DEB",
     package_builder_cls=DebPackageBuilder,
-    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
+    deployers=_LINUX_SPECS_DEPLOYERS,
     filename_glob="scalyr-agent-2_*.*.*_all.deb",
-    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
+    base_docker_image=_LINUX_SPECS_BASE_IMAGE
 )
 
 RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_RPM",
     package_builder_cls=RpmPackageBuilder,
-    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
+    deployers=_LINUX_SPECS_DEPLOYERS,
     filename_glob="scalyr-agent-2-*.*.*-*.noarch.rpm",
-    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
+    base_docker_image=_LINUX_SPECS_BASE_IMAGE
 )
 
 MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="MSI",
     package_builder_cls=MsiWindowsPackageBuilder,
-    deployer=deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER,
+    deployers=_LINUX_SPECS_DEPLOYERS,
     filename_glob="ScalyrAgentInstaller-*.*.*.msi"
 )
 
 DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_DOCKER_JSON",
     package_builder_cls=DockerJsonPackageBuilder,
-    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
+    deployers=_LINUX_SPECS_DEPLOYERS,
     filename_glob="scalyr-agent-docker-json-*.*.*",
-    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE,
+    base_docker_image=_LINUX_SPECS_BASE_IMAGE,
 )
 
 TAR_PACKAGE_BUILD_SPEC = PackageBuildSpec(
     name="DOCKERIZED_TAR",
     package_builder_cls=TarballPackageBuilder,
-    deployer=deployers.BASE_ENVIRONMENT_DEPLOYER,
+    deployers=_LINUX_SPECS_DEPLOYERS,
     filename_glob="scalyr-agent-*.*.*.tar.gz",
-    base_docker_image=_DOCKERIZED_SPECS_BASE_IMAGE
+    base_docker_image=_LINUX_SPECS_BASE_IMAGE
 )
 
 
@@ -1499,15 +1504,18 @@ def run_command_in_docker_and_get_output(
     Run command in the special Dockerfile which is located with this module in the same directory.
     """
     # Make sure that the base image with build environment is built.
-    deployer = package_build_spec.deployer
-    deployer.deploy_in_docker(
-        base_docker_image=package_build_spec.base_docker_image
-    )
+
+    current_base_image = package_build_spec.base_docker_image
+    for deployer in package_build_spec.deployers:
+
+        deployer.deploy_in_docker(
+            base_docker_image=current_base_image
+        )
+        current_base_image = deployer.get_image_name(base_docker_image=current_base_image)
 
     dockerfile_path = __PARENT_DIR__ / "Dockerfile"
 
-    deployer_image_name = deployer.get_image_name(base_docker_image=package_build_spec.base_docker_image)
-    image_name = f"{package_build_spec.name}-{deployer_image_name}".lower()
+    image_name = f"agent-builder-spec-{package_build_spec.name}".lower()
 
     # Run the image build. The package also has to be build during that.
     # Building the package during the image build is more convenient than building it in the container
@@ -1524,7 +1532,7 @@ def run_command_in_docker_and_get_output(
             "-t",
             image_name,
             "--build-arg",
-            f"BASE_IMAGE_NAME={deployer_image_name}",
+            f"BASE_IMAGE_NAME={current_base_image}",
             "--build-arg",
             f"BUILD_COMMAND=python3 {command}",
             "--build-arg",
