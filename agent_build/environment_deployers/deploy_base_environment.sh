@@ -15,6 +15,7 @@
 
 set -e
 
+exit 0
 
 SOURCE_ROOT=$(dirname "$(dirname "$(dirname "$0")")")
 
