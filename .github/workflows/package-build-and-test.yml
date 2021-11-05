@@ -1,46 +1,29 @@
 name: Packages build
 
-on: [push]
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
 
 env:
   DOCKER_BUILDKIT: 1
 jobs:
-#  unit-test:
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os: [ubuntu-20.04, windows-2019, macos-10.15]
-#        python: ["3.8"]
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v2
-#
-#      - name: Install python.
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: '3.8.10'
-#
-#      - name: Prepare environment for the tests.
-#        id: prepare
-#        uses: ./.github/actions/run-environment-deployer
-#        with:
-#          name: 'test'
-#
-#      - name: Run unit tests.
-#        shell: bash
-#        run: |
-#          python -m pytest ./tests/unit
 
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
-        os: [ubuntu-20.04]
-        python-version: ["3.8"]
+#        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
+#        os: [ubuntu-20.04]
+#        python-version: ["3.8"]
         include:
-          - package_type: "msi"
-            os: windows-2019
+          - package_type: ${{ inputs.package_name }}
+            os: ${{ inputs.os }}
             python-version: "3.8"
 #          - package_type: "k8s"
 #            os: ubuntu-20.04

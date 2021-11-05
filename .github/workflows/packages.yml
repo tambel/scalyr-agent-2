@@ -1,0 +1,12 @@
+name: Packages
+
+on: [push]
+
+env:
+  DOCKER_BUILDKIT: 1
+jobs:
+  call-workflow-1:
+    uses: .github/workflows/package-build-and-test.yml.@refactor-tests
+    with:
+      package_name: deb_x86_64
+      os: ubuntu-20.04
