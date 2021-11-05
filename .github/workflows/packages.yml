@@ -6,7 +6,7 @@ env:
   DOCKER_BUILDKIT: 1
 jobs:
   call-workflow-1:
-    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml.@refactor-tests
+    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
     with:
       package_name: deb_x86_64
       os: ubuntu-20.04
