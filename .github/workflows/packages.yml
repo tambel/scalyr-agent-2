@@ -6,7 +6,7 @@ env:
   DOCKER_BUILDKIT: 1
 jobs:
 
-  get_info:
+  get-info:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
