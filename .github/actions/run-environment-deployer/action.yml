@@ -6,7 +6,6 @@ inputs:
   names:
     description: 'Names of the deployers.'
     required: true
-
   architecture:
     description: ""
     required: true
@@ -45,11 +44,11 @@ runs:
         echo "FFF"
         echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
         echo "${{ steps.deployer-info.outputs.current-deployer-name }}"
-        python3 agent_build/environment_deployers/deployers.py
-          deploy
-          ${{ steps.deployer-info.outputs.current-deployer-name }}
-          --base-docker-image  "${{ inputs.base-docker-image }}"
-          --architecture "${{ inputs.architecture }}"
+        python3 agent_build/environment_deployers/deployers.py \
+          deploy \
+          ${{ steps.deployer-info.outputs.current-deployer-name }} \
+          --base-docker-image  "${{ inputs.base-docker-image }}" \
+          --architecture "${{ inputs.architecture }}" \
           --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
