@@ -25,8 +25,8 @@ jobs:
         with:
           names: 'base_environment'
 
-      - run: |
-        id: package-test-targets
+      - id: package-test-targets
+        run: |
           python3 tests/package_tests/package_test_runner.py get-test-specs deb_x86_64
           echo "::set-output name=package-test-targets::$(python3 tests/package_tests/package_test_runner.py get-test-specs deb_x86_64)"
 
