@@ -187,6 +187,8 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
+
+          echo "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
           python3 tests/package_tests/package_test_runner.py \
             run \
             ${{ matrix.spec_name }} \
