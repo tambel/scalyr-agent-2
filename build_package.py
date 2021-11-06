@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     if args.command == "get-build-spec":
         if args.spec == "deployers":
-            deployers = package_builder_spec.deployers
+            deployers = package_builder_spec.used_deployers
             if deployers:
                 deployer_names = [d.name for d in deployers]
                 print(",".join(deployer_names))
@@ -123,8 +123,8 @@ if __name__ == '__main__':
             print(package_builder_spec.filename_glob)
 
         if args.spec == "base-docker-image":
-            if package_builder_spec.base_docker_image:
-                print(package_builder_spec.base_docker_image)
+            if package_builder_spec.base_image:
+                print(package_builder_spec.base_image)
 
         if args.spec == "architecture":
             if package_builder_spec.architecture:
