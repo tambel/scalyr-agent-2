@@ -20,6 +20,7 @@ from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
 
+import platform
 import re
 
 if False:  # NOSONAR
@@ -2205,9 +2206,10 @@ def get_agent_start_up_message():
         used_locale,
     ) = get_language_code_coding_and_locale()
 
-    msg = "Starting scalyr agent... (version=%s) (revision=%s) %s (Python version: %s) " "(OpenSSL version: %s) (default fs encoding: %s) (locale: %s) (LANG env variable: %s)" % (
+    msg = "Starting scalyr agent... (version=%s) (revision=%s) (arch=%s) %s (Python version: %s) " "(OpenSSL version: %s) (default fs encoding: %s) (locale: %s) (LANG env variable: %s)" % (
         __scalyr__.SCALYR_VERSION,
         build_revision,
+        platform.processor(),
         get_pid_tid(),
         python_version_str,
         openssl_version,

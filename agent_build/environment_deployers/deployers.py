@@ -48,6 +48,7 @@
 #
 
 import argparse
+import enum
 import pathlib as pl
 import platform
 import shutil
@@ -61,6 +62,18 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
 
+class Architecture(enum.Enum):
+    X86_64 = "x86_64"
+    ARM64 = "arm64"
+
+
+def architecture_to_docker_architecture(architecture: Architecture):
+    if architecture == Architecture.X86_64:
+        return "amd64"
+    elif architecture == Architecture.ARM64:
+        return "arm64"
+
+
 class EnvironmentDeployer:
     """
     Base abstraction of the deployer.
@@ -71,22 +84,16 @@ class EnvironmentDeployer:
             name: str,
             deployment_script_path: Union[str, pl.Path],
             used_files: list = None,
-            base_deployer: Optional['EnvironmentDeployer'] = None,
     ):
         self._name = name
         self._deployment_script_path = deployment_script_path
         self._used_files = used_files or []
-        self._base_deployer = base_deployer
 
         self._used_files_checksum: Optional[str] = None
 
     @property
     def name(self):
         return self._name
-
-    @property
-    def base_deployer(self) -> Optional['EnvironmentDeployer']:
-        return self._base_deployer
 
 
     def deploy(
@@ -120,6 +127,7 @@ class EnvironmentDeployer:
     def deploy_in_docker(
         self,
         base_docker_image: str,
+        architecture: Architecture,
         cache_dir: Union[str, pl.Path] = None,
 
     ):
@@ -130,15 +138,9 @@ class EnvironmentDeployer:
         # build environment there. If cache directory is specified, then the docker image will be serialized to the
         # file and that file will be stored in the cache.
 
-        if self._base_deployer:
-            self._base_deployer.deploy_in_docker(
-                base_docker_image=base_docker_image,
-                cache_dir=cache_dir,
-            )
-
         # Get the name of the builder image.
         image_name = self.get_image_name(
-            base_docker_image=base_docker_image
+            architecture=architecture
         )
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
@@ -198,28 +200,23 @@ class EnvironmentDeployer:
             ),
         )
 
-        container_name = self.get_image_name(base_docker_image)
+        container_name = self.get_image_name(architecture)
 
         # Remove if such container exists.
         subprocess.check_call(["docker", "rm", "-f", container_name])
-
-        if self._base_deployer:
-            final_base_image = self._base_deployer.get_image_name(
-                base_docker_image=base_docker_image
-            )
-        else:
-            final_base_image = base_docker_image
 
         # Create container and run the 'prepare environment' script in it.
         subprocess.check_call(
             [
                 "docker",
                 "run",
+                "--platform",
+                architecture_to_docker_architecture(architecture),
                 "-i",
                 "--name",
                 container_name,
                 *volumes_mappings,
-                final_base_image,
+                base_docker_image,
                 str(container_prepare_env_script_path),
             ]
         )
@@ -236,9 +233,9 @@ class EnvironmentDeployer:
                 subprocess.check_call(["docker", "save", image_name], stdout=f)
 
 
-    def get_image_name(self, base_docker_image: str):
+    def get_image_name(self, architecture: Architecture):
 
-        return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}".lower()
+        return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}-{architecture.value}".lower()
 
 
     def _get_used_files(self) -> List[pl.Path]:
@@ -372,8 +369,9 @@ if __name__ == '__main__':
 
     for p in [deploy_parser, get_info_parser]:
         p.add_argument("deployer_name", choices=DEPLOYERS.keys())
+        p.add_argument("--architecture", required=False, choices=["x86_64", "arm64"])
 
-    get_info_parser.add_argument("info", choices=["checksum", "base-deployer"])
+    get_info_parser.add_argument("info", choices=["checksum", "image-name"])
 
     deploy_parser.add_argument("--base-docker-image", dest="base_docker_image")
 
@@ -393,9 +391,9 @@ if __name__ == '__main__':
         if args.info == "checksum":
             checksum = deployer.get_used_files_checksum()
             print(checksum)
-        if args.info == "base-deployer":
-            if deployer.base_deployer:
-                print(deployer.base_deployer.name)
+
+        if args.info == "image-name":
+            deployer.get_image_name(architecture=args.architecture)
 
         exit(0)
 
@@ -403,6 +401,7 @@ if __name__ == '__main__':
         if args.base_docker_image:
             deployer.deploy_in_docker(
                 base_docker_image=args.base_docker_image,
+                architecture=args.architecture,
                 cache_dir=args.cache_dir
             )
         else:
@@ -412,6 +411,3 @@ if __name__ == '__main__':
 
 
         exit(0)
-
-
-

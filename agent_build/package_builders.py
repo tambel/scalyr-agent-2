@@ -13,28 +13,25 @@
 # limitations under the License.
 import dataclasses
 import enum
-import json
-import logging
 import pathlib as pl
 import tarfile
 import abc
-import argparse
-import platform
 import shutil
 import subprocess
 import time
 import sys
 import stat
-import hashlib
 import uuid
 import os
 import re
 import io
 import shlex
-from typing import Union, Optional, Type, List
+from typing import Union, Optional, Type, List, Dict
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
+
+from agent_build.environment_deployers.deployers import Architecture
 
 sys.path.append(str(__SOURCE_ROOT__))
 
@@ -44,6 +41,16 @@ from agent_build.environment_deployers import deployers
 from agent_build import common
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
+
+
+class PackageType(enum.Enum):
+    DEB = "deb"
+    RPM = "rpm"
+    TAR = "tar"
+    DOCKER_JSON = "docker-json"
+    DOCKER_SYSLOG = "docker-syslog"
+    K8S = "k8s"
+    MSI = "msi"
 
 
 class PackageBuilder(abc.ABC):
@@ -77,7 +84,7 @@ class PackageBuilder(abc.ABC):
             and the old cache will be invalidated.
         4. Build the package with the 'build' action.
 
-    Package builder can be also configured to run its own copy in the docker instead of building directly on the system
+    PackageType builder can be also configured to run its own copy in the docker instead of building directly on the system
     where the code runs. It may be very useful, because there is no need to prepare the current system to be able to
     perform the build. That also provides more consistent build results, no matter what is the host system.
     """
@@ -102,11 +109,13 @@ class PackageBuilder(abc.ABC):
     # Name of the image in case if build is performed inside the docker. Has to pe specified if 'DOCKERIZED' is True.
     BASE_DOCKER_IMAGE = None
 
-    # The name of the package type
-    PACKAGE_TYPE = None
+    # # The name of the package type
+    # PACKAGE_TYPE = None
 
     # The type of the installation. For more info, see the 'InstallType' in the scalyr_agent/__scalyr__.py
     INSTALL_TYPE = None
+
+    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES: Dict[deployers.Architecture, str] = {}
 
     # Add agent source code as a bundled frozen binary if True, or
     # add the source code as it is.
@@ -114,6 +123,7 @@ class PackageBuilder(abc.ABC):
 
     def __init__(
         self,
+        architecture: Architecture,
         variant: str = None,
         no_versioned_file_name: bool = False,
     ):
@@ -135,6 +145,8 @@ class PackageBuilder(abc.ABC):
 
         self._variant = variant
         self._no_versioned_file_name = no_versioned_file_name
+
+        self._architecture = architecture
 
     def build(self, output_path: Union[str, pl.Path]):
         """
@@ -913,6 +925,8 @@ class DockerApiPackageBuilder(ContainerPackageBuilder):
 
 
 class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
+    PACKAGE_TYPE: PackageType
+    PACKAGE_FPM_TYPE: str
     """
     Base image builder for packages which are produced by the 'fpm' packager.
     For example dep, rpm.
@@ -920,11 +934,13 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
 
     def __init__(
         self,
+        architecture,
         variant: str = None,
         no_versioned_file_name: bool = False,
     ):
         super(FpmBasedPackageBuilder, self).__init__(
-            variant=variant, no_versioned_file_name=no_versioned_file_name
+            variant=variant, no_versioned_file_name=no_versioned_file_name,
+            architecture=architecture
         )
         # Path to generated changelog files.
         self._package_changelogs_path: Optional[pl.Path] = None
@@ -971,12 +987,18 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
             "log files and transmit them to Scalyr."
         )
 
+
+
+       #filename = f"scalyr-agent-2_{self._package_version}_{arch}.{ext}"
+
+
+
         # fmt: off
         fpm_command = [
             "fpm",
             "-s", "dir",
-            "-a", "all",
-            "-t", type(self).PACKAGE_TYPE,
+            "-a", self.PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES[self._architecture],
+            "-t", self.PACKAGE_FPM_TYPE,
             "-n", "scalyr-agent-2",
             "-v", self._package_version,
             "--chdir", str(self._package_files_path),
@@ -1131,12 +1153,22 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
 
 
 class DebPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_TYPE = "deb"
+    PACKAGE_TYPE = PackageType.DEB
+    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
+        deployers.Architecture.X86_64: "amd64",
+        deployers.Architecture.ARM64: "arm64"
+    }
+    PACKAGE_FPM_TYPE = "deb"
     #DOCKERIZED = True
 
 
 class RpmPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_TYPE = "rpm"
+    PACKAGE_TYPE = PackageType.RPM
+    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
+        deployers.Architecture.X86_64: "x86_64",
+        deployers.Architecture.ARM64: "aarch64"
+    }
+    PACKAGE_FPM_TYPE = "rpm"
     #DOCKERIZED = True
 
 
@@ -1147,6 +1179,10 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 
     PACKAGE_TYPE = "tar"
     INSTALL_TYPE = "packageless"
+    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
+        Architecture.X86_64: Architecture.X86_64.value,
+        Architecture.ARM64: Architecture.ARM64.value
+    }
     #DOCKERIZED = True
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
@@ -1330,24 +1366,40 @@ package_types_to_builders = {
     ]
 }
 
-PACKAGE_TYPE_TO_FILENAME_GLOB = {
-    "deb": "scalyr-agent-2_*.*.*_all.deb",
-    "rpm": "scalyr-agent-2-*.*.*-*.noarch.rpm",
-    "tar": "scalyr-agent-*.*.*.tar.gz",
-    "msi": "ScalyrAgentInstaller-*.*.*.msi",
-    "k8s": "scalyr-agent-k8s-*.*.*",
-    "docker-json": "scalyr-agent-docker-json-*.*.*",
-}
+# PACKAGE_TYPE_TO_FILENAME_GLOB = {
+#     "deb": "scalyr-agent-2_*.*.*_all.deb",
+#     "rpm": "scalyr-agent-2-*.*.*-*.noarch.rpm",
+#     "tar": "scalyr-agent-*.*.*.tar.gz",
+#     "msi": "ScalyrAgentInstaller-*.*.*.msi",
+#     "k8s": "scalyr-agent-k8s-*.*.*",
+#     "docker-json": "scalyr-agent-docker-json-*.*.*",
+# }
+
+@dataclasses.dataclass
+class DockerImageSpec:
+    image_name: str
+    architecture: deployers.Architecture
+
+
+def create_build_spec_name(package_type: PackageType, architecture: deployers.Architecture = None):
+    result = f"{package_type.value}"
+    if architecture:
+        result = f"{result}_{architecture.value}"
+
+    return result
+
+
 
 
 @dataclasses.dataclass
 class PackageBuildSpec:
-    name: str
+    package_type: PackageType
     package_builder_cls: Type[PackageBuilder]
-    deployers: List[deployers.EnvironmentDeployer]
+    used_deployers: List[deployers.EnvironmentDeployer]
     filename_glob: str
-    base_docker_image: str = None
-    architecture: str = "amd64"
+    architecture: deployers.Architecture
+    base_image: DockerImageSpec = None
+
 
 
 _LINUX_SPECS_BASE_IMAGE = "centos:7"
@@ -1356,67 +1408,223 @@ _LINUX_SPECS_DEPLOYERS = [
     deployers.BASE_ENVIRONMENT_DEPLOYER
 ]
 
+_DEFAULT_ARCHITECTURES = [Architecture.X86_64, Architecture.ARM64]
 
-DEB_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-    name="DOCKERIZED_DEB",
-    package_builder_cls=DebPackageBuilder,
-    deployers=_LINUX_SPECS_DEPLOYERS,
-    filename_glob="scalyr-agent-2_*.*.*_all.deb",
-    base_docker_image=_LINUX_SPECS_BASE_IMAGE
-)
+SPECS: Dict[str, PackageBuildSpec] = {}
 
-DEB_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-    name="DOCKERIZED_DEB",
+
+def _add_specs(
+        package_type: PackageType,
+        package_builder_cls: Type[PackageBuilder],
+        filename_glob_format: str,
+        used_deployers: List[deployers.EnvironmentDeployer] = None,
+        base_docker_image: str = None,
+        architectures: List[deployers.Architecture] = None,
+):
+
+    global SPECS
+    architectures = architectures or [None]
+
+    specs = []
+
+    for arch in architectures:
+        used_deployers = used_deployers or []
+
+        if base_docker_image:
+            base_docker_image_spec = DockerImageSpec(
+                image_name=base_docker_image,
+                architecture=arch
+            )
+        else:
+            base_docker_image_spec = None
+
+        package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES.get(arch, "")
+
+        spec = PackageBuildSpec(
+            package_type=package_type,
+            package_builder_cls=package_builder_cls,
+            filename_glob=filename_glob_format.format(arch=package_arch_name),
+            used_deployers=used_deployers,
+            architecture=arch,
+            base_image=base_docker_image_spec
+        )
+        spec_name = create_build_spec_name(
+            package_type=package_type,
+            architecture=arch
+        )
+        SPECS[spec_name] = spec
+        specs.append(spec)
+
+    return specs
+
+DEB_x86_64, DEB_ARM64 = _add_specs(
+    package_type=PackageType.DEB,
     package_builder_cls=DebPackageBuilder,
-    deployers=_LINUX_SPECS_DEPLOYERS,
-    filename_glob="scalyr-agent-2_*.*.*_all.deb",
+    filename_glob_format="scalyr-agent-2_*.*.*_{arch}.deb",
+    used_deployers=_LINUX_SPECS_DEPLOYERS,
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-    architecture="arm64"
+    architectures=_DEFAULT_ARCHITECTURES
 )
-
-RPM_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-    name="DOCKERIZED_RPM",
+RPM_x86_64, RPM_ARM64 = _add_specs(
+    package_type=PackageType.RPM,
     package_builder_cls=RpmPackageBuilder,
-    deployers=_LINUX_SPECS_DEPLOYERS,
-    filename_glob="scalyr-agent-2-*.*.*-*.noarch.rpm",
-    base_docker_image=_LINUX_SPECS_BASE_IMAGE
-)
-
-MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-    name="MSI",
-    package_builder_cls=MsiWindowsPackageBuilder,
-    deployers=[deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
-    filename_glob="ScalyrAgentInstaller-*.*.*.msi"
-)
-
-DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
-    name="DOCKERIZED_DOCKER_JSON",
-    package_builder_cls=DockerJsonPackageBuilder,
-    deployers=_LINUX_SPECS_DEPLOYERS,
-    filename_glob="scalyr-agent-docker-json-*.*.*",
+    filename_glob_format="scalyr-agent-2-*.*.*-*.{arch}.rpm",
+    used_deployers=_LINUX_SPECS_DEPLOYERS,
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+    architectures=_DEFAULT_ARCHITECTURES
 )
-
-TAR_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-    name="DOCKERIZED_TAR",
+TAR_x86_64, TAR_ARM64 = _add_specs(
+    package_type=PackageType.TAR,
     package_builder_cls=TarballPackageBuilder,
-    deployers=_LINUX_SPECS_DEPLOYERS,
-    filename_glob="scalyr-agent-*.*.*.tar.gz",
-    base_docker_image=_LINUX_SPECS_BASE_IMAGE
+    filename_glob_format="scalyr-agent-*.*.*_{arch}.tar.gz",
+    used_deployers=_LINUX_SPECS_DEPLOYERS,
+    base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+    architectures=_DEFAULT_ARCHITECTURES
+)
+MSI_x86_64 = _add_specs(
+    package_type=PackageType.MSI,
+    package_builder_cls=MsiWindowsPackageBuilder,
+    filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
+    used_deployers=[deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
+    architectures=[Architecture.X86_64]
 )
 
 
-PACKAGE_TYPES_TO_BUILD_SPECS = {
-    "deb": DEB_PACKAGE_BUILD_SPEC,
-    "rpm": RPM_PACKAGE_BUILD_SPEC,
-    "msi": MSI_PACKAGE_BUILD_SPEC,
-    "tar": TAR_PACKAGE_BUILD_SPEC,
-    "docker-json": DOCKER_JSON_BUILD_SPEC
-}
+a=10
+# DEB_X86_64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.DEB,
+#     package_builder_cls=DebPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-2_*.*.*_amd64.deb",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+#     architecture=Architecture.X86_64
+# )
+#
+# DEB_ARM64_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.DEB,
+#     package_builder_cls=DebPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-2_*.*.*_arm64.deb",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+#     architecture=Architecture.ARM64
+# )
+#
+# RPM_X86_64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.RPM,
+#     package_builder_cls=RpmPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-2-*.*.*-*.x86_64.rpm",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+#     architecture=Architecture.X86_64
+# )
+#
+# RPM_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.RPM,
+#     package_builder_cls=RpmPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-2-*.*.*-*.aarch64.rpm",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+#     architecture=Architecture.ARM64
+# )
+#
+# TAR_X86_64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.TAR,
+#     package_builder_cls=TarballPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-*.*.*_x86_64.tar.gz",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+#     architecture=Architecture.X86_64
+# )
+#
+# TAR_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.TAR,
+#     package_builder_cls=TarballPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-*.*.*_arm64.tar.gz",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+#     architecture=Architecture.ARM64
+# )
+#
+# MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.MSI,
+#     package_builder_cls=MsiWindowsPackageBuilder,
+#     deployers=[deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
+#     filename_glob="ScalyrAgentInstaller-*.*.*.msi",
+#     architecture=Architecture.X86_64
+# )
+#
+# DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
+#     package_type=PackageType.DOCKER_JSON,
+#     package_builder_cls=DockerJsonPackageBuilder,
+#     deployers=_LINUX_SPECS_DEPLOYERS,
+#     filename_glob="scalyr-agent-docker-json-*.*.*",
+#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
+# )
+
+
+
+# class PackageTypeWithArchitecture:
+#     DEB_X86_64 = f"{PackageType.DEB}"
+#     DEB_ARM64 = "deb_arm64"
+#     RPM_X86_64 = "rpm_x86_64"
+#     RPM_ARM64 = "rpm_arm64"
+#     TAR_X86_64 = "tar_x86_64"
+#     TAR_ARM64 = "tar_arm64"
+
+
+def get_spec_name_from_package_type_and_architecture(
+        package_type: PackageType,
+        architecture: Optional[Union[str, Architecture]] = None
+):
+    if not architecture:
+        return package_type.value
+
+    if isinstance(architecture, Architecture):
+        arch = architecture.value
+    else:
+        arch = architecture
+    return f"{package_type.value}_{arch}"
+
+
+
+def get_package_spec_name(
+        spec: PackageBuildSpec
+):
+    return get_spec_name_from_package_type_and_architecture(
+        package_type=spec.package_type,
+        architecture=spec.architecture
+    )
+
+
+# PACKAGE_BUILD_SPECS = {
+#     f"{PackageType.DEB.value}_{Architecture.X86_64.value}": DEB_X86_64_PACKAGE_BUILD_SPEC,
+#     f"{PackageType.DEB.value}_{Architecture.ARM64.value}": DEB_ARM64_ARM64_PACKAGE_BUILD_SPEC,
+#     f"{PackageType.RPM.value}_{Architecture.X86_64.value}": RPM_X86_64_PACKAGE_BUILD_SPEC,
+#     f"{PackageType.RPM.value}_{Architecture.ARM64.value}": RPM_ARM64_PACKAGE_BUILD_SPEC,
+#     f"{PackageType.TAR.value}_{Architecture.X86_64.value}": TAR_X86_64_PACKAGE_BUILD_SPEC,
+#     f"{PackageType.TAR.value}_{Architecture.ARM64.value}": TAR_ARM64_PACKAGE_BUILD_SPEC,
+#     "msi": MSI_PACKAGE_BUILD_SPEC,
+#     "docker-json": DOCKER_JSON_BUILD_SPEC
+# }
+
+# PACKAGE_BUILD_SPECS = {
+#    get_package_spec_name(spec): spec for spec in [
+#         DEB_X86_64_PACKAGE_BUILD_SPEC,
+#         DEB_ARM64_ARM64_PACKAGE_BUILD_SPEC,
+#         RPM_X86_64_PACKAGE_BUILD_SPEC,
+#         RPM_ARM64_PACKAGE_BUILD_SPEC,
+#         TAR_X86_64_PACKAGE_BUILD_SPEC,
+#         TAR_ARM64_PACKAGE_BUILD_SPEC,
+#         MSI_PACKAGE_BUILD_SPEC,
+#         DOCKER_JSON_BUILD_SPEC
+#     ]
+# }
+#
+# a=10
 
 
 def build_package(
-        package_type: str,
+        #package_type: str,
         package_build_spec: PackageBuildSpec,
         output_path: Union[str, pl.Path],
         locally: bool = False,
@@ -1424,11 +1632,16 @@ def build_package(
         no_versioned_file_name: bool = False
 ):
 
+    if output_path.exists():
+        shutil.rmtree(output_path)
+    output_path.mkdir(parents=True)
+
     package_builder_cls = package_build_spec.package_builder_cls
     package_builder = package_builder_cls(
+        architecture=package_build_spec.architecture,
         variant=variant, no_versioned_file_name=no_versioned_file_name
     )
-    if locally or not package_build_spec.base_docker_image:
+    if locally or not package_build_spec.base_image:
         package_builder.build(
             output_path=output_path,
         )
@@ -1437,7 +1650,7 @@ def build_package(
         command_argv = [
             str(build_package_script_path),
             "build",
-            package_type,
+            get_package_spec_name(package_build_spec),
             "--locally",
             "--output-dir",
             "/tmp/build",
@@ -1452,58 +1665,6 @@ def build_package(
         )
 
 
-def build_test_runner_frozen_binary(
-        package_type: str,
-        package_build_spec: PackageBuildSpec,
-        output_path: Union[str, pl.Path],
-        locally: bool = False,
-):
-    # Also build the frozen binary for the package test script, they will be used to test the packages later.
-
-    if locally or not package_build_spec.base_docker_image:
-        package_test_script_path = (
-            __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test_runner.py"
-        )
-
-        subprocess.check_call(
-            [
-                sys.executable,
-                "-m",
-                "PyInstaller",
-                str(package_test_script_path),
-                "--distpath",
-                str(output_path),
-                "--onefile",
-            ]
-        )
-
-        # Make the package test frozen binaries executable.
-        for child_path in output_path.iterdir():
-            child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
-
-    else:
-
-        build_package_script_path = pl.Path("/scalyr-agent-2/build_package.py")
-        command_argv = [
-            str(build_package_script_path),
-            "build",
-            package_type,
-            "--build-tests",
-            "--locally",
-            "--output-dir",
-            "/tmp/build",
-        ]
-
-        command = shlex.join(command_argv)
-
-        run_command_in_docker_and_get_output(
-            package_build_spec=package_build_spec,
-            command=command,
-            output_path=output_path,
-            build_stage="test"
-        )
-
-
 def run_command_in_docker_and_get_output(
         package_build_spec: PackageBuildSpec,
         command: str,
@@ -1515,17 +1676,22 @@ def run_command_in_docker_and_get_output(
     """
     # Make sure that the base image with build environment is built.
 
-    current_base_image = package_build_spec.base_docker_image
-    for deployer in package_build_spec.deployers:
+    current_base_image = package_build_spec.base_image.image_name
+    for deployer in package_build_spec.used_deployers:
 
         deployer.deploy_in_docker(
-            base_docker_image=current_base_image
+            base_docker_image=current_base_image,
+            architecture=package_build_spec.architecture
         )
-        current_base_image = deployer.get_image_name(base_docker_image=current_base_image)
+        current_base_image = deployer.get_image_name(architecture=package_build_spec.architecture)
 
     dockerfile_path = __PARENT_DIR__ / "Dockerfile"
+    spec_name = create_build_spec_name(
+        package_type=package_build_spec.package_type,
+        architecture=package_build_spec.architecture
+    )
 
-    image_name = f"agent-builder-spec-{package_build_spec.name}".lower()
+    image_name = f"agent-builder-spec-{spec_name}".lower()
 
     # Run the image build. The package also has to be build during that.
     # Building the package during the image build is more convenient than building it in the container
@@ -1540,7 +1706,9 @@ def run_command_in_docker_and_get_output(
             "docker",
             "build",
             "--platform",
-            package_build_spec.architecture,
+            deployers.architecture_to_docker_architecture(
+                package_build_spec.architecture
+            ),
             "-t",
             image_name,
             "--build-arg",
