@@ -405,9 +405,11 @@ if __name__ == '__main__':
 
     if args.command == "get-package-build-spec-info":
         package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
-        build_spec = {"include": [package_build_spec.used_deployers_info_as_dict]}
+        package_build_spec_dict = package_build_spec.used_deployers_info_as_dict
+        package_build_spec_dict["package-filename-glob"] = package_build_spec.filename_glob
+        matrix = {"include": [package_build_spec_dict]}
         print(
-            json.dumps(build_spec)
+            json.dumps(matrix)
         )
         exit(0)
 
