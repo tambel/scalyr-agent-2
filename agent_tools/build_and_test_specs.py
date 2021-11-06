@@ -384,11 +384,22 @@ if __name__ == '__main__':
     package_deployers_parser.add_argument("package_type", choices=PACKAGE_BUILD_SPECS.keys())
 
     deployer_parser = subparsers.add_parser("deployer")
-    deployer_parser.add_argument("name", choices=DEPLOYERS.keys())
-    deployer_parser.add_argument("action", choices=["deploy", "checksum"])
-    deployer_parser.add_argument("--cache-dir", dest="cache_dir")
+    deployer_parser.add_argument("deployer_name", choices=DEPLOYERS.keys())
+    deployer_parser.add_argument("deployer_command", choices=["deploy", "checksum", "result-image-name"])
     deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
+    deployer_parser.add_argument("--cache-dir", dest="cache_dir")
     deployer_parser.add_argument("--architecture")
+
+    # deployer_subparsers = deployer_parser.add_subparsers(dest="deployer_command")
+    #
+    # deploy_parser = deployer_subparsers.add_parser("deploy")
+
+
+    # deployer_parser.add_argument("name", choices=DEPLOYERS.keys())
+    # deployer_parser.add_argument("action", choices=["deploy", "checksum"])
+    # deployer_parser.add_argument("--cache-dir", dest="cache_dir")
+    # deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
+    # deployer_parser.add_argument("--architecture")
 
     args = parser.parse_args()
 
@@ -420,8 +431,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if args.command == "deployer":
-        deployer = DEPLOYERS[args.name]
-        if args.action == "deploy":
+        deployer = DEPLOYERS[args.deployer_name]
+        if args.deployer_command == "deploy":
             if args.base_docker_image:
                 deployer.deploy_in_docker(
                     base_docker_image=args.base_docker_image,
@@ -435,9 +446,12 @@ if __name__ == '__main__':
 
             exit(0)
 
-        if args.action == "checksum":
+        if args.deployer_command == "checksum":
             checksum = deployer.get_used_files_checksum()
             print(checksum)
             exit(0)
-        print(args)
+
+        if args.deployer_command == "result-image-name":
+            image_name = deployer.get_image_name(constants.Architecture(args.architecture))
+            print(image_name)
 

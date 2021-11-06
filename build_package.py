@@ -38,7 +38,8 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 
 sys.path.append(str(__SOURCE_ROOT__))
 
-from agent_build import package_builders
+from agent_tools import package_builders
+from agent_tools import build_and_test_specs
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
 
@@ -49,36 +50,26 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    subparsers = parser.add_subparsers(dest="command")
+    #subparsers = parser.add_subparsers(dest="command")
 
-    build_spec_parser = subparsers.add_parser("get-build-spec")
-    build_parser = subparsers.add_parser("build")
+    #build_spec_parser = subparsers.add_parser("get-build-spec")
+    #build_parser = subparsers.add_parser("build")
 
-    for p in [build_parser, build_spec_parser]:
-        p.add_argument(
+    parser.add_argument(
             "package_spec_name",
             type=str,
-            choices=list(package_builders.SPECS.keys()),
+            choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys(),
             help="Type of the package to build.",
         )
 
-    build_spec_parser.add_argument(
-        "spec",
-        choices=[
-            "deployers",
-            "package-filename-glob",
-            "base-docker-image"
-        ]
-    )
-
-    build_parser.add_argument(
+    parser.add_argument(
         "--locally",
         action="store_true",
         help="Perform the build on the current system which runs the script. Without that, some packages may be built "
         "by default inside the docker.",
     )
 
-    build_parser.add_argument(
+    parser.add_argument(
         "--output-dir",
         required=True,
         type=str,
@@ -86,7 +77,7 @@ if __name__ == '__main__':
         help="The directory where the result package has to be stored.",
     )
 
-    build_parser.add_argument(
+    parser.add_argument(
         "--no-versioned-file-name",
         action="store_true",
         dest="no_versioned_file_name",
@@ -95,7 +86,7 @@ if __name__ == '__main__':
         "applies to the `tarball` and container builders artifacts.",
     )
 
-    build_parser.add_argument(
+    parser.add_argument(
         "-v",
         "--variant",
         dest="variant",
@@ -108,10 +99,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Find the builder class.
-    package_builder_spec = package_builders.SPECS[args.package_spec_name]
+    package_build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.package_spec_name]
 
-    if args.command == "get-build-spec":
-        deployers = package_builder_spec.used_deployers
+    # if args.command == "get-build-spec":
+    #     deployers = package_build_spec.used_deployers
 
         # if args.spec == "deployers":
         #     deployers = package_build_spec.used_deployers
@@ -130,15 +121,10 @@ if __name__ == '__main__':
         #     if package_build_spec.architecture:
         #         print(package_build_spec.architecture.value)
 
-        exit(0)
+        # exit(0)
 
-    if args.command == "build":
-        logging.info(f"Build package '{args.package_spec_name}'...")
+    logging.info(f"Build package '{args.package_spec_name}'...")
 
-        package_builders.build_package_from_spec(
-            package_build_spec_name=args.package_spec_name,
-            output_path_dir=args.output_dir,
-            locally=args.locally,
-            variant=args.variant,
-            no_versioned_file_name=args.no_versioned_file_name
-        )
+    package_build_spec.build(
+        output_path=args.output_dir
+    )
