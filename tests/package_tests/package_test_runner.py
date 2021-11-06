@@ -21,7 +21,7 @@ from tests.package_tests import deb_rpm_tar_msi_test
 from tests.package_tests import packages_sanity_tests
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
-
+sys.path.append(str(__SOURCE_ROOT__))
 
 __frozen__ = hasattr(sys, "frozen")
 
