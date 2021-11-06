@@ -389,7 +389,6 @@ if __name__ == '__main__':
 
     subparsers = parser.add_subparsers(dest="command")
 
-    spec_info_parser = subparsers.add_parser("get-test-specs")
     run_test_parser = subparsers.add_parser("run")
     run_test_parser.add_argument("spec_name", choices=SPECS.keys())
     run_test_parser.add_argument("--package-path", dest="package_path", required=False)
@@ -403,7 +402,7 @@ if __name__ == '__main__':
     build_frozen_test_runner.add_argument("--output-dir", dest="output_dir")
     build_frozen_test_runner.add_argument("--locally", required=False, action="store_true")
 
-
+    spec_info_parser = subparsers.add_parser("get-test-specs")
     spec_info_parser.add_argument("package_type", choices=package_builders.SPECS.keys())
 
     args = parser.parse_args()
@@ -430,7 +429,7 @@ if __name__ == '__main__':
 
     if args.command == "get-test-specs":
 
-        test_specs = PACKAGE_BUILDER_TO_TEST_SPEC[args.spec_name]
+        test_specs = PACKAGE_BUILDER_TO_TEST_SPEC[args.package_type]
 
         result_json_specs = []
         for spec in test_specs:
