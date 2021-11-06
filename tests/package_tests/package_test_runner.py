@@ -43,6 +43,7 @@ class TargetSystem(enum.Enum):
 
 @dataclasses.dataclass
 class PackageTestSpec:
+    name: str
     target_system: TargetSystem
     package_builder_spec: package_builders.PackageBuildSpec
     remote_machine_spec: Union[DockerBasedTestSpec, packages_sanity_tests.Ec2BasedTestSpec] = None
@@ -77,6 +78,7 @@ def create_test_spec(
             full_name = f"{test_spec_name}_{remote_machine_suffix}"
 
             spec = PackageTestSpec(
+                name=full_name,
                 target_system=target_system,
                 package_builder_spec=package_builder_spec,
                 remote_machine_spec=remote_machine_spec
@@ -85,6 +87,7 @@ def create_test_spec(
             PACKAGE_BUILDER_TO_TEST_SPEC[package_build_spec_name].append(spec)
     else:
         spec = PackageTestSpec(
+            name=test_spec_name,
             target_system=target_system,
             package_builder_spec=package_builder_spec,
         )
@@ -437,6 +440,7 @@ if __name__ == '__main__':
             used_deployer_names = [d.name for d in spec.package_builder_spec.used_deployers]
             used_deployers_str = ",".join(used_deployer_names)
 
+            json_result["spec_name"] = spec.name
             json_result["deployers"] = used_deployers_str
             json_result["base-docker-image"] = spec.package_builder_spec.base_image.image_name
             json_result["architecture"] = spec.package_builder_spec.architecture.value
