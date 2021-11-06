@@ -26,7 +26,7 @@ runs:
           fi
           current_deployer_name=$(cut -d "," -f -1 <<< $names)
           other_deployer_names=$(cut -d "," -f 2- <<< $names)
-          echo "::set-output name=checksum::$(python3 agent_tools/environment_deployers.py deployer "$current_deployer_name" checksum)"
+          echo "::set-output name=checksum::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" checksum)"
           echo "::set-output name=current-deployer-name::$current_deployer_name"
           echo "::set-output name=other-deployer-names::$other_deployer_names"
 
@@ -44,7 +44,7 @@ runs:
         echo "FFF"
         echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
         echo "${{ steps.deployer-info.outputs.current-deployer-name }}"
-        python3 agent_tools/environment_deployers.py \
+        python3 agent_tools/build_and_test_specs.py \
           deployer \
           ${{ steps.deployer-info.outputs.current-deployer-name }} \
           deploy \
