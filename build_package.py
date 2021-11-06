@@ -71,8 +71,6 @@ if __name__ == '__main__':
         ]
     )
 
-    build_parser.add_argument("--build-tests", action="store_true")
-
     build_parser.add_argument(
         "--locally",
         action="store_true",
@@ -116,40 +114,30 @@ if __name__ == '__main__':
         deployers = package_builder_spec.used_deployers
 
         # if args.spec == "deployers":
-        #     deployers = package_builder_spec.used_deployers
+        #     deployers = package_build_spec.used_deployers
         #     if deployers:
         #         deployer_names = [d.name for d in deployers]
         #         print(",".join(deployer_names))
         #
         # if args.spec == "package-filename-glob":
-        #     print(package_builder_spec.filename_glob)
+        #     print(package_build_spec.filename_glob)
         #
         # if args.spec == "base-docker-image":
-        #     if package_builder_spec.base_image.image_name:
-        #         print(package_builder_spec.base_image)
+        #     if package_build_spec.base_image.image_name:
+        #         print(package_build_spec.base_image)
         #
         # if args.spec == "architecture":
-        #     if package_builder_spec.architecture:
-        #         print(package_builder_spec.architecture.value)
+        #     if package_build_spec.architecture:
+        #         print(package_build_spec.architecture.value)
 
         exit(0)
 
     if args.command == "build":
         logging.info(f"Build package '{args.package_spec_name}'...")
-        output_path = pl.Path(args.output_dir)
 
-        # Build only frozen binary tests instead of package.
-        if args.build_tests:
-            package_builders.build_test_runner_frozen_binary(
-                package_build_spec=package_builder_spec,
-                output_path=output_path,
-                locally=args.locally
-            )
-            exit(0)
-
-        package_builders.build_package(
-            package_build_spec=package_builder_spec,
-            output_path=output_path,
+        package_builders.build_package_from_spec(
+            package_build_spec_name=args.package_spec_name,
+            output_path_dir=args.output_dir,
             locally=args.locally,
             variant=args.variant,
             no_versioned_file_name=args.no_versioned_file_name

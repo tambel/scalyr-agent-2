@@ -26,31 +26,352 @@ import os
 import re
 import io
 import shlex
-from typing import Union, Optional, Type, List, Dict
+from typing import Union, Optional, Type, List, Dict, Callable
+
+
+from agent_tools import constants
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
 
-from agent_build.environment_deployers.deployers import Architecture
-
-sys.path.append(str(__SOURCE_ROOT__))
-
-from agent_build.common import cat_files, recursively_delete_files_by_name
-from agent_build.environment_deployers import deployers
-
-from agent_build import common
-
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
 
+def cat_files(file_paths, destination, convert_newlines=False):
+    """Concatenates the contents of the specified files and writes it to a new file at destination.
 
-class PackageType(enum.Enum):
-    DEB = "deb"
-    RPM = "rpm"
-    TAR = "tar"
-    DOCKER_JSON = "docker-json"
-    DOCKER_SYSLOG = "docker-syslog"
-    K8S = "k8s"
-    MSI = "msi"
+    @param file_paths: A list of paths for the files that should be read. The concatenating will be done in the same
+        order as the list.
+    @param destination: The path of the file to write the contents to.
+    @param convert_newlines: If True, the final file will use Windows newlines (i.e., CR LF).
+    """
+    with pl.Path(destination).open("w") as dest_fp:
+        for file_path in file_paths:
+            with pl.Path(file_path).open("r") as in_fp:
+                for line in in_fp:
+                    if convert_newlines:
+                        line.replace("\n", "\r\n")
+                    dest_fp.write(line)
+
+
+def recursively_delete_files_by_name(
+    dir_path: Union[str, pl.Path], *file_names: Union[str, pl.Path]
+):
+    """Deletes any files that are in the current working directory or any of its children whose file names
+    match the specified regular expressions.
+
+    This will recursively examine all children of the current working directory.
+
+    @param file_names: A variable number of strings containing regular expressions that should match the file names of
+        the files that should be deleted.
+    """
+    # Compile the strings into actual regular expression match objects.
+    matchers = []
+    for file_name in file_names:
+        matchers.append(re.compile(str(file_name)))
+
+    # Walk down the current directory.
+    for root, dirs, files in os.walk(dir_path.absolute()):
+        # See if any of the files at this level match any of the matchers.
+        for file_path in files:
+            for matcher in matchers:
+                if matcher.match(file_path):
+                    # Delete it if it did match.
+                    os.unlink(os.path.join(root, file_path))
+                    break
+
+
+def recursively_delete_dirs_by_name(
+        root_dir: Union[str, pl.Path], *dir_names: str
+):
+    """
+    Deletes any directories that are in the current working directory or any of its children whose file names
+    match the specified regular expressions.
+
+    This will recursively examine all children of the current working directory.
+
+    If a directory is found that needs to be deleted, all of it and its children are deleted.
+
+    @param dir_names: A variable number of strings containing regular expressions that should match the file names of
+        the directories that should be deleted.
+    """
+
+    # Compile the strings into actual regular expression match objects.
+    matchers = []
+    for dir_name in dir_names:
+        matchers.append(re.compile(dir_name))
+
+    # Walk down the file tree, top down, allowing us to prune directories as we go.
+    for root, dirs, files in os.walk(root_dir):
+        # Examine all directories at this level, see if any get a match
+        for dir_path in dirs:
+            for matcher in matchers:
+                if matcher.match(dir_path):
+                    shutil.rmtree(os.path.join(root, dir_path))
+                    # Also, remove it from dirs so that we don't try to walk down it.
+                    dirs.remove(dir_path)
+                    break
+
+
+class BadChangeLogFormat(Exception):
+    pass
+
+
+def parse_date(date_str):
+    """Parses a date time string of the format MMM DD, YYYY HH:MM +ZZZZ and returns seconds past epoch.
+
+    Example of the format is: Oct 10, 2014 17:00 -0700
+
+    @param date_str: A string containing the date and time in the format described above.
+
+    @return: The number of seconds past epoch.
+
+    @raise ValueError: if there is a parsing problem.
+    """
+    # For some reason, it was hard to parse this particular format with the existing Python libraries,
+    # especially when the timezone was not the same as the local time zone.  So, we have to do this the
+    # sort of hard way.
+    #
+    # It is a little annoying that strptime only takes Sep for September and not Sep which is more common
+    # in US-eng, so we cheat here and just swap it out.
+    adjusted = date_str.replace("Sept", "Sep")
+
+    # Find the timezone string at the end of the string.
+    if re.search(r"[\-+]\d\d\d\d$", adjusted) is None:
+        raise ValueError(
+            "Value '%s' does not meet required time format of 'MMM DD, YYYY HH:MM +ZZZZ' (or "
+            "as an example, ' 'Oct 10, 2014 17:00 -0700'" % date_str
+        )
+
+    # Use the existing Python string parsing calls to just parse the time and date.  We will handle the timezone
+    # separately.
+    try:
+        base_time = time.mktime(time.strptime(adjusted[0:-6], "%b %d, %Y %H:%M"))
+    except ValueError:
+        raise ValueError(
+            "Value '%s' does not meet required time format of 'MMM DD, YYYY HH:MM +ZZZZ' (or "
+            "as an example, ' 'Oct 10, 2014 17:00 -0700'" % date_str
+        )
+
+    # Since mktime assumes the time is in localtime, we might have a different time zone
+    # in tz_str, we must manually added in the difference.
+    # First, convert -0700 to seconds.. the second two digits are the number of hours
+    # and the last two are the minute of minutes.
+    tz_str = adjusted[-5:]
+    tz_offset_secs = int(tz_str[1:3]) * 3600 + int(tz_str[3:5]) * 60
+
+    if tz_str.startswith("-"):
+        tz_offset_secs *= -1
+
+    # Determine the offset for the local timezone.
+    if time.daylight:
+        local_offset_secs = -1 * time.altzone
+    else:
+        local_offset_secs = -1 * time.timezone
+
+    base_time += local_offset_secs - tz_offset_secs
+    return base_time
+
+
+def parse_change_log():
+    """Parses the contents of CHANGELOG.md and returns the content in a structured way.
+
+    @return: A list of dicts, one for each release in CHANGELOG.md.  Each release dict will have with several fields:
+            name:  The name of the release
+            version:  The version of the release
+            packager:  The name of the packager, such as 'Steven Czerwinski'
+            packager_email:  The email for the packager
+            time:  The seconds past epoch when the package was created
+            notes:  A list of strings or lists representing the notes for the release.  The list may
+                have elements that are strings (for a single line of notes) or lists (for a nested list under
+                the last string element).  Only three levels of nesting are allowed.
+    """
+    # Some regular expressions matching what we expect to see in CHANGELOG.md.
+    # Each release section should start with a '##' line for major header.
+    release_matcher = re.compile(r'## ([\d\._]+) "(.*)"')
+    # The expected pattern we will include in a HTML comment to give information on the packager.
+    packaged_matcher = re.compile(
+        r"Packaged by (.*) <(.*)> on (\w+ \d+, \d+ \d+:\d\d [+-]\d\d\d\d)"
+    )
+
+    # Listed below are the deliminators we use to extract the structure from the changelog release
+    # sections.  We fix our markdown syntax to make it easier for us.
+    #
+    # Our change log will look something like this:
+    #
+    # ## 2.0.1 "Aggravated Aardvark"
+    #
+    # New core features:
+    # * Blah blah
+    # * Blah Blah
+    #   - sub point
+    #
+    # Bug fixes:
+    # * Blah Blah
+
+    # The deliminators, each level is marked by what pattern we should see in the next line to either
+    # go up a level, go down a level, or confirm it is at the same level.
+    section_delims = [
+        # First level does not have any prefix.. just plain text.
+        # So, the level up is the release header, which begins with '##'
+        # The level down is ' *'.
+        {
+            "up": re.compile("## "),
+            "down": re.compile(r"\* "),
+            "same": re.compile(r"[^\s\*\-#]"),
+            "prefix": "",
+        },
+        # Second level always begins with an asterisk.
+        {
+            "up": re.compile(r"[^\s\*\-#]"),
+            "down": re.compile("    - "),
+            "same": re.compile(r"\* "),
+            "prefix": "* ",
+        },
+        # Third level always begins with '  -'
+        {
+            "up": re.compile(r"\* "),
+            "down": None,
+            "same": re.compile("    - "),
+            "prefix": "    - ",
+        },
+    ]
+
+    # Helper function.
+    def read_section(lines, level=0):
+        """Transforms the lines representing the notes for a single release into the desired nested representation.
+
+        @param lines: The lines for the notes for a release including markup. NOTE, this list must be in reverse order,
+            where the next line to be scanned is the last line in the list.
+        @param level: The nesting level that these lines are at.
+
+        @return: A list containing the notes, with nested lists as appropriate.
+        """
+        result = []
+
+        if len(lines) == 0:
+            return result
+
+        while len(lines) > 0:
+            # Go over each line, seeing based on its content, if we should go up a nesting level, down a level,
+            # or just stay at the same level.
+            my_line = lines.pop()
+
+            # If the next line is at our same level, then just add it to our current list and continue.
+            if section_delims[level]["same"].match(my_line) is not None:
+                result.append(my_line[len(section_delims[level]["prefix"]) :])
+                continue
+
+            # For all other cases, someone else is going to have to look at this line, so add it back to the list.
+            lines.append(my_line)
+
+            # If the next line looks like it belongs any previous nesting levels, then we must have exited out of
+            # our current nesting level, so just return what we have gathered for this sublist.
+            for i in range(level + 1):
+                if section_delims[i]["up"].match(my_line) is not None:
+                    return result
+            if (
+                section_delims[level]["down"] is not None
+                and section_delims[level]["down"].match(my_line) is not None
+            ):
+                # Otherwise, it looks like the next line belongs to a sublist.  Recursively call ourselves, going
+                # down a level in nesting.
+                result.append(read_section(lines, level + 1))
+            else:
+                raise BadChangeLogFormat(
+                    "Release not line did not match expect format at level %d: %s"
+                    % (level, my_line)
+                )
+        return result
+
+    # Begin the real work here.  Read the change log.
+    change_log_fp = open(os.path.join(__SOURCE_ROOT__, "CHANGELOG.md"), "r")
+
+    try:
+        # Skip over the first two lines since it should be header.
+        change_log_fp.readline()
+        change_log_fp.readline()
+
+        # Read over all the lines, eliminating the comment lines and other useless things.  Also strip out all newlines.
+        content = []
+        in_comment = False
+        for line in change_log_fp:
+            line = line.rstrip()
+            if len(line) == 0:
+                continue
+
+            # Check for a comment.. either beginning or closing.
+            if line == "<!---":
+                in_comment = True
+            elif line == "--->":
+                in_comment = False
+            elif packaged_matcher.match(line) is not None:
+                # The only thing we will pay attention to while in a comment is our packaged line.  If we see it,
+                # grab it.
+                content.append(line)
+            elif not in_comment:
+                # Keep any non-comments.
+                content.append(line)
+
+        change_log_fp.close()
+        change_log_fp = None
+    finally:
+        if change_log_fp is not None:
+            change_log_fp.close()
+
+    # We reverse the content list so the first lines to be read are at the end.  This way we can use pop down below.
+    content.reverse()
+
+    # The list of release objects
+    releases = []
+
+    # The rest of the log should just contain release notes for each release.  Iterate over the content,
+    # reading out the release notes for each release.
+    while len(content) > 0:
+        # Each release must begin with at least two lines -- one for the release name and then one for the
+        # 'Packaged by Steven Czerwinski on... ' line that we pulled out of the HTML comment.
+        if len(content) < 2:
+            raise BadChangeLogFormat(
+                "New release section does not contain at least two lines."
+            )
+
+        # Extract the information from each of those two lines.
+        current_line = content.pop()
+        release_version_name = release_matcher.match(current_line)
+        if release_version_name is None:
+            raise BadChangeLogFormat(
+                "Header line for release did not match expected format: %s"
+                % current_line
+            )
+
+        current_line = content.pop()
+        packager_info = packaged_matcher.match(current_line)
+        if packager_info is None:
+            raise BadChangeLogFormat(
+                "Packager line for release did not match expected format: %s"
+                % current_line
+            )
+
+        # Read the section notes until we hit a '##' line.
+        release_notes = read_section(content)
+
+        try:
+            time_value = parse_date(packager_info.group(3))
+        except ValueError as err:
+            message = getattr(err, "message", str(err))
+            raise BadChangeLogFormat(message)
+
+        releases.append(
+            {
+                "name": release_version_name.group(2),
+                "version": release_version_name.group(1),
+                "packager": packager_info.group(1),
+                "packager_email": packager_info.group(2),
+                "time": time_value,
+                "notes": release_notes,
+            }
+        )
+
+    return releases
 
 
 class PackageBuilder(abc.ABC):
@@ -88,44 +409,23 @@ class PackageBuilder(abc.ABC):
     where the code runs. It may be very useful, because there is no need to prepare the current system to be able to
     perform the build. That also provides more consistent build results, no matter what is the host system.
     """
-
-    # # Path to the script which has to be executed to prepare the build environment, and install all tools and programs
-    # # which are required by this package builder. See 'prepare-build-environment' action. in the docstring of this
-    # # class.
-    # PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH: Union[str, pl.Path] = None
-    ENVIRONMENT_DEPLOYER_NAME: str = None
-
-    # # The list of files which are somehow used during the preparation of the build environment. This is needed to
-    # # calculate their checksum. (see action 'dump-checksum')
-    # FILES_USED_IN_BUILD_ENVIRONMENT: Union[str, pl.Path] = [
-    #     __SOURCE_ROOT__ / "agent_build" / "requirements.txt",
-    #     __SOURCE_ROOT__ / "agent_build" / "monitors_requirements.txt",
-    #     __SOURCE_ROOT__ / "agent_build" / "frozen-binary-builder-requirements.txt",
-    # ]
-
-    # # If this flag True, then the builder will run inside the docker.
-    DOCKERIZED = False
-
-    # Name of the image in case if build is performed inside the docker. Has to pe specified if 'DOCKERIZED' is True.
-    BASE_DOCKER_IMAGE = None
-
     # # The name of the package type
     # PACKAGE_TYPE = None
 
     # The type of the installation. For more info, see the 'InstallType' in the scalyr_agent/__scalyr__.py
     INSTALL_TYPE = None
 
-    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES: Dict[deployers.Architecture, str] = {}
+    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES: Dict[constants.Architecture, str] = {}
 
     # Add agent source code as a bundled frozen binary if True, or
     # add the source code as it is.
     USE_FROZEN_BINARIES: bool = True
 
     def __init__(
-        self,
-        architecture: Architecture,
-        variant: str = None,
-        no_versioned_file_name: bool = False,
+            self,
+            architecture: constants.Architecture,
+            variant: str = None,
+            no_versioned_file_name: bool = False,
     ):
         """
         :param variant: Adds the specified string into the package's iteration name. This may be None if no additional
@@ -162,7 +462,7 @@ class PackageBuilder(abc.ABC):
 
         output_path.mkdir(parents=True)
 
-        #deployer = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
+        # deployer = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
 
         # If locally option is specified or builder class is not dockerized by default then just build the package
         # directly on this system.
@@ -172,228 +472,6 @@ class PackageBuilder(abc.ABC):
         self._intermediate_results_path = self._build_output_path / "intermediate_results"
         self._intermediate_results_path.mkdir()
         self._build(output_path=output_path)
-
-        # The package has to be build inside the docker.
-        if True:
-            pass
-        else:
-            # Make sure that the base image with build environment is built.
-            deployer_cls.deploy()
-
-            dockerfile_path = __PARENT_DIR__ / "Dockerfile"
-
-            # Make changes to the existing command line arguments to pass them to the docker builder.
-            command_argv = sys.argv[:]
-
-            # Create the path for the current script file which will be used inside the docker.
-            build_package_script_path = pl.Path(command_argv[0]).absolute()
-
-            container_builder_module_path = pl.Path(
-                "/scalyr-agent-2",
-                pl.Path(build_package_script_path).relative_to(__SOURCE_ROOT__),
-            )
-
-            # Replace the 'host-specific' path of this script with 'docker-specific' path
-            command_argv[0] = str(container_builder_module_path)
-
-            # Since the builder can be configured to run inside the docker by default, then we have to tell it to not to
-            # do so when it is already inside the docker.
-            command_argv.insert(1, "--locally")
-
-            # Also change the 'host-specific' output path.
-            output_dir_index = command_argv.index("--output-dir")
-            command_argv[output_dir_index + 1] = "/tmp/build"
-
-            # Join everything into one command string.
-            command = common.shlex_join(command_argv)
-
-            image_name = f"scalyr-agent-{type(self).PACKAGE_TYPE}-builder".lower()
-
-            # Run the image build. The package also has to be build during that.
-            # Building the package during the image build is more convenient than building it in the container
-            # because the the docker build caching mechanism will save out time when nothing in agent source is changed.
-            # This can save time during the local debugging.
-
-            subprocess.check_call(
-                [
-                    "docker",
-                    "build",
-                    "-t",
-                    image_name,
-                    "--build-arg",
-                    f"BASE_IMAGE_NAME={deployer_cls.get_image_name()}",
-                    "--build-arg",
-                    f"BUILD_COMMAND=python3 {command}",
-                    "-f",
-                    str(dockerfile_path),
-                    str(__SOURCE_ROOT__),
-                ]
-            )
-
-            # The image is build and package has to be fetched from it, so create the container...
-
-            # Remove the container with the same name if exists.
-            container_name = image_name
-            subprocess.check_call(["docker", "rm", "-f", container_name])
-
-            # Create the container.
-            subprocess.check_call(
-                ["docker", "create", "--name", container_name, image_name]
-            )
-
-            # Copy package output from the container.
-            subprocess.check_call(
-                [
-                    "docker",
-                    "cp",
-                    "-a",
-                    f"{container_name}:/tmp/build/.",
-                    str(output_path),
-                ],
-            )
-
-            # Remove the container.
-            subprocess.check_call(["docker", "rm", "-f", container_name])
-
-    # @classmethod
-    # def prepare_build_environment(
-    #     cls, cache_dir: Union[str, pl.Path] = None, locally: bool = False
-    # ):
-    #     """
-    #     Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
-    #     """
-    #     if locally or not cls.DOCKERIZED:
-    #         # Prepare the build environment on the current system.
-    #
-    #         # Choose the shell according to the operation system.
-    #         if platform.system() == "Windows":
-    #             shell = "powershell"
-    #         else:
-    #             shell = "bash"
-    #
-    #         command = [shell, str(cls.PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH)]
-    #
-    #         # If cache directory is presented, then we pass it as an additional argument to the
-    #         # 'prepare build environment' script, so it can use the cache too.
-    #         if cache_dir:
-    #             command.append(str(pl.Path(cache_dir)))
-    #
-    #         # Run the 'prepare build environment' script in previously chosen shell.
-    #         subprocess.check_call(
-    #             command,
-    #         )
-    #     else:
-    #         # Instead of preparing the build environment on the current system, create the docker image and prepare the
-    #         # build environment there. If cache directory is specified, then the docker image will be serialized to the
-    #         # file and that file will be stored in the cache.
-    #
-    #         # Get the name of the builder image.
-    #         image_name = cls._get_build_environment_docker_image_name()
-    #
-    #         # Before the build, check if there is already an image with the same name. The name contains the checksum
-    #         # of all files which are used in it, so the name identity also guarantees the content identity.
-    #         output = (
-    #             subprocess.check_output(["docker", "images", "-q", image_name])
-    #             .decode()
-    #             .strip()
-    #         )
-    #
-    #         if output:
-    #             # The image already exists, skip the build.
-    #             print(
-    #                 f"Image '{image_name}' already exists, skip the build and reuse it."
-    #             )
-    #             return
-    #
-    #         save_to_cache = False
-    #
-    #         # If cache directory is specified, then check if the image file is already there and we can reuse it.
-    #         if cache_dir:
-    #             cache_dir = pl.Path(cache_dir)
-    #             cached_image_path = cache_dir / image_name
-    #             if cached_image_path.is_file():
-    #                 print(
-    #                     "Cached image file has been found, loading and reusing it instead of building."
-    #                 )
-    #                 subprocess.check_call(
-    #                     ["docker", "load", "-i", str(cached_image_path)]
-    #                 )
-    #                 return
-    #             else:
-    #                 # Cache is used but there is no suitable image file. Set the flag to signal that the built
-    #                 # image has to be saved to the cache.
-    #                 save_to_cache = True
-    #
-    #         print(f"Build image '{image_name}'")
-    #
-    #         # Create the builder image.
-    #         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
-    #
-    #         container_root_path = pl.Path("/scalyr-agent-2")
-    #
-    #         # All files, which are used in the build have to be mapped to the docker container.
-    #         volumes_mappings = []
-    #         for used_path in cls._get_files_used_in_build_environment():
-    #             rel_used_path = pl.Path(used_path).relative_to(__SOURCE_ROOT__)
-    #             abs_host_path = __SOURCE_ROOT__ / rel_used_path
-    #             abs_container_path = container_root_path / rel_used_path
-    #             volumes_mappings.extend(["-v", f"{abs_host_path}:{abs_container_path}"])
-    #
-    #         # Map the 'prepare environment' script's path to the docker.
-    #         container_prepare_env_script_path = pl.Path(
-    #             container_root_path,
-    #             pl.Path(cls.PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH).relative_to(
-    #                 __SOURCE_ROOT__
-    #             ),
-    #         )
-    #
-    #         container_name = cls.__name__
-    #
-    #         # Remove if such container exists.
-    #         subprocess.check_call(["docker", "rm", "-f", container_name])
-    #
-    #         # Create container and run the 'prepare environment' script in it.
-    #         subprocess.check_call(
-    #             [
-    #                 "docker",
-    #                 "run",
-    #                 "-i",
-    #                 "--name",
-    #                 container_name,
-    #                 *volumes_mappings,
-    #                 cls.BASE_DOCKER_IMAGE,
-    #                 str(container_prepare_env_script_path),
-    #             ]
-    #         )
-    #
-    #         # Save the current state of the container into image.
-    #         subprocess.check_call(["docker", "commit", container_name, image_name])
-    #
-    #         # Save image if caching is enabled.
-    #         if cache_dir and save_to_cache:
-    #             cache_dir.mkdir(parents=True, exist_ok=True)
-    #             cached_image_path = cache_dir / image_name
-    #             print(f"Saving '{image_name}' image file into cache.")
-    #             with cached_image_path.open("wb") as f:
-    #                 subprocess.check_call(["docker", "save", image_name], stdout=f)
-
-    # @classmethod
-    # def dump_build_environment_files_content_checksum(
-    #     cls, checksum_output_path: Union[str, pl.Path]
-    # ):
-    #     """
-    #     Dump the checksum of the content of the file used during the 'prepare-build-environment' action.
-    #         For more info see 'dump-checksum' action in class docstring.
-    #
-    #     :param checksum_output_path: Is mainly created for the CI/CD purposes. If specified, the function dumps the
-    #         file with the checksum of all the content of all files which are used during the preparation
-    #         of the build environment. This checksum can be used by CI/CD as the cache key..
-    #     """
-    #     checksum = cls._get_build_environment_files_checksum()
-    #
-    #     checksum_output_path = pl.Path(checksum_output_path)
-    #     checksum_output_path.parent.mkdir(exist_ok=True, parents=True)
-    #     checksum_output_path.write_text(checksum)
 
     @property
     def _build_info(self) -> Optional[str]:
@@ -408,8 +486,8 @@ class PackageBuilder(abc.ABC):
                 subprocess.check_output(
                     "git config user.email", shell=True, cwd=str(__SOURCE_ROOT__)
                 )
-                .decode()
-                .strip()
+                    .decode()
+                    .strip()
             )
         except subprocess.CalledProcessError:
             packager_email = "unknown"
@@ -423,8 +501,8 @@ class PackageBuilder(abc.ABC):
                 shell=True,
                 cwd=__SOURCE_ROOT__,
             )
-            .decode()
-            .strip()
+                .decode()
+                .strip()
         )
 
         print("Latest commit: %s" % commit_id.strip(), file=build_info_buffer)
@@ -434,8 +512,8 @@ class PackageBuilder(abc.ABC):
             subprocess.check_output(
                 "git branch | cut -d ' ' -f 2", shell=True, cwd=__SOURCE_ROOT__
             )
-            .decode()
-            .strip()
+                .decode()
+                .strip()
         )
         print("From branch: %s" % branch.strip(), file=build_info_buffer)
 
@@ -450,7 +528,7 @@ class PackageBuilder(abc.ABC):
 
     @staticmethod
     def _add_config(
-        config_source_path: Union[str, pl.Path], output_path: Union[str, pl.Path]
+            config_source_path: Union[str, pl.Path], output_path: Union[str, pl.Path]
     ):
         """
         Copy config folder from the specified path to the target path.
@@ -473,7 +551,7 @@ class PackageBuilder(abc.ABC):
 
     @staticmethod
     def _add_certs(
-        path: Union[str, pl.Path], intermediate_certs=True, copy_other_certs=True
+            path: Union[str, pl.Path], intermediate_certs=True, copy_other_certs=True
     ):
         """
         Create needed certificates files in the specified path.
@@ -498,65 +576,6 @@ class PackageBuilder(abc.ABC):
     def _package_version(self) -> str:
         """The version of the agent"""
         return pl.Path(__SOURCE_ROOT__, "VERSION").read_text().strip()
-
-    # @classmethod
-    # def _get_files_used_in_build_environment(cls):
-    #     """
-    #     Get the list of all files which are used in the 'prepare-build-environment action.
-    #
-    #     """
-    #
-    #     def get_dir_files(dir_path: pl.Path):
-    #         # ignore those directories.
-    #         if dir_path.name == "__pycache__":
-    #             return []
-    #
-    #         result = []
-    #         for child_path in dir_path.iterdir():
-    #             if child_path.is_dir():
-    #                 result.extend(get_dir_files(child_path))
-    #             else:
-    #                 result.append(child_path)
-    #
-    #         return result
-    #
-    #     used_files = []
-    #
-    #     # The build environment preparation script is also has to be included.
-    #     used_files.append(cls.PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH)
-    #
-    #     # Since the 'FILES_USED_IN_BUILD_ENVIRONMENT' class attribute can also contain directories, look for them and
-    #     # include all files inside them recursively.
-    #     for path in cls.FILES_USED_IN_BUILD_ENVIRONMENT:
-    #         path = pl.Path(path)
-    #         if path.is_dir():
-    #             used_files.extend(get_dir_files(path))
-    #         else:
-    #             used_files.append(path)
-    #
-    #     return used_files
-
-    # @classmethod
-    # def _get_build_environment_files_checksum(cls):
-    #     """
-    #     Calculate the sha256 checksum of all files which are used in the "prepare-build-environment" action.
-    #     """
-    #     used_files = cls._get_files_used_in_build_environment()
-    #
-    #     # Calculate the sha256 for each file's content, filename and permissions.
-    #     sha256 = hashlib.sha256()
-    #     for file_path in used_files:
-    #         file_path = pl.Path(file_path)
-    #         sha256.update(str(file_path).encode())
-    #         sha256.update(str(file_path.stat().st_mode).encode())
-    #         sha256.update(file_path.read_bytes())
-    #
-    #     checksum = sha256.hexdigest()
-    #     return checksum
-
-    # @classmethod
-    # def _get_build_environment_docker_image_name(cls):
-    #     return f"package-builder-base-{cls._get_build_environment_files_checksum()}".lower()
 
     def _build_frozen_binary(self, output_path: Union[str, pl.Path]):
         """
@@ -586,29 +605,6 @@ class PackageBuilder(abc.ABC):
         for child_path in frozen_binary_output.iterdir():
             child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
             shutil.copy2(child_path, output_path)
-
-        # # Also build the frozen binary for the package test script, they will be used to test the packages later.
-        # package_test_pyinstaller_output = self._build_output_path / "package_test_frozen_binary"
-        #
-        # package_test_script_path = (
-        #     __SOURCE_ROOT__ / "tests" / "package_tests" / "package_test_runner.py"
-        # )
-        #
-        # subprocess.check_call(
-        #     [
-        #         sys.executable,
-        #         "-m",
-        #         "PyInstaller",
-        #         str(package_test_script_path),
-        #         "--distpath",
-        #         str(package_test_pyinstaller_output),
-        #         "--onefile",
-        #     ]
-        # )
-        #
-        # # Make the package test frozen binaries executable.
-        # for child_path in package_test_pyinstaller_output.iterdir():
-        #     child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
@@ -670,7 +666,7 @@ class PackageBuilder(abc.ABC):
             agent_config_executable_path.symlink_to(pl.Path("..", "py", "scalyr_agent", "config_main.py"))
 
             # Don't include the tests directories.  Also, don't include the .idea directory created by IDE.
-            common.recursively_delete_dirs_by_name(source_code_path, r"\.idea", "tests", "__pycache__")
+            recursively_delete_dirs_by_name(source_code_path, r"\.idea", "tests", "__pycache__")
             recursively_delete_files_by_name(
                 source_code_path,
                 r".*\.pyc", r".*\.pyo", r".*\.pyd", r"all_tests\.py", r".*~"
@@ -689,13 +685,6 @@ class LinuxPackageBuilder(PackageBuilder):
     """
     The base package builder for all Linux packages.
     """
-
-    # PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH = (
-    #     __PARENT_DIR__ / "linux" / "prepare_build_environment.sh"
-    # )
-    # BASE_DOCKER_IMAGE = "centos:7"
-    DOCKERIZED = True
-    ENVIRONMENT_DEPLOYER_NAME = "dockerized_agent_builder"
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
@@ -726,7 +715,6 @@ class LinuxFhsBasedPackageBuilder(LinuxPackageBuilder):
     INSTALL_TYPE = "package"
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
-
         # The install root is located in the usr/share/scalyr-agent-2.
         install_root = output_path / "usr/share/scalyr-agent-2"
         super(LinuxFhsBasedPackageBuilder, self)._build_package_files(
@@ -741,7 +729,7 @@ class LinuxFhsBasedPackageBuilder(LinuxPackageBuilder):
         usr_sbin_path.mkdir(parents=True)
         for binary_path in bin_path.iterdir():
             binary_symlink_path = (
-                self._package_files_path / "usr/sbin" / binary_path.name
+                    self._package_files_path / "usr/sbin" / binary_path.name
             )
             symlink_target_path = pl.Path(
                 "..", "share", "scalyr-agent-2", "bin", binary_path.name
@@ -822,9 +810,9 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
             # Add dockerfile.
             tar.add(str(type(self).DOCKERFILE_PATH), arcname="Dockerfile")
             # Add requirement files.
-            tar.add(str(__PARENT_DIR__ / "requirements.txt"), arcname="requirements.txt")
+            tar.add(str(_AGENT_BUILD_PATH / "requirements.txt"), arcname="requirements.txt")
             tar.add(
-                str(__PARENT_DIR__ / "linux/k8s_and_docker/container_requirements.txt"),
+                str(_AGENT_BUILD_PATH / "linux/k8s_and_docker/container_requirements.txt"),
                 arcname="container_requirements.txt"
             )
             # Add container source tarball.
@@ -925,7 +913,7 @@ class DockerApiPackageBuilder(ContainerPackageBuilder):
 
 
 class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
-    PACKAGE_TYPE: PackageType
+    PACKAGE_TYPE: constants.PackageType
     PACKAGE_FPM_TYPE: str
     """
     Base image builder for packages which are produced by the 'fpm' packager.
@@ -933,10 +921,10 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
     """
 
     def __init__(
-        self,
-        architecture,
-        variant: str = None,
-        no_versioned_file_name: bool = False,
+            self,
+            architecture,
+            variant: str = None,
+            no_versioned_file_name: bool = False,
     ):
         super(FpmBasedPackageBuilder, self).__init__(
             variant=variant, no_versioned_file_name=no_versioned_file_name,
@@ -957,13 +945,13 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
         init_d_path = output_path / "etc/init.d"
         init_d_path.mkdir(parents=True)
         shutil.copy2(
-            __PARENT_DIR__ / "linux/deb_or_rpm/files/init.d/scalyr-agent-2",
+            _AGENT_BUILD_PATH / "linux/deb_or_rpm/files/init.d/scalyr-agent-2",
             init_d_path / "scalyr-agent-2",
         )
 
     def _build(
-        self,
-        output_path: Union[str, pl.Path],
+            self,
+            output_path: Union[str, pl.Path],
     ):
         """
         Build the deb or rpm package using the 'fpm' pckager.
@@ -987,11 +975,7 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
             "log files and transmit them to Scalyr."
         )
 
-
-
-       #filename = f"scalyr-agent-2_{self._package_version}_{arch}.{ext}"
-
-
+        # filename = f"scalyr-agent-2_{self._package_version}_{arch}.{ext}"
 
         # fmt: off
         fpm_command = [
@@ -1096,7 +1080,7 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
         # Handle the RPM log first.  We parse CHANGELOG.md and then emit the notes in the expected format.
         fp = open(self._package_changelogs_path / "changelog-rpm", "w")
         try:
-            for release in common.parse_change_log():
+            for release in parse_change_log():
                 date_str = time.strftime("%a %b %d %Y", time.localtime(release["time"]))
 
                 # RPM expects the leading line for a relesae to start with an asterisk, then have
@@ -1126,7 +1110,7 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
         # Next, create the Debian change log.
         fp = open(self._package_changelogs_path / "changelog-deb", "w")
         try:
-            for release in common.parse_change_log():
+            for release in parse_change_log():
                 # Debian expects a leading line that starts with the package, including the version, the distribution
                 # urgency.  Then, anything goes until the last line for the release, which begins with two dashes.
                 date_str = time.strftime(
@@ -1153,23 +1137,23 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
 
 
 class DebPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_TYPE = PackageType.DEB
+    PACKAGE_TYPE = constants.PackageType.DEB
     PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
-        deployers.Architecture.X86_64: "amd64",
-        deployers.Architecture.ARM64: "arm64"
+        constants.Architecture.X86_64: "amd64",
+        constants.Architecture.ARM64: "arm64"
     }
     PACKAGE_FPM_TYPE = "deb"
-    #DOCKERIZED = True
+    # DOCKERIZED = True
 
 
 class RpmPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_TYPE = PackageType.RPM
+    PACKAGE_TYPE = constants.PackageType.RPM
     PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
-        deployers.Architecture.X86_64: "x86_64",
-        deployers.Architecture.ARM64: "aarch64"
+        constants.Architecture.X86_64: "x86_64",
+        constants.Architecture.ARM64: "aarch64"
     }
     PACKAGE_FPM_TYPE = "rpm"
-    #DOCKERIZED = True
+    # DOCKERIZED = True
 
 
 class TarballPackageBuilder(LinuxPackageBuilder):
@@ -1180,10 +1164,11 @@ class TarballPackageBuilder(LinuxPackageBuilder):
     PACKAGE_TYPE = "tar"
     INSTALL_TYPE = "packageless"
     PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
-        Architecture.X86_64: Architecture.X86_64.value,
-        Architecture.ARM64: Architecture.ARM64.value
+        constants.Architecture.X86_64: constants.Architecture.X86_64.value,
+        constants.Architecture.ARM64: constants.Architecture.ARM64.value
     }
-    #DOCKERIZED = True
+
+    # DOCKERIZED = True
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
 
@@ -1233,11 +1218,6 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 class MsiWindowsPackageBuilder(PackageBuilder):
     PACKAGE_TYPE = "msi"
     INSTALL_TYPE = "package"
-    # PREPARE_BUILD_ENVIRONMENT_SCRIPT_PATH = (
-    #     _AGENT_BUILD_PATH / "windows/prepare_build_environment.ps1"
-    # )
-    DOCKERIZED = False
-    ENVIRONMENT_DEPLOYER_NAME = "agent_builder"
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able
@@ -1256,18 +1236,6 @@ class MsiWindowsPackageBuilder(PackageBuilder):
             return version
 
         return base_version
-
-    @classmethod
-    def _prepare_build_environment(cls, cache_dir: Union[str, pl.Path] = None):
-        """
-        Prepare the build environment to be able to build the windows msi package.
-        """
-        prepare_environment_script_path = (
-            _AGENT_BUILD_PATH / "windows/prepare_build_environment.ps1"
-        )
-        subprocess.check_call(
-            ["powershell", str(prepare_environment_script_path), str(cache_dir)]
-        )
 
     def _build(self, output_path: Union[str, pl.Path]):
 
@@ -1349,403 +1317,3 @@ class MsiWindowsPackageBuilder(PackageBuilder):
             ],
             cwd=str(scalyr_dir.absolute().parent),
         )
-
-
-# Map package type names to package builder classes.
-package_types_to_builders = {
-    package_builder_cls.PACKAGE_TYPE: package_builder_cls
-    for package_builder_cls in [
-        DebPackageBuilder,
-        RpmPackageBuilder,
-        TarballPackageBuilder,
-        MsiWindowsPackageBuilder,
-        K8sPackageBuilder,
-        DockerJsonPackageBuilder,
-        DockerSyslogPackageBuilder,
-        DockerApiPackageBuilder
-    ]
-}
-
-# PACKAGE_TYPE_TO_FILENAME_GLOB = {
-#     "deb": "scalyr-agent-2_*.*.*_all.deb",
-#     "rpm": "scalyr-agent-2-*.*.*-*.noarch.rpm",
-#     "tar": "scalyr-agent-*.*.*.tar.gz",
-#     "msi": "ScalyrAgentInstaller-*.*.*.msi",
-#     "k8s": "scalyr-agent-k8s-*.*.*",
-#     "docker-json": "scalyr-agent-docker-json-*.*.*",
-# }
-
-@dataclasses.dataclass
-class DockerImageSpec:
-    image_name: str
-    architecture: deployers.Architecture
-
-
-def create_build_spec_name(package_type: PackageType, architecture: deployers.Architecture = None):
-    result = f"{package_type.value}"
-    if architecture:
-        result = f"{result}_{architecture.value}"
-
-    return result
-
-
-
-
-@dataclasses.dataclass
-class PackageBuildSpec:
-    package_type: PackageType
-    package_builder_cls: Type[PackageBuilder]
-    used_deployers: List[deployers.EnvironmentDeployer]
-    filename_glob: str
-    architecture: deployers.Architecture
-    base_image: DockerImageSpec = None
-
-
-
-_LINUX_SPECS_BASE_IMAGE = "centos:7"
-_LINUX_SPECS_DEPLOYERS = [
-    deployers.PYTHON_ENVIRONMENT_DEPLOYER,
-    deployers.BASE_ENVIRONMENT_DEPLOYER
-]
-
-_DEFAULT_ARCHITECTURES = [Architecture.X86_64, Architecture.ARM64]
-
-SPECS: Dict[str, PackageBuildSpec] = {}
-
-
-def _add_specs(
-        package_type: PackageType,
-        package_builder_cls: Type[PackageBuilder],
-        filename_glob_format: str,
-        used_deployers: List[deployers.EnvironmentDeployer] = None,
-        base_docker_image: str = None,
-        architectures: List[deployers.Architecture] = None,
-):
-
-    global SPECS
-    architectures = architectures or [None]
-
-    specs = []
-
-    for arch in architectures:
-        used_deployers = used_deployers or []
-
-        if base_docker_image:
-            base_docker_image_spec = DockerImageSpec(
-                image_name=base_docker_image,
-                architecture=arch
-            )
-        else:
-            base_docker_image_spec = None
-
-        package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES.get(arch, "")
-
-        spec = PackageBuildSpec(
-            package_type=package_type,
-            package_builder_cls=package_builder_cls,
-            filename_glob=filename_glob_format.format(arch=package_arch_name),
-            used_deployers=used_deployers,
-            architecture=arch,
-            base_image=base_docker_image_spec
-        )
-        spec_name = create_build_spec_name(
-            package_type=package_type,
-            architecture=arch
-        )
-        SPECS[spec_name] = spec
-        specs.append(spec)
-
-    return specs
-
-DEB_x86_64, DEB_ARM64 = _add_specs(
-    package_type=PackageType.DEB,
-    package_builder_cls=DebPackageBuilder,
-    filename_glob_format="scalyr-agent-2_*.*.*_{arch}.deb",
-    used_deployers=_LINUX_SPECS_DEPLOYERS,
-    base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-    architectures=_DEFAULT_ARCHITECTURES
-)
-RPM_x86_64, RPM_ARM64 = _add_specs(
-    package_type=PackageType.RPM,
-    package_builder_cls=RpmPackageBuilder,
-    filename_glob_format="scalyr-agent-2-*.*.*-*.{arch}.rpm",
-    used_deployers=_LINUX_SPECS_DEPLOYERS,
-    base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-    architectures=_DEFAULT_ARCHITECTURES
-)
-TAR_x86_64, TAR_ARM64 = _add_specs(
-    package_type=PackageType.TAR,
-    package_builder_cls=TarballPackageBuilder,
-    filename_glob_format="scalyr-agent-*.*.*_{arch}.tar.gz",
-    used_deployers=_LINUX_SPECS_DEPLOYERS,
-    base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-    architectures=_DEFAULT_ARCHITECTURES
-)
-MSI_x86_64 = _add_specs(
-    package_type=PackageType.MSI,
-    package_builder_cls=MsiWindowsPackageBuilder,
-    filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
-    used_deployers=[deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
-    architectures=[Architecture.X86_64]
-)
-
-
-a=10
-# DEB_X86_64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.DEB,
-#     package_builder_cls=DebPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-2_*.*.*_amd64.deb",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-#     architecture=Architecture.X86_64
-# )
-#
-# DEB_ARM64_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.DEB,
-#     package_builder_cls=DebPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-2_*.*.*_arm64.deb",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-#     architecture=Architecture.ARM64
-# )
-#
-# RPM_X86_64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.RPM,
-#     package_builder_cls=RpmPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-2-*.*.*-*.x86_64.rpm",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-#     architecture=Architecture.X86_64
-# )
-#
-# RPM_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.RPM,
-#     package_builder_cls=RpmPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-2-*.*.*-*.aarch64.rpm",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-#     architecture=Architecture.ARM64
-# )
-#
-# TAR_X86_64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.TAR,
-#     package_builder_cls=TarballPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-*.*.*_x86_64.tar.gz",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-#     architecture=Architecture.X86_64
-# )
-#
-# TAR_ARM64_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.TAR,
-#     package_builder_cls=TarballPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-*.*.*_arm64.tar.gz",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-#     architecture=Architecture.ARM64
-# )
-#
-# MSI_PACKAGE_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.MSI,
-#     package_builder_cls=MsiWindowsPackageBuilder,
-#     deployers=[deployers.BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
-#     filename_glob="ScalyrAgentInstaller-*.*.*.msi",
-#     architecture=Architecture.X86_64
-# )
-#
-# DOCKER_JSON_BUILD_SPEC = PackageBuildSpec(
-#     package_type=PackageType.DOCKER_JSON,
-#     package_builder_cls=DockerJsonPackageBuilder,
-#     deployers=_LINUX_SPECS_DEPLOYERS,
-#     filename_glob="scalyr-agent-docker-json-*.*.*",
-#     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
-# )
-
-
-
-# class PackageTypeWithArchitecture:
-#     DEB_X86_64 = f"{PackageType.DEB}"
-#     DEB_ARM64 = "deb_arm64"
-#     RPM_X86_64 = "rpm_x86_64"
-#     RPM_ARM64 = "rpm_arm64"
-#     TAR_X86_64 = "tar_x86_64"
-#     TAR_ARM64 = "tar_arm64"
-
-
-def get_spec_name_from_package_type_and_architecture(
-        package_type: PackageType,
-        architecture: Optional[Union[str, Architecture]] = None
-):
-    if not architecture:
-        return package_type.value
-
-    if isinstance(architecture, Architecture):
-        arch = architecture.value
-    else:
-        arch = architecture
-    return f"{package_type.value}_{arch}"
-
-
-
-def get_package_spec_name(
-        spec: PackageBuildSpec
-):
-    return get_spec_name_from_package_type_and_architecture(
-        package_type=spec.package_type,
-        architecture=spec.architecture
-    )
-
-
-# PACKAGE_BUILD_SPECS = {
-#     f"{PackageType.DEB.value}_{Architecture.X86_64.value}": DEB_X86_64_PACKAGE_BUILD_SPEC,
-#     f"{PackageType.DEB.value}_{Architecture.ARM64.value}": DEB_ARM64_ARM64_PACKAGE_BUILD_SPEC,
-#     f"{PackageType.RPM.value}_{Architecture.X86_64.value}": RPM_X86_64_PACKAGE_BUILD_SPEC,
-#     f"{PackageType.RPM.value}_{Architecture.ARM64.value}": RPM_ARM64_PACKAGE_BUILD_SPEC,
-#     f"{PackageType.TAR.value}_{Architecture.X86_64.value}": TAR_X86_64_PACKAGE_BUILD_SPEC,
-#     f"{PackageType.TAR.value}_{Architecture.ARM64.value}": TAR_ARM64_PACKAGE_BUILD_SPEC,
-#     "msi": MSI_PACKAGE_BUILD_SPEC,
-#     "docker-json": DOCKER_JSON_BUILD_SPEC
-# }
-
-# PACKAGE_BUILD_SPECS = {
-#    get_package_spec_name(spec): spec for spec in [
-#         DEB_X86_64_PACKAGE_BUILD_SPEC,
-#         DEB_ARM64_ARM64_PACKAGE_BUILD_SPEC,
-#         RPM_X86_64_PACKAGE_BUILD_SPEC,
-#         RPM_ARM64_PACKAGE_BUILD_SPEC,
-#         TAR_X86_64_PACKAGE_BUILD_SPEC,
-#         TAR_ARM64_PACKAGE_BUILD_SPEC,
-#         MSI_PACKAGE_BUILD_SPEC,
-#         DOCKER_JSON_BUILD_SPEC
-#     ]
-# }
-#
-# a=10
-
-
-def build_package(
-        #package_type: str,
-        package_build_spec: PackageBuildSpec,
-        output_path: Union[str, pl.Path],
-        locally: bool = False,
-        variant: str = None,
-        no_versioned_file_name: bool = False
-):
-
-    if output_path.exists():
-        shutil.rmtree(output_path)
-    output_path.mkdir(parents=True)
-
-    package_builder_cls = package_build_spec.package_builder_cls
-    package_builder = package_builder_cls(
-        architecture=package_build_spec.architecture,
-        variant=variant, no_versioned_file_name=no_versioned_file_name
-    )
-    if locally or not package_build_spec.base_image:
-        package_builder.build(
-            output_path=output_path,
-        )
-    else:
-        build_package_script_path = pl.Path("/scalyr-agent-2/build_package.py")
-        command_argv = [
-            str(build_package_script_path),
-            "build",
-            get_package_spec_name(package_build_spec),
-            "--locally",
-            "--output-dir",
-            "/tmp/build",
-        ]
-
-        command = shlex.join(command_argv)
-        run_command_in_docker_and_get_output(
-            package_build_spec=package_build_spec,
-            command=command,
-            output_path=output_path,
-            build_stage="build"
-        )
-
-
-def run_command_in_docker_and_get_output(
-        package_build_spec: PackageBuildSpec,
-        command: str,
-        output_path: Union[str, pl.Path],
-        build_stage: str
-):
-    """
-    Run command in the special Dockerfile which is located with this module in the same directory.
-    """
-    # Make sure that the base image with build environment is built.
-
-    current_base_image = package_build_spec.base_image.image_name
-    for deployer in package_build_spec.used_deployers:
-
-        deployer.deploy_in_docker(
-            base_docker_image=current_base_image,
-            architecture=package_build_spec.architecture
-        )
-        current_base_image = deployer.get_image_name(architecture=package_build_spec.architecture)
-
-    dockerfile_path = __PARENT_DIR__ / "Dockerfile"
-    spec_name = create_build_spec_name(
-        package_type=package_build_spec.package_type,
-        architecture=package_build_spec.architecture
-    )
-
-    image_name = f"agent-builder-spec-{spec_name}".lower()
-
-    # Run the image build. The package also has to be build during that.
-    # Building the package during the image build is more convenient than building it in the container
-    # because the the docker build caching mechanism will save our time when nothing in agent source is changed.
-    # This can save time during the local debugging.
-
-    env = os.environ.copy()
-    env["DOCKER_BUILDKIT"] = "1"
-
-    subprocess.check_call(
-        [
-            "docker",
-            "build",
-            "--platform",
-            deployers.architecture_to_docker_architecture(
-                package_build_spec.architecture
-            ),
-            "-t",
-            image_name,
-            "--build-arg",
-            f"BASE_IMAGE_NAME={current_base_image}",
-            "--build-arg",
-            f"BUILD_COMMAND=python3 {command}",
-            "--build-arg",
-            f"BUILD_STAGE={build_stage}",
-            "-f",
-            str(dockerfile_path),
-            str(__SOURCE_ROOT__),
-        ],
-        env=env
-    )
-
-    # The image is build and package has to be fetched from it, so create the container...
-
-    # Remove the container with the same name if exists.
-    container_name = image_name
-
-    subprocess.check_call(["docker", "rm", "-f", container_name])
-
-    # Create the container.
-    subprocess.check_call(
-        ["docker", "create", "--name", container_name, image_name]
-    )
-
-    # Copy package output from the container.
-    subprocess.check_call(
-        [
-            "docker",
-            "cp",
-            "-a",
-            f"{container_name}:/tmp/build/.",
-            str(output_path),
-        ],
-    )
-
-    # Remove the container.
-    subprocess.check_call(["docker", "rm", "-f", container_name])

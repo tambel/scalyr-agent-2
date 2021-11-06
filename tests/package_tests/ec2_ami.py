@@ -110,6 +110,7 @@ from libcloud.compute.deployment import (
 )
 
 #from scalyr_agent import compat
+from agent_tools import build_and_test_specs
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
@@ -123,19 +124,7 @@ MOCK_CONFIGS_DIRECTORY = os.path.join(BASE_DIR, "configs/")
 TEST_FILES_DIRECTORY = os.path.join(BASE_DIR, "files/")
 
 
-@dataclasses.dataclass
-class OSFamily:
-    WINDOWS = 1
-    LINUX = 2
 
-
-@dataclasses.dataclass
-class Ec2BasedTestSpec:
-    image_name: str
-    image_id: str
-    size_id: str
-    ssh_username: str
-    os_family: OSFamily
 
 
 # TODO: Revert back to micro image if there are still failures with small
@@ -339,7 +328,7 @@ def _verify_url_exists(url, use_head=False):
 
 
 def main(
-    distro: Ec2BasedTestSpec,
+    distro: build_and_test_specs.Ec2BasedTestSpec,
     #test_type,
     #from_version,
     to_version,
@@ -363,7 +352,7 @@ def main(
     # TODO: Lower those timeouts when upstream yum related issues or similar start to stabilize.
     # All AMI tests should take less than 5 minutes, but in the last days (dec 1, 2020), they
     # started to take 10 minutes with multiple timeouts.
-    if distro.os_family == OSFamily.WINDOWS:
+    if distro.os_family == build_and_test_specs.OSFamily.WINDOWS:
         deploy_step_timeout = 440  # 320
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
@@ -389,7 +378,7 @@ def main(
         target=str(test_runner_remote_path)
     )
 
-    if distro.os_family == OSFamily.WINDOWS:
+    if distro.os_family == build_and_test_specs.OSFamily.WINDOWS:
         script_content = f"python3 {test_runner_remote_path}"
         script_extension = "ps1"
     else:

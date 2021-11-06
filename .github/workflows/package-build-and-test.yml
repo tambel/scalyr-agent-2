@@ -10,11 +10,11 @@ on:
         required: true
         type: string
 
-#      build-matrix:
-#        required: true
-#        type: string
+      package-build-spec:
+        required: true
+        type: string
 
-      test-targets:
+      test-specs:
         required: false
         type: string
 
@@ -23,16 +23,16 @@ env:
 jobs:
 
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.os }}
     strategy:
-      matrix:
+      matrix: ${{fromJSON(inputs.package-build-spec) }}
 #        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
 #        os: [ubuntu-20.04]
 #        python-version: ["3.8"]
-        include:
-          - package_type: ${{ inputs.package_name }}
-            os: ${{ inputs.os }}
-            python-version: "3.8"
+#        include:
+#          - package_type: ${{ inputs.package_name }}
+#            os: ${{ inputs.os }}
+#            python-version: "3.8"
 #          - package_type: "k8s"
 #            os: ubuntu-20.04
 #            python-version: "3.8"
@@ -47,6 +47,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.8.10'
+
 
 #      - name: Get information about deployers which are used to build '${{ matrix.package_type }}' package.
 #        id: get-deployers-info
@@ -63,6 +64,15 @@ jobs:
 #          names: ${{ steps.get-deployers-info.outputs.deployer-names }}
 #          base-docker-image: ${{ steps.get-deployers-info.outputs.deployer-base-image }}
 #          architecture: ${{ steps.get-deployers-info.outputs.architecture }}
+
+      - name: Prepare build environment by running appropriate deployer.
+        if: ${{ steps.get-deployers-info.outputs.deployer-names }}
+        id: prepare
+        uses: ./.github/actions/run-environment-deployer
+        with:
+          names: ${{ matrix.deployers }}
+          base-docker-image: ${{ matrix.base-docker-image }}
+          architecture: ${{ matrix.architecture }}
 #
 #      - name: Build.
 #        id: build
@@ -101,7 +111,7 @@ jobs:
     needs: build
     runs-on: ${{ inputs.os }}
     strategy:
-      matrix: ${{fromJSON(inputs.test-targets) }}
+      matrix: ${{fromJSON(inputs.test-specs) }}
 
     steps:
       - name: Checkout repository

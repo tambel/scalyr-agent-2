@@ -61,17 +61,7 @@ __PARENT_DIR__ = pl.Path(__file__).parent.absolute()
 __SOURCE_ROOT__ = __PARENT_DIR__.parent.parent
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
-
-class Architecture(enum.Enum):
-    X86_64 = "x86_64"
-    ARM64 = "arm64"
-
-
-def architecture_to_docker_architecture(architecture: Architecture):
-    if architecture == Architecture.X86_64:
-        return "amd64"
-    elif architecture == Architecture.ARM64:
-        return "arm64"
+from agent_tools import constants
 
 
 class EnvironmentDeployer:
@@ -127,7 +117,7 @@ class EnvironmentDeployer:
     def deploy_in_docker(
         self,
         base_docker_image: str,
-        architecture: Architecture,
+        architecture: constants.Architecture,
         cache_dir: Union[str, pl.Path] = None,
 
     ):
@@ -211,7 +201,7 @@ class EnvironmentDeployer:
                 "docker",
                 "run",
                 "--platform",
-                architecture_to_docker_architecture(architecture),
+                architecture.as_docker_platform.value,
                 "-i",
                 "--name",
                 container_name,
@@ -233,7 +223,7 @@ class EnvironmentDeployer:
                 subprocess.check_call(["docker", "save", image_name], stdout=f)
 
 
-    def get_image_name(self, architecture: Architecture):
+    def get_image_name(self, architecture: constants.Architecture):
 
         return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}-{architecture.value}".lower()
 
@@ -296,68 +286,6 @@ class EnvironmentDeployer:
         return self._used_files_checksum
 
 
-class BaseEnvironmentDeployer(EnvironmentDeployer):
-    FILES_USED_IN_DEPLOYMENT = [
-        _AGENT_BUILD_DIR / "requirements.txt",
-        _AGENT_BUILD_DIR / "monitors_requirements.txt",
-        __SOURCE_ROOT__ / "dev-requirements.txt",
-        __SOURCE_ROOT__ / "benchmarks/micro/requirements-compression-algorithms.txt",
-    ]
-
-
-base_environment_used_files = [
-    _AGENT_BUILD_DIR / "requirements.txt",
-    _AGENT_BUILD_DIR / "monitors_requirements.txt",
-    __SOURCE_ROOT__ / "dev-requirements.txt",
-    __SOURCE_ROOT__ / "benchmarks/micro/requirements-compression-algorithms.txt",
-]
-
-PYTHON_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
-    name="python",
-    deployment_script_path=__PARENT_DIR__ / "install_python_and_ruby.sh"
-)
-
-BASE_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
-    name="base_environment",
-    deployment_script_path=__PARENT_DIR__ / "deploy_base_environment.sh",
-    used_files=base_environment_used_files,
-)
-
-BASE_WINDOWS_ENVIRONMENT_DEPLOYER = EnvironmentDeployer(
-    name="windows_agent_builder",
-    deployment_script_path=__PARENT_DIR__ / "deploy_agent_windows_builder.ps1",
-    used_files=base_environment_used_files,
-)
-
-
-# class TestEnvironmentDeployer(BaseEnvironmentDeployer):
-#     NAME = "test"
-#     DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_base_environment.sh"
-#
-#
-# class AgentBuilderMachineDeployer(BaseEnvironmentDeployer):
-#     NAME = "agent_builder"
-#     if platform.system() != "Windows":
-#         DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_linux_builder.sh"
-#     else:
-#         DEPLOYMENT_SCRIPT = __PARENT_DIR__ / "deploy_agent_windows_builder.ps1"
-#
-
-# class DockerizedAgentBuilderMachineDeployer(AgentBuilderMachineDeployer):
-#     NAME = "dockerized_agent_builder"
-#     BASE_DOCKER_IMAGE = "centos:7"
-
-
-# Map deployers to their names.
-DEPLOYERS: Dict[str, EnvironmentDeployer] = {
-    dep.name: dep for dep in [
-        PYTHON_ENVIRONMENT_DEPLOYER,
-        BASE_ENVIRONMENT_DEPLOYER,
-        BASE_WINDOWS_ENVIRONMENT_DEPLOYER
-    ]
-}
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
 
@@ -401,7 +329,7 @@ if __name__ == '__main__':
         if args.base_docker_image:
             deployer.deploy_in_docker(
                 base_docker_image=args.base_docker_image,
-                architecture=Architecture(args.architecture),
+                architecture=constants.Architecture(args.architecture),
                 cache_dir=args.cache_dir
             )
         else:
