@@ -6,11 +6,11 @@ inputs:
   names:
     description: 'Names of the deployers.'
     required: true
-  architecture:
-    description: ""
-    required: false
   base-docker-image:
     description: "Name of the base docker image. If specified, then the deployer will be executed inside this image."
+    required: false
+  architecture:
+    description: ""
     required: false
 
 runs:
@@ -27,7 +27,7 @@ runs:
           current_deployer_name=$(cut -d "," -f -1 <<< $names)
           other_deployer_names=$(cut -d "," -f 2- <<< $names)
           echo "::set-output name=checksum::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" checksum)"
-          echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture ${{ inputs.architecture }})"
+          echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture "${{ inputs.architecture }}")"
           echo "::set-output name=current-deployer-name::$current_deployer_name"
           echo "::set-output name=other-deployer-names::$other_deployer_names"
 
