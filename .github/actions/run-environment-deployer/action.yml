@@ -65,10 +65,10 @@ runs:
         ## Remove checksum file, it is not needed anymore.
         #rm checksum.txt
 
-#    - name: Run base deployer if specified.
-#      if: steps.deployer-info.outputs.other-deployer-names
-#      uses: ./.github/actions/run-environment-deployer
-#      with:
-#        names: ${{ steps.deployer-info.outputs.other-deployer-names }}
-#        base-docker-image: ${{ steps.deployer-info.outputs.result-image-name }}
-#        architecture: ${{ inputs.architecture }}
+    - name: Run base deployer if specified.
+      if: steps.deployer-info.outputs.other-deployer-names
+      uses: ./.github/actions/run-environment-deployer
+      with:
+        names: ${{ steps.deployer-info.outputs.other-deployer-names }}
+        base-docker-image: ${{ steps.deployer-info.outputs.result-image-name }}
+        architecture: ${{ inputs.architecture }}
