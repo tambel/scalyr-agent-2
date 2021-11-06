@@ -117,48 +117,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - run: |
-          echo ${{ matrix.spec_name }}
+      - name: Install python.
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.10'
 
-
-
-
-#  package-test:
-#    needs: build
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
-#        os: ["ubuntu-20.04"]
-#        python-version: [3.8]
-#        where: ["docker"]
-#        include:
-#          - target: ubuntu-2004-tar
-#            where: docker
-#            os: ubuntu-20.04
-##          - target: docker-json
-##            where: locally
-##            os: ubuntu-20.04
-#          - target: windows-server-2019
-#            where: locally
-#            os: windows-2019
-#
-#
-#
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v2
-#
-#      - name: Install python.
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: '3.8.10'
-#
-#      - name: Prepare environment for the tests.
-#        id: prepare
-#        uses: ./.github/actions/run-environment-deployer
-#        with:
-#          names: 'base_environment'
+      - name: Prepare environment for the tests.
+        id: prepare
+        uses: ./.github/actions/run-environment-deployer
+        with:
+          names: 'base_environment'
 #
 #
 #      - name: "Get package file info"
