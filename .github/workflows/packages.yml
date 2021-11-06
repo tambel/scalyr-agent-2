@@ -12,6 +12,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Prepare environment for the tests.
+        id: prepare
+        uses: ./.github/actions/run-environment-deployer
+        with:
+          names: 'base_environment'
+
       - run: |
           python3 tests/package_tests/package_test_runner.py deb_x86_64
           echo "::set-output name=package-test-targets::$(python3 tests/package_tests/package_test_runner.py deb_x86_64)"
