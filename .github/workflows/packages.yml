@@ -37,4 +37,4 @@ jobs:
     with:
       package_name: deb_x86_64
       os: ubuntu-20.04
-      test-targets: "${{ needs.get-info.outputs.package-test-targets }}"
+      test-targets: ${{ needs.get-info.outputs.package-test-targets }}
