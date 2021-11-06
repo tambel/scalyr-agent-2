@@ -93,15 +93,15 @@ jobs:
             tests-build-output/package_test_runner*
 
 
-  package-test:
-    needs: build
-    runs-on: ${{ inputs.package_name }}
-    strategy:
-      matrix: ${{fromJSON( inputs.test-targets }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+#  package-test:
+#    needs: build
+#    runs-on: ${{ inputs.package_name }}
+#    strategy:
+#      matrix: ${{fromJSON( inputs.test-targets }}
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
 
 
 
