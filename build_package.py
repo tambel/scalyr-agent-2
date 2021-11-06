@@ -123,12 +123,12 @@ if __name__ == '__main__':
             print(package_builder_spec.filename_glob)
 
         if args.spec == "base-docker-image":
-            if package_builder_spec.base_image:
+            if package_builder_spec.base_image.image_name:
                 print(package_builder_spec.base_image)
 
         if args.spec == "architecture":
             if package_builder_spec.architecture:
-                print(package_builder_spec.architecture)
+                print(package_builder_spec.architecture.value)
 
         exit(0)
 
