@@ -6,6 +6,10 @@ inputs:
   names:
     description: 'Names of the deployers.'
     required: true
+
+  architecture:
+    description: ""
+    required: true
   base-docker-image:
     description: "Name of the base docker image. If specified, then the deployer will be executed inside this image."
     required: false
@@ -33,7 +37,7 @@ runs:
         cache-version: v1
       with:
         path: ~/dependencies_cache
-        key: deployer-${{ steps.deployer-info.outputs.current-deployer-name }}-${{ inputs.base-docker-image }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+        key: deployer-${{ steps.deployer-info.outputs.current-deployer-name }}-${{ inputs.base-docker-image }}-${{ inputs.architecture }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
@@ -41,7 +45,12 @@ runs:
         echo "FFF"
         echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
         echo "${{ steps.deployer-info.outputs.current-deployer-name }}"
-        python3 agent_build/environment_deployers/deployers.py deploy ${{ steps.deployer-info.outputs.current-deployer-name }} --base-docker-image  "${{ inputs.base-docker-image }}" --cache-dir ~/dependencies_cache
+        python3 agent_build/environment_deployers/deployers.py
+          deploy
+          ${{ steps.deployer-info.outputs.current-deployer-name }}
+          --base-docker-image  "${{ inputs.base-docker-image }}"
+          --architecture "${{ inputs.architecture }}"
+          --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
@@ -61,3 +70,4 @@ runs:
       with:
         names: ${{ steps.deployer-info.outputs.other-deployer-names }}
         base-docker-image: ${{ inputs.base-docker-image }}
+        architecture: ${{ inputs.architecture }}

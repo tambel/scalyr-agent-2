@@ -17,10 +17,10 @@ jobs:
           echo "::set-output name=package-test-targets::$(python3 tests/package/tests/package_test_specs.py deb_x86_64)"
 
 
-  call-workflow-1:
-    needs: get-info
-    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
-    with:
-      package_name: deb_x86_64
-      os: ubuntu-20.04
-      test-targets: ${{ needs.get-info.outputs.package-test-targets }}
+#  call-workflow-1:
+#    needs: get-info
+#    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
+#    with:
+#      package_name: deb_x86_64
+#      os: ubuntu-20.04
+#      test-targets: ${{ needs.get-info.outputs.package-test-targets }}
