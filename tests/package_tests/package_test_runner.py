@@ -300,6 +300,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.command == "run":
+        print(args)
         run_test_from_spec(
             test_spec_name=args.spec_name,
             package_path=args.package_path,
