@@ -383,6 +383,13 @@ if __name__ == '__main__':
     package_deployers_parser = subparsers.add_parser("get-package-build-spec-info")
     package_deployers_parser.add_argument("package_type", choices=PACKAGE_BUILD_SPECS.keys())
 
+    deployer_parser = subparsers.add_parser("deployer")
+    deployer_parser.add_argument("name", choices=DEPLOYERS.keys())
+    deployer_parser.add_argument("action", choices=["deploy", "checksum"])
+    deployer_parser.add_argument("--cache-dir", dest="cache_dir")
+    deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
+    deployer_parser.add_argument("--architecture")
+
     args = parser.parse_args()
 
     if args.command == "get-package-build-spec-info":
@@ -411,3 +418,27 @@ if __name__ == '__main__':
         print(json.dumps({"include": result_spec_infos}))
 
         sys.exit(0)
+
+    if args.command == "deployer":
+        print(args)
+        deployer = DEPLOYERS[args.name]
+        if args.action == "deploy":
+            if args.base_docker_image:
+                deployer.deploy_in_docker(
+                    base_docker_image=args.base_docker_image,
+                    architecture=constants.Architecture(args.architecture),
+                    cache_dir=args.cache_dir,
+                )
+            else:
+                deployer.deploy(
+                    cache_dir=args.cache_dir
+                )
+
+            exit(0)
+
+        if args.action == "checksum":
+            checksum = deployer.get_used_files_checksum()
+            print(checksum)
+            exit(0)
+        print(args)
+
