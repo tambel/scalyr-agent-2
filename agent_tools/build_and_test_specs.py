@@ -420,7 +420,6 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if args.command == "deployer":
-        print(args)
         deployer = DEPLOYERS[args.name]
         if args.action == "deploy":
             if args.base_docker_image:
