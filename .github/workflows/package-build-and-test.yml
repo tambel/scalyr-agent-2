@@ -127,6 +127,7 @@ jobs:
         uses: ./.github/actions/run-environment-deployer
         with:
           names: 'base_environment'
+          architecture: ${{ matrix.architecture }}
 #
 #
 #      - name: "Get package file info"
