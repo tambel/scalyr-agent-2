@@ -8,6 +8,8 @@ jobs:
 
   get-info:
     runs-on: ubuntu-20.04
+    outputs:
+      package-test-targets: ${{ steps.package-test-targets.outputs.package-test-targets }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -24,6 +26,7 @@ jobs:
           names: 'base_environment'
 
       - run: |
+        id: package-test-targets
           python3 tests/package_tests/package_test_runner.py get-test-specs deb_x86_64
           echo "::set-output name=package-test-targets::$(python3 tests/package_tests/package_test_runner.py get-test-specs deb_x86_64)"
 
