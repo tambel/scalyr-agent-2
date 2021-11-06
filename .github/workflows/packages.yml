@@ -35,6 +35,7 @@ jobs:
 
 
   call-workflow-1:
+    name: deb_x86_64
     needs: get-info
     uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
     with:

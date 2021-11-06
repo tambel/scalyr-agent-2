@@ -79,7 +79,7 @@ def dockerized_function(
         if hasattr(sys, "dockerized"):
             return func(*args, **kwargs)
 
-        nonlocal path_mappings
+        nonlocal final_path_mappings
 
         def handle_arg(arg):
 
@@ -141,7 +141,7 @@ def dockerized_function(
             ["docker", "create", "--name", container_name, image_name]
         )
 
-        for host_path, container_path in path_mappings.items():
+        for host_path, container_path in final_path_mappings.items():
             # Copy package output from the container.
 
             if not host_path.exists():
