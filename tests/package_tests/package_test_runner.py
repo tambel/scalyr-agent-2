@@ -434,20 +434,19 @@ if __name__ == '__main__':
 
         test_specs = PACKAGE_BUILDER_TO_TEST_SPEC[args.package_type]
 
-        result_json_specs = []
+        #result_json_specs = []
+        json_result = collections.defaultdict(list)
+
         for spec in test_specs:
-            json_result = {}
             used_deployer_names = [d.name for d in spec.package_builder_spec.used_deployers]
             used_deployers_str = ",".join(used_deployer_names)
 
-            json_result["spec_name"] = spec.name
-            json_result["deployers"] = used_deployers_str
-            json_result["base-docker-image"] = spec.package_builder_spec.base_image.image_name
-            json_result["architecture"] = spec.package_builder_spec.architecture.value
+            json_result["spec_name"].append(spec.name)
+            json_result["deployers"].append(used_deployers_str)
+            json_result["base-docker-image"].append(spec.package_builder_spec.base_image.image_name)
+            json_result["architecture"].append(spec.package_builder_spec.architecture.value)
 
-            result_json_specs.append(json_result)
-
-            print(json.dumps(result_json_specs))
+        print(json.dumps(json_result))
 
         sys.exit(0)
 
