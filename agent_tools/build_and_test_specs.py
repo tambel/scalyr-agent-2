@@ -387,7 +387,7 @@ if __name__ == '__main__':
 
     if args.command == "get-package-build-spec-info":
         package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
-        build_spec = {"include": package_build_spec.used_deployers_info_as_dict}
+        build_spec = {"include": [package_build_spec.used_deployers_info_as_dict]}
         print(
             json.dumps(build_spec)
         )
