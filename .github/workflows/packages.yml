@@ -24,8 +24,8 @@ jobs:
           names: 'base_environment'
 
       - run: |
-          python3 tests/package_tests/package_test_runner.py deb_x86_64
-          echo "::set-output name=package-test-targets::$(python3 tests/package_tests/package_test_runner.py deb_x86_64)"
+          python3 tests/package_tests/package_test_runner.py get-test-specs deb_x86_64
+          echo "::set-output name=package-test-targets::$(python3 tests/package_tests/package_test_runner.py get-test-specs deb_x86_64)"
 
 
 #  call-workflow-1:
