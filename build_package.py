@@ -56,9 +56,9 @@ if __name__ == '__main__':
 
     for p in [build_parser, build_spec_parser]:
         p.add_argument(
-            "package_type",
+            "package_spec_name",
             type=str,
-            choices=list(package_builders.PACKAGE_TYPES_TO_BUILD_SPECS.keys()),
+            choices=list(package_builders.SPECS.keys()),
             help="Type of the package to build.",
         )
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Find the builder class.
-    package_builder_spec = package_builders.PACKAGE_TYPES_TO_BUILD_SPECS[args.package_type]
+    package_builder_spec = package_builders.SPECS[args.package_spec_name]
 
     if args.command == "get-build-spec":
         if args.spec == "deployers":
@@ -126,16 +126,19 @@ if __name__ == '__main__':
             if package_builder_spec.base_docker_image:
                 print(package_builder_spec.base_docker_image)
 
+        if args.spec == "architecture":
+            if package_builder_spec.architecture:
+                print(package_builder_spec.architecture)
+
         exit(0)
 
     if args.command == "build":
-        logging.info(f"Build package '{args.package_type}'...")
+        logging.info(f"Build package '{args.package_spec_name}'...")
         output_path = pl.Path(args.output_dir)
 
         # Build only frozen binary tests instead of package.
         if args.build_tests:
             package_builders.build_test_runner_frozen_binary(
-                package_type=args.package_type,
                 package_build_spec=package_builder_spec,
                 output_path=output_path,
                 locally=args.locally
@@ -143,7 +146,6 @@ if __name__ == '__main__':
             exit(0)
 
         package_builders.build_package(
-            package_type=args.package_type,
             package_build_spec=package_builder_spec,
             output_path=output_path,
             locally=args.locally,

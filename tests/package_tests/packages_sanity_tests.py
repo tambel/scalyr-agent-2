@@ -82,6 +82,7 @@ import time
 import re
 import tempfile
 import shutil
+import dataclasses
 
 from typing import Optional
 from typing import Union
@@ -120,6 +121,22 @@ MOCK_CONFIGS_DIRECTORY = os.path.join(BASE_DIR, "configs/")
 # Directory which contains additional files which are used by the test and are uploaded to the
 # server
 TEST_FILES_DIRECTORY = os.path.join(BASE_DIR, "files/")
+
+
+@dataclasses.dataclass
+class OSFamily:
+    WINDOWS = 1
+    LINUX = 2
+
+
+@dataclasses.dataclass
+class Ec2BasedTestSpec:
+    image_name: str
+    image_id: str
+    size_id: str
+    ssh_username: str
+    os_family: OSFamily
+
 
 # TODO: Revert back to micro image if there are still failures with small
 EC2_DISTRO_DETAILS_MAP = {
@@ -322,7 +339,7 @@ def _verify_url_exists(url, use_head=False):
 
 
 def main(
-    distro,
+    distro: Ec2BasedTestSpec,
     #test_type,
     #from_version,
     to_version,
@@ -343,125 +360,10 @@ def main(
 
 
 ):
-    # type: (str, str, str, str, str, str, str, bool, bool) -> None
-
-    # deployment objects for package files will be stored here.
-    file_upload_steps = []
-
-    # # We always upload all the mock test configs from tests/ami/configs/ directory to a remote
-    # # server.
-    # # Those configs are used during various checks and tests. Uploading the configs is much less
-    # # messy compared to manipulating the configs using sed on the server.
-    # file_names = os.listdir(MOCK_CONFIGS_DIRECTORY)
-    # for file_name in file_names:
-    #     config_file_path = os.path.join(MOCK_CONFIGS_DIRECTORY, file_name)
-    #     file_upload_step = _create_config_file_deployment_step(config_file_path)
-    #     file_upload_steps.append(file_upload_step)
-    #
-    # # Upload auxiliary files from tests/ami/files/
-    # file_names = os.listdir(TEST_FILES_DIRECTORY)
-    # for file_name in file_names:
-    #     file_path = os.path.join(TEST_FILES_DIRECTORY, file_name)
-    #     file_upload_step = _create_file_deployment_step(file_path, "ca_certs")
-    #     file_upload_steps.append(file_upload_step)
-
-    # if test_type == "install":
-    #     install_package_source = to_version
-    # else:
-    #     # install package is specified in from-version in case of upgrade
-    #     install_package_source = from_version
-
-    # # prepare data for install_package
-    # install_package_source_type = _get_source_type(install_package_source)
-
-    # if install_package_source_type == "file":
-    #     # create install package file deployment object.
-    #     file_upload_steps.append(
-    #         _create_file_deployment_step(install_package_source, "install_package")
-    #     )
-
-    # install_package_info = {
-    #     "type": install_package_source_type,
-    #     "source": install_package_source,
-    # }
-
-    upgrade_package_info = None
-
-    # # prepare data for upgrade_package if it is specified.
-    # if test_type == "upgrade":
-    #     upgrade_package_source = to_version
-    #     upgrade_package_source_type = _get_source_type(upgrade_package_source)
-    #
-    #     if upgrade_package_source_type == "file":
-    #         # create install package file deployment object.
-    #         file_upload_steps.append(
-    #             _create_file_deployment_step(to_version, "upgrade_package")
-    #         )
-    #
-    #     upgrade_package_info = {
-    #         "type": upgrade_package_source_type,
-    #         "source": upgrade_package_source,
-    #     }
-
-    distro_details = EC2_DISTRO_DETAILS_MAP[distro]
-
-    # if distro.lower().startswith("windows"):
-    #     package_type = "windows"
-    #     script_extension = "ps1"
-    # else:
-    #     package_type = (
-    #         "deb"
-    #         if distro.startswith("ubuntu") or distro.startswith("debian")
-    #         else "rpm"
-    #     )
-    #     script_extension = "sh"
-    #
-    # script_filename = "test_%s.%s.j2" % (package_type, script_extension)
-    # script_file_path = os.path.join(SCRIPTS_DIR, script_filename)
-
-    # with open(script_file_path, "r") as fp:
-    #     script_content = fp.read()
-
-    # cat_logs_script_file_path = os.path.join(
-    #     SCRIPTS_DIR, "cat_logs.%s" % (script_extension)
-    # )
-
-    # with open(cat_logs_script_file_path, "r") as fp:
-    #     cat_logs_script_content = fp.read()
-
-    # installer_script_info = {
-    #     "source": installer_script_url or DEFAULT_INSTALLER_SCRIPT_URL
-    # }
-    # if os.path.exists(installer_script_url):
-    #     installer_script_info["type"] = "file"
-    #     file_upload_steps.append(
-    #         _create_file_deployment_step(installer_script_url, "install-scalyr-agent-2")
-    #     )
-    # else:
-    #     if not _verify_url_exists(installer_script_url):
-    #         raise ValueError(
-    #             'Failed to retrieve installer script from "%s". Ensure that the URL is correct.'
-    #             % (installer_script_url)
-    #         )
-    #     installer_script_info["type"] = "url"
-
-    # rendered_template = render_script_template(
-    #     script_template=script_content,
-    #     distro_name=distro,
-    #     distro_details=distro_details,
-    #     python_package=python_package,
-    #     test_type=test_type,
-    #     install_package=install_package_info,
-    #     upgrade_package=upgrade_package_info,
-    #     installer_script_url=installer_script_info,
-    #     additional_packages=additional_packages,
-    #     verbose=verbose,
-    # )
-
     # TODO: Lower those timeouts when upstream yum related issues or similar start to stabilize.
     # All AMI tests should take less than 5 minutes, but in the last days (dec 1, 2020), they
     # started to take 10 minutes with multiple timeouts.
-    if "windows" in distro.lower():
+    if distro.os_family == OSFamily.WINDOWS:
         deploy_step_timeout = 440  # 320
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
@@ -487,11 +389,10 @@ def main(
         target=str(test_runner_remote_path)
     )
 
-    if distro.lower().startswith("windows"):
+    if distro.os_family == OSFamily.WINDOWS:
         script_content = f"python3 {test_runner_remote_path}"
         script_extension = "ps1"
     else:
-
         start_test_runner_command = create_remote_test_command(
             f"./{test_runner_remote_path}", str(remote_package_path),
         )
@@ -511,23 +412,6 @@ def main(
         test_package_step
     ])
 
-    # if file_upload_steps:
-    #     # Package files must be uploaded to the instance directly.
-    #     file_upload_steps.append(test_package_step)  # type: ignore
-    #     deployment = MultiStepDeployment(add=file_upload_steps)  # type: ignore
-    # else:
-    #     deployment = MultiStepDeployment(add=test_package_step)  # type: ignore
-
-    # # Add a step which always cats agent.log file at the end. This helps us troubleshoot failures.
-    # if "windows" not in distro.lower():
-    #     # NOTE: We don't add it on Windows since it tends to time out often
-    #     cat_logs_step = ScriptDeployment(
-    #         cat_logs_script_content, timeout=cat_step_timeout
-    #     )
-    #     deployment.add(cat_logs_step)
-    # else:
-    #     cat_logs_step = None  # type: ignore
-
     driver = get_libcloud_driver(
         access_key=access_key,
         secret_key=secret_key,
@@ -535,8 +419,8 @@ def main(
     )
 
     size = NodeSize(
-        distro_details["size_id"],
-        distro_details["size_id"],
+        distro.size_id,
+        distro.size_id,
         0,
         0,
         0,
@@ -544,7 +428,7 @@ def main(
         driver,
     )
     image = NodeImage(
-        distro_details["image_id"], distro_details["image_name"], driver, None
+        distro.image_id, distro.image_name, driver, None
     )
 
     circle_branch_name = os.environ.get("CIRCLE_BRANCH", "unknown")
@@ -575,7 +459,7 @@ def main(
             ssh_key=private_key_path,
             ex_keyname=keypair_name,
             ex_security_groups=security_groups,
-            ssh_username=distro_details["ssh_username"],
+            ssh_username=distro.ssh_username,
             ssh_timeout=20,
             max_tries=max_tries,
             wait_period=15,
@@ -621,51 +505,6 @@ def main(
 
     if not success:
         sys.exit(1)
-
-
-# def render_script_template(
-#     script_template,
-#     distro_name,
-#     distro_details,
-#     python_package,
-#     test_type,
-#     install_package=None,
-#     upgrade_package=None,
-#     installer_script_url=None,
-#     additional_packages=None,
-#     verbose=False,
-# ):
-#     # type: (str, str, dict, str, str, Optional[Dict], Optional[Dict], Optional[Dict], Optional[str], bool) -> str
-#     """
-#     Render the provided script template with common context.
-#     """
-#     # from_version = from_version or ""
-#     # to_version = to_version or ""
-#     template_context = distro_details.copy()
-#     template_context["distro_name"] = distro_name
-#
-#     template_context["test_type"] = test_type
-#
-#     template_context["installer_script_info"] = (
-#         installer_script_url or DEFAULT_INSTALLER_SCRIPT_URL
-#     )
-#     template_context["scalyr_api_key"] = SCALYR_API_KEY
-#     template_context["python_package"] = (
-#         python_package or distro_details["default_python_package_name"]
-#     )
-#
-#     template_context["install_package"] = install_package
-#     template_context["upgrade_package"] = upgrade_package
-#     template_context["additional_packages"] = additional_packages
-#
-#     template_context["verbose"] = verbose
-#
-#     env = Environment(
-#         loader=FileSystemLoader(SCRIPTS_DIR), extensions=["jinja2.ext.with_"]
-#     )
-#     template = env.from_string(script_template)
-#     rendered_template = template.render(**template_context)
-#     return rendered_template
 
 
 def destroy_node_and_cleanup(driver, node):

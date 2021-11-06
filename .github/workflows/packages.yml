@@ -5,8 +5,21 @@ on: [push]
 env:
   DOCKER_BUILDKIT: 1
 jobs:
+
+  get_info:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - run: |
+          echo "::set-output name=package-test-targets::$(python tests/package/tests/package_test_specs.py deb_x86_64)"
+
+
   call-workflow-1:
+    needs: get-info
     uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
     with:
       package_name: deb_x86_64
       os: ubuntu-20.04
+      test-targets: ${{ fromJSON(needs.outputs.package-test-targets) }}

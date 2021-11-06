@@ -24,6 +24,7 @@ import tarfile
 import logging
 import sys
 
+from agent_build import package_builders
 from tests.package_tests.common import LogVerifier, AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck
 
 
@@ -76,14 +77,17 @@ def install_msi_package(package_path: pl.Path):
     subprocess.check_call(f"msiexec.exe /I {package_path} /quiet", shell=True)
 
 
-def install_package(package_type: str, package_path: pl.Path):
-    if package_type == "deb":
+def install_package(
+        package_type: package_builders.PackageType,
+        package_path: pl.Path
+):
+    if package_type == package_builders.PackageType.DEB:
         install_deb_package(package_path)
-    elif package_type == "rpm":
+    elif package_type == package_builders.PackageType.RPM:
         install_rpm_package(package_path)
-    elif package_type == "tar":
+    elif package_type == package_builders.PackageType.TAR:
         install_tarball(package_path)
-    elif package_type == "msi":
+    elif package_type == package_builders.PackageType.MSI:
         install_msi_package(package_path)
 
 
@@ -91,49 +95,64 @@ def _get_msi_install_path() -> pl.Path:
     return pl.Path(os.environ["programfiles(x86)"]) / "Scalyr"
 
 
-def start_agent(package_type: str):
-    if package_type in ["deb", "rpm", "msi"]:
+def start_agent(package_type: package_builders.PackageType):
+    if package_type in [
+        package_builders.PackageType.DEB,
+        package_builders.PackageType.RPM,
+        package_builders.PackageType.TAR
+    ]:
 
-        if package_type == "msi":
+        if package_type == package_builders.PackageType.MSI:
             # Add agent binaries to the PATH env. variable on windows.
             bin_path = _get_msi_install_path() / "bin"
             os.environ["PATH"] = f"{bin_path};{os.environ['PATH']}"
 
         subprocess.check_call(f"scalyr-agent-2 start", shell=True, env=os.environ)
-    elif package_type == "tar":
+    elif package_type == package_builders.PackageType.TAR:
         tarball_dir = _get_tarball_install_path()
 
         binary_path = tarball_dir / "bin/scalyr-agent-2"
         subprocess.check_call([binary_path, "start"])
 
 
-def get_agent_status(package_type: str):
-    if package_type in ["deb", "rpm", "msi"]:
+def get_agent_status(package_type: package_builders.PackageType):
+    if package_type in [
+        package_builders.PackageType.DEB,
+        package_builders.PackageType.RPM,
+        package_builders.PackageType.TAR
+    ]:
         subprocess.check_call(f"scalyr-agent-2 status -v", shell=True)
-    elif package_type == "tar":
+    elif package_type == package_builders.PackageType.TAR:
         tarball_dir = _get_tarball_install_path()
 
         binary_path = tarball_dir / "bin/scalyr-agent-2"
         subprocess.check_call([binary_path, "status", "-v"])
 
 
-def stop_agent(package_type: str):
-    if package_type in ["deb", "rpm", "msi"]:
+def stop_agent(package_type: package_builders.PackageType):
+    if package_type in [
+        package_builders.PackageType.DEB,
+        package_builders.PackageType.RPM,
+        package_builders.PackageType.TAR
+    ]:
         subprocess.check_call(f"scalyr-agent-2 stop", shell=True)
-    if package_type == "tar":
+    if package_type == package_builders.PackageType.TAR:
         tarball_dir = _get_tarball_install_path()
 
         binary_path = tarball_dir / "bin/scalyr-agent-2"
         subprocess.check_call([binary_path, "stop"])
 
 
-def configure_agent(package_type: str, api_key: str):
-    if package_type in ["deb", "rpm"]:
+def configure_agent(package_type: package_builders.PackageType, api_key: str):
+    if package_type in[
+        package_builders.PackageType.DEB,
+        package_builders.PackageType.RPM,
+    ]:
         config_path = pathlib.Path(AGENT_CONFIG_PATH)
-    elif package_type == "tar":
+    elif package_type == package_builders.PackageType.TAR:
         install_path = _get_tarball_install_path()
         config_path = install_path / "config/agent.json"
-    elif package_type == "msi":
+    elif package_type == package_builders.PackageType.MSI:
         config_path = _get_msi_install_path() / "config" / "agent.json"
 
     config = {}
@@ -173,28 +192,31 @@ def remove_rpm_package():
     )
 
 
-def remove_package(package_type: str):
-    if package_type == "deb":
+def remove_package(package_type: package_builders.PackageType):
+    if package_type == package_builders.PackageType.DEB:
         remove_deb_package()
-    elif package_type == "rpm":
+    elif package_type == package_builders.PackageType.RPM:
         remove_rpm_package()
 
 
 AGENT_CONFIG_PATH = "/etc/scalyr-agent-2/agent.json"
 
 
-def _get_logs_path(package_type: str) -> pl.Path:
-    if package_type in ["deb", "rpm"]:
+def _get_logs_path(package_type: package_builders.PackageType) -> pl.Path:
+    if package_type in [
+        package_builders.PackageType.DEB,
+        package_builders.PackageType.RPM
+    ]:
         return pl.Path("/var/log/scalyr-agent-2")
-    elif package_type == "tar":
+    elif package_type == package_builders.PackageType.TAR:
         return _get_tarball_install_path() / "log"
-    elif package_type == "msi":
+    elif package_type == package_builders.PackageType.MSI:
         return _get_msi_install_path() / "log"
 
 
 def run(
         package_path: pl.Path,
-        package_type: str,
+        package_type: package_builders.PackageType,
         scalyr_api_key: str,
 ):
     if not package_path.exists():

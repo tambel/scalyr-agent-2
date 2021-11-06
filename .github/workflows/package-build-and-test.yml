@@ -10,6 +10,10 @@ on:
         required: true
         type: string
 
+      test-targets:
+        required: false
+        type: string
+
 env:
   DOCKER_BUILDKIT: 1
 jobs:
@@ -89,110 +93,127 @@ jobs:
             tests-build-output/package_test_runner*
 
 
-
-
-
-
   package-test:
     needs: build
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.package_name }}
     strategy:
-      matrix:
-        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
-        os: ["ubuntu-20.04"]
-        python-version: [3.8]
-        where: ["docker"]
-        include:
-          - target: ubuntu-2004-tar
-            where: docker
-            os: ubuntu-20.04
-#          - target: docker-json
-#            where: locally
-#            os: ubuntu-20.04
-          - target: windows-server-2019
-            where: locally
-            os: windows-2019
-
-
+      matrix: ${{fromJSON( inputs.test-targets }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install python.
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.10'
-
-      - name: Prepare environment for the tests.
-        id: prepare
-        uses: ./.github/actions/run-environment-deployer
-        with:
-          names: 'base_environment'
 
 
-      - name: "Get package file info"
-        id: get-package-info
-        run: |
-          #echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
-          echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py get ${{ matrix.target }} package-type)"
 
-#      - name: "Get package type."
-#        id: get-package-type
-#        run: echo "::set-output name=package-type::$(python tests/package_tests/deb_or_rpm_test.py ${{ matrix.target }} package-filename-glob)"
-
-      - name: Download package.
-        uses: actions/download-artifact@v2
-        with:
-          name: "package-${{ steps.get-package-info.outputs.package-type }}"
-          path: ~/package
-
-      - name: Download package test (if presented).
-        uses: actions/download-artifact@v2
-        if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
-        with:
-          name: "package-test-${{ steps.get-package-info.outputs.package-type }}"
-          path: ~/package_test
-
-      - name: Start minikube for the test of the kubernetes build.
-        if: ${{ steps.get-package-info.outputs.package-type == 'k8s' }}
-        shell: bash
-        run: |
-          minikube start
-
-      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
-      - name: Make Kubernetes and docker package builder scripts executable.
-        if: steps.get-package-info.outputs.package-type == 'k8s' || steps.get-package-info.outputs.package-type == 'docker-json'
-        run: |
-          chmod +x ~/package/*
-
-      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
-      - name: Make package test frozen binaries executable.
-        id: process-frozen-test-runner-path
-        if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
-        run: |
-          chmod +x ~/package_test/package_test_runner*
-
-          # set path to the frozen test runner as current step output.
-          echo "::set-output name=frozen_test_runner_path::$(ls ~/package_test/package_test_runner*)"
-
-
-#      - name: Set up QEMU
-#        id: qemu
-#        uses: docker/setup-qemu-action@v1
+#  package-test:
+#    needs: build
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        target: ["ubuntu-1404", "ubuntu-1604", "ubuntu-1804", "ubuntu-2004", "centos-7", "centos-8", "amazonlinux-2"]
+#        os: ["ubuntu-20.04"]
+#        python-version: [3.8]
+#        where: ["docker"]
+#        include:
+#          - target: ubuntu-2004-tar
+#            where: docker
+#            os: ubuntu-20.04
+##          - target: docker-json
+##            where: locally
+##            os: ubuntu-20.04
+#          - target: windows-server-2019
+#            where: locally
+#            os: windows-2019
+#
+#
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#
+#      - name: Install python.
+#        uses: actions/setup-python@v2
 #        with:
-#          platforms: all
+#          python-version: '3.8.10'
+#
+#      - name: Prepare environment for the tests.
+#        id: prepare
+#        uses: ./.github/actions/run-environment-deployer
+#        with:
+#          names: 'base_environment'
+#
+#
+#      - name: "Get package file info"
+#        id: get-package-info
+#        run: |
+#          #echo "::set-output name=package-filename-glob::$(python build_package.py ${{ matrix.package_type }} package-filename-glob)"
+#          echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py get ${{ matrix.target }} package-type)"
+#
+##      - name: "Get package type."
+##        id: get-package-type
+##        run: echo "::set-output name=package-type::$(python tests/package_tests/package_test_runner.py ${{ matrix.target }} package-filename-glob)"
+#
+#      - name: Download package.
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: "package-${{ steps.get-package-info.outputs.package-type }}"
+#          path: ~/package
+#
+#      - name: Download package test (if presented).
+#        uses: actions/download-artifact@v2
+#        if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
+#        with:
+#          name: "package-test-${{ steps.get-package-info.outputs.package-type }}"
+#          path: ~/package_test
+#
+#      - name: Start minikube for the test of the kubernetes build.
+#        if: ${{ steps.get-package-info.outputs.package-type == 'k8s' }}
+#        shell: bash
+#        run: |
+#          minikube start
+#
+#      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+#      - name: Make Kubernetes and docker package builder scripts executable.
+#        if: steps.get-package-info.outputs.package-type == 'k8s' || steps.get-package-info.outputs.package-type == 'docker-json'
+#        run: |
+#          chmod +x ~/package/*
+#
+#      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+#      - name: Make package test frozen binaries executable.
+#        id: process-frozen-test-runner-path
+#        if: steps.get-package-info.outputs.package-type != 'k8s' && steps.get-package-info.outputs.package-type != 'docker-json'
+#        run: |
+#          chmod +x ~/package_test/package_test_runner*
+#
+#          # set path to the frozen test runner as current step output.
+#          echo "::set-output name=frozen_test_runner_path::$(ls ~/package_test/package_test_runner*)"
+#
+#
+##      - name: Set up QEMU
+##        id: qemu
+##        uses: docker/setup-qemu-action@v1
+##        with:
+##          platforms: all
+#
+#      - name: Test.
+#        shell: bash
+#        env:
+#          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+#        run: |
+#          python3 tests/package_tests/package_test_runner.py test ${{ matrix.target }} \
+#            --where ${{ matrix.where }} \
+#            --package-path ~/package/* \
+#            --frozen-test-runner-path "${{ steps.process-frozen-test-runner-path.outputs.frozen_test_runner_path }}" \
+#            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+#
 
-      - name: Test.
-        shell: bash
-        env:
-          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-        run: |
-          python3 tests/package_tests/package_test_runner.py test ${{ matrix.target }} \
-            --where ${{ matrix.where }} \
-            --package-path ~/package/* \
-            --frozen-test-runner-path "${{ steps.process-frozen-test-runner-path.outputs.frozen_test_runner_path }}" \
-            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+
+
+
+
+
+
 
 
 #  test:
@@ -286,7 +307,7 @@ jobs:
 #          fi
 #
 #
-#          python3 tests/package_tests/deb_or_rpm_test.py \
+#          python3 tests/package_tests/package_test_runner.py \
 #            --package-type ${{ matrix.package_type }} \
 #            --docker-image "${{ matrix.docker-image }}" \
 #            --package-path ~/package/* \
