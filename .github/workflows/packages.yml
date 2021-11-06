@@ -28,6 +28,8 @@ jobs:
 
       - id: package-info
         run: |
+          python3 tests/agent_tools/build_and_test_specs.py get-package-build-spec-info deb_x86_64
+          python3 tests/agent_tools/build_and_test_specs.py get-package-test-specs-info deb_x86_64
           echo "::set-output name=package-build-spec::$(python3 tests/agent_tools/build_and_test_specs.py get-package-build-spec-info deb_x86_64)"
           echo "::set-output name=package-test-specs::$(python3 tests/agent_tools/build_and_test_specs.py get-package-test-specs-info deb_x86_64)"
 

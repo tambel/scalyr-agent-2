@@ -25,7 +25,7 @@ jobs:
   build:
     runs-on: ${{ inputs.os }}
     strategy:
-      matrix: ${{fromJSON(inputs.package-build-spec) }}
+      matrix: ${{fromJSON(inputs.package-build-spec)}}
 #        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
 #        os: [ubuntu-20.04]
 #        python-version: ["3.8"]
