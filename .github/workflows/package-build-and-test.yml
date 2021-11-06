@@ -101,7 +101,7 @@ jobs:
     needs: build
     runs-on: ${{ inputs.package_name }}
     strategy:
-      matrix: ${{fromJSON( inputs.test-targets }}
+      matrix: ${{fromJSON( inputs.test-targets ) }}
 
     steps:
       - name: Checkout repository
