@@ -369,7 +369,7 @@ if __name__ == '__main__':
 
     for p in [deploy_parser, get_info_parser]:
         p.add_argument("deployer_name", choices=DEPLOYERS.keys())
-        p.add_argument("--architecture", required=False, choices=["x86_64", "arm64"])
+        p.add_argument("--architecture", required=False)
 
     get_info_parser.add_argument("info", choices=["checksum", "image-name"])
 
@@ -401,7 +401,7 @@ if __name__ == '__main__':
         if args.base_docker_image:
             deployer.deploy_in_docker(
                 base_docker_image=args.base_docker_image,
-                architecture=args.architecture,
+                architecture=Architecture(args.architecture),
                 cache_dir=args.cache_dir
             )
         else:
