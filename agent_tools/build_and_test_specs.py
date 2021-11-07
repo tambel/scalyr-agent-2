@@ -141,13 +141,16 @@ class PackageBuildSpec:
 
     def build(self, output_path: pl.Path):
 
+        if self.base_image:
+            build_func = self.get_dockerized_function(
+                func=self.build_package_from_spec,
+                build_stage="build",
+                path_mappings={output_path: "/tmp/build"}
+            )
+        else:
+            build_func = self.build_package_from_spec
 
-        wrapped_func = self.get_dockerized_function(
-            func=self.build_package_from_spec,
-            build_stage="build",
-            path_mappings={output_path: "/tmp/build"}
-        )
-        wrapped_func(
+        build_func(
             package_build_spec_name=self.name,
             output_path_dir=str(output_path)
         )
@@ -196,12 +199,12 @@ def _add_package_build_specs(
         package_type: constants.PackageType,
         package_builder_cls: Type[package_builders.PackageBuilder],
         filename_glob_format: str,
+        architectures: List[constants.Architecture],
         used_deployers: List[deployers.EnvironmentDeployer] = None,
         base_docker_image: str = None,
-        architectures: List[constants.Architecture] = None,
+
 ):
     global PACKAGE_BUILD_SPECS
-    architectures = architectures or [None]
 
     specs = []
 
