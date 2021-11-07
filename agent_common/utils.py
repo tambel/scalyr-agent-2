@@ -1,6 +1,7 @@
 from typing import Union
 import pathlib as pl
 
+__all__ = ["find_file_in_dir_by_glob"]
 
 def find_file_in_dir_by_glob(
     dir_path: Union[str, pl.Path],

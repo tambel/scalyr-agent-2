@@ -1,5 +1,6 @@
 import enum
 
+from .utils import *
 
 class InstallType(enum.Enum):
     """

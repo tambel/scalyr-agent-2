@@ -417,6 +417,7 @@ class PackageBuilder(abc.ABC):
     where the code runs. It may be very useful, because there is no need to prepare the current system to be able to
     perform the build. That also provides more consistent build results, no matter what is the host system.
     """
+    FROZEN_BINARY_FILE_NAME = "scalyr-agent-2"
     # # The name of the package type
     # PACKAGE_TYPE = None
 
@@ -658,7 +659,6 @@ class PackageBuilder(abc.ABC):
             hidden_import_options.append("--hidden-import")
             hidden_import_options.append(str(h))
 
-        frozen_binary_name = "scalyr-agent-2"
         dist_path = pyinstaller_output / "dist"
 
         # Run the PyInstaller.
@@ -671,7 +671,7 @@ class PackageBuilder(abc.ABC):
                 "--onefile",
                 "--distpath", str(dist_path),
                 "--workpath", str(pyinstaller_output / "build"),
-                "-n", frozen_binary_name,
+                "-n", type(self).FROZEN_BINARY_FILE_NAME,
                 "--paths", ":".join(paths_to_include),
                 *add_data_options,
                 *hidden_import_options
@@ -680,7 +680,7 @@ class PackageBuilder(abc.ABC):
             cwd=str(__SOURCE_ROOT__)
         )
 
-        frozen_binary_path = dist_path / frozen_binary_name
+        frozen_binary_path = dist_path / type(self).FROZEN_BINARY_FILE_NAME
         # Make frozen binary executable.
         frozen_binary_path.chmod(frozen_binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
@@ -1303,6 +1303,7 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 
 class MsiWindowsPackageBuilder(PackageBuilder):
     INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
+    FROZEN_BINARY_FILE_NAME = "scalyr-agent-2.exe"
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able
