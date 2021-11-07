@@ -72,11 +72,11 @@ class EnvironmentDeployer:
     def __init__(
             self,
             name: str,
-            deployment_script_path: Union[str, pl.Path],
+            deployment_script_paths: List[Union[str, pl.Path]],
             used_files: list = None,
     ):
         self._name = name
-        self._deployment_script_path = deployment_script_path
+        self._deployment_script_paths = deployment_script_paths
         self._used_files = used_files or []
 
         self._used_files_checksum: Optional[str] = None
@@ -96,23 +96,24 @@ class EnvironmentDeployer:
 
         # Prepare the environment on the current system.
 
-        # Choose the shell according to the operation system.
-        if self._deployment_script_path.suffix == ".ps1":
-            shell = "powershell"
-        else:
-            shell = shutil.which("bash")
+        for script_path in self._deployment_script_paths:
+            # Choose the shell according to the operation system.
+            if script_path.suffix == ".ps1":
+                shell = "powershell"
+            else:
+                shell = shutil.which("bash")
 
-        command = [shell, str(self._deployment_script_path)]
+            command = [shell, str(script_path)]
 
-        # If cache directory is presented, then we pass it as an additional argument to the
-        # 'prepare build environment' script, so it can use the cache too.
-        if cache_dir:
-            command.append(str(pl.Path(cache_dir)))
+            # If cache directory is presented, then we pass it as an additional argument to the
+            # 'prepare build environment' script, so it can use the cache too.
+            if cache_dir:
+                command.append(str(pl.Path(cache_dir)))
 
-        # Run the 'prepare build environment' script in previously chosen shell.
-        subprocess.check_call(
-            command,
-        )
+            # Run the 'prepare build environment' script in previously chosen shell.
+            subprocess.check_call(
+                command,
+            )
 
     def deploy_in_docker(
         self,

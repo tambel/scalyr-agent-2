@@ -69,21 +69,19 @@ Set-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\Environment' -Name path -Val
 
 $Env:Path = "$Env:Path;$paths"
 
-$Env:Path
-
-$script_path = $PSScriptRoot
-$source_root = (get-item $script_path ).parent.parent.FullName
-
-$pip_cache_path = "$cache_path\pip"
-if (Test-Path $pip_cache_path -PathType Container) {
-    cp $pip_cache_path (python -m pip cache dir)
-    Copy-Item -Path "$pip_cache_path\*" -Destination "$(python -m pip cache dir)" -Recurse
-}
-
-python -m pip install -r "$source_root\dev-requirements.txt"
-
-if (!(Test-Path $pip_cache_path -PathType Container)) {
-    Copy-Item -Path "$(python -m pip cache dir)" -Destination "$pip_cache_path" -Recurse
-}
+# $script_path = $PSScriptRoot
+# $source_root = (get-item $script_path ).parent.parent.FullName
+#
+# $pip_cache_path = "$cache_path\pip"
+# if (Test-Path $pip_cache_path -PathType Container) {
+#     cp $pip_cache_path (python -m pip cache dir)
+#     Copy-Item -Path "$pip_cache_path\*" -Destination "$(python -m pip cache dir)" -Recurse
+# }
+#
+# python -m pip install -r "$source_root\dev-requirements.txt"
+#
+# if (!(Test-Path $pip_cache_path -PathType Container)) {
+#     Copy-Item -Path "$(python -m pip cache dir)" -Destination "$pip_cache_path" -Recurse
+# }
 
 Add-Content "$cache_path\paths.txt" "$wix_path" -Encoding utf8
