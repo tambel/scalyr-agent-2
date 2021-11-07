@@ -109,12 +109,15 @@ class PackageBuildSpec:
 
     @property
     def used_deployers_info_as_dict(self):
-
-        return {
+        result = {
             "deployers": self.used_deployers_string_array,
-            "base-docker-image": package_build_spec.base_image.image_name,
             "architecture": package_build_spec.architecture.value
         }
+
+        if package_build_spec.base_image:
+            result["base-docker-image"] = package_build_spec.base_image.image_name
+
+        return result
 
     def get_dockerized_function(
             self,
