@@ -44,4 +44,4 @@ jobs:
       package-build-spec: ${{ needs.get-info.outputs.package-build-spec }}
       test-specs: ${{ needs.get-info.outputs.package-test-specs }}
     secrets:
-      token: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
