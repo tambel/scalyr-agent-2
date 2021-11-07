@@ -5,21 +5,27 @@ on: [push]
 env:
   DOCKER_BUILDKIT: 1
 
+
 jobs:
   deb_x86_64:
-    name: deb_x86_64
     uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
     with:
       package_name: deb_x86_64
-      os: ubuntu-20.04
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
 
-  deb_arm64:
-    name: deb_arm64
+#  deb_arm64:
+#    name: deb_arm64
+#    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
+#    with:
+#      package_name: deb_arm64
+#      os: ubuntu-20.04
+#    secrets:
+#      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+
+  rpm_x86_64:
     uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
     with:
-      package_name: deb_arm64
-      os: ubuntu-20.04
+      package_name: rpm_x86_64
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}

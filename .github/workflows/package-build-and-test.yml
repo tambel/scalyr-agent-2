@@ -7,7 +7,8 @@ on:
         required: true
         type: string
       os:
-        required: true
+        default: ubuntu-20.04
+        required: false
         type: string
       python-version:
         required: false
