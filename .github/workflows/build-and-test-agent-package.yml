@@ -94,7 +94,7 @@ jobs:
 #          architecture: ${{ steps.get-deployers-info.outputs.architecture }}
 
       - name: Set up QEMU
-        if: !startsWith(inputs.package_name, 'msi')
+        if: ${{ !startsWith(inputs.package_name, 'msi') }}
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
