@@ -142,10 +142,10 @@ jobs:
 
 
   package-test:
-    needs: build
+    needs: [get-build-and-test-specs,build]
     runs-on: ${{ inputs.os }}
     strategy:
-      matrix: ${{fromJSON(inputs.test-specs) }}
+      matrix: ${{fromJSON(needs.get-build-and-test-specs.package-test-specs) }}
 
     steps:
       - name: Checkout repository
