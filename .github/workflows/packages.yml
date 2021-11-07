@@ -15,14 +15,11 @@ jobs:
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
 
-#  deb_arm64:
-#    name: deb_arm64
-#    needs: get-info
-#    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
-#    with:
-#      package_name: deb_arm64
-#      os: ubuntu-20.04
-#      package-build-spec: ${{ needs.get-info.outputs.package-build-spec }}
-#      test-specs: ${{ needs.get-info.outputs.package-test-specs }}
-#    secrets:
-#      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+  deb_arm64:
+    name: deb_arm64
+    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
+    with:
+      package_name: deb_arm64
+      os: ubuntu-20.04
+    secrets:
+      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
