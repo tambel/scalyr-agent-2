@@ -38,6 +38,11 @@ pip_cache_dir="$(python3 -m pip cache dir)"
 
 restore_from_cache pip "$pip_cache_dir"
 
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/main-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/monitors-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/compression-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/frozen-binaries-requirements.txt"
+
 #if $use_cache ; then
 #  mkdir -p "$pip_cache_dir"
 #  cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
@@ -46,12 +51,7 @@ restore_from_cache pip "$pip_cache_dir"
 save_to_cache pip "$pip_cache_dir"
 
 
-
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/main-requirements.txt"
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/monitors-requirements.txt"
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/compression-requirements.txt"
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/frozen-binaries-requirements.txt"
-
-if $save_cache ; then
-  cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
-fi
+#
+#if $save_cache ; then
+#  cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
+#fi
