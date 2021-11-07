@@ -189,7 +189,7 @@ def get_package_build_spec(
 PACKAGE_BUILD_SPECS: Dict[str, PackageBuildSpec] = {}
 
 
-def _add_specs(
+def _add_package_build_specs(
         package_type: constants.PackageType,
         package_builder_cls: Type[package_builders.PackageBuilder],
         filename_glob_format: str,
@@ -212,7 +212,7 @@ def _add_specs(
         else:
             base_docker_image_spec = None
 
-        package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES.get(arch, "")
+        package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(arch, "")
 
         spec = PackageBuildSpec(
             package_type=package_type,
@@ -232,7 +232,7 @@ def _add_specs(
     return specs
 
 
-DEB_x86_64, DEB_ARM64 = _add_specs(
+DEB_x86_64, DEB_ARM64 = _add_package_build_specs(
     package_type=constants.PackageType.DEB,
     package_builder_cls=package_builders.DebPackageBuilder,
     filename_glob_format="scalyr-agent-2_*.*.*_{arch}.deb",
@@ -240,7 +240,7 @@ DEB_x86_64, DEB_ARM64 = _add_specs(
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
-RPM_x86_64, RPM_ARM64 = _add_specs(
+RPM_x86_64, RPM_ARM64 = _add_package_build_specs(
     package_type=constants.PackageType.RPM,
     package_builder_cls=package_builders.RpmPackageBuilder,
     filename_glob_format="scalyr-agent-2-*.*.*-*.{arch}.rpm",
@@ -248,7 +248,7 @@ RPM_x86_64, RPM_ARM64 = _add_specs(
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
-TAR_x86_64, TAR_ARM64 = _add_specs(
+TAR_x86_64, TAR_ARM64 = _add_package_build_specs(
     package_type=constants.PackageType.TAR,
     package_builder_cls=package_builders.TarballPackageBuilder,
     filename_glob_format="scalyr-agent-*.*.*_{arch}.tar.gz",
@@ -256,7 +256,7 @@ TAR_x86_64, TAR_ARM64 = _add_specs(
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
-MSI_x86_64 = _add_specs(
+MSI_x86_64 = _add_package_build_specs(
     package_type=constants.PackageType.MSI,
     package_builder_cls=package_builders.MsiWindowsPackageBuilder,
     filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
@@ -266,6 +266,7 @@ MSI_x86_64 = _add_specs(
 
 class TargetSystem(enum.Enum):
     UBUNTU_1404 = "ubuntu-1404"
+    UBUNTU_2004 = "ubuntu-2004"
 
     AMAZONLINUX_2 = "amazonlinux-2"
 
@@ -298,17 +299,17 @@ PACKAGE_BUILDER_TO_TEST_SPEC: Dict[str, List[PackageTestSpec]] = collections.def
 
 def create_test_spec(
         target_system: TargetSystem,
-        package_builder_spec: PackageBuildSpec,
+        package_build_spec: PackageBuildSpec,
         remote_machine_specs: List[Union[DockerImageInfo, Ec2BasedTestSpec]] = None
 ):
 
     global TEST_SPECS, PACKAGE_BUILDER_TO_TEST_SPEC
 
     package_build_spec_name = create_build_spec_name(
-        package_type=package_builder_spec.package_type,
-        architecture=package_builder_spec.architecture
+        package_type=package_build_spec.package_type,
+        architecture=package_build_spec.architecture
     )
-    test_spec_name = f"{target_system.value}_{package_builder_spec.architecture.value}"
+    test_spec_name = f"{package_build_spec.package_type.value}_{target_system.value}_{package_build_spec.architecture.value}"
     if remote_machine_specs:
         for remote_machine_spec in remote_machine_specs:
             if isinstance(remote_machine_spec, DockerImageInfo):
@@ -323,7 +324,7 @@ def create_test_spec(
             spec = PackageTestSpec(
                 name=full_name,
                 target_system=target_system,
-                package_build_spec=package_builder_spec,
+                package_build_spec=package_build_spec,
                 remote_machine_spec=remote_machine_spec
             )
             TEST_SPECS[full_name] = spec
@@ -332,7 +333,7 @@ def create_test_spec(
         spec = PackageTestSpec(
             name=test_spec_name,
             target_system=target_system,
-            package_build_spec=package_builder_spec,
+            package_build_spec=package_build_spec,
         )
 
         TEST_SPECS[test_spec_name] = spec
@@ -341,7 +342,7 @@ def create_test_spec(
 
 create_test_spec(
     target_system=TargetSystem.UBUNTU_1404,
-    package_builder_spec=DEB_x86_64,
+    package_build_spec=DEB_x86_64,
     remote_machine_specs=[
         DockerImageInfo("ubuntu:14.04"),
         # Ec2BasedTestSpec(
@@ -355,7 +356,7 @@ create_test_spec(
 )
 create_test_spec(
     target_system=TargetSystem.UBUNTU_1404,
-    package_builder_spec=DEB_ARM64,
+    package_build_spec=DEB_ARM64,
     remote_machine_specs=[
         DockerImageInfo("ubuntu:14.04"),
     ],
@@ -363,9 +364,17 @@ create_test_spec(
 
 create_test_spec(
     target_system=TargetSystem.AMAZONLINUX_2,
-    package_builder_spec=RPM_x86_64,
+    package_build_spec=RPM_x86_64,
     remote_machine_specs=[
         DockerImageInfo("amazonlinux:2"),
+    ],
+)
+
+create_test_spec(
+    target_system=TargetSystem.UBUNTU_2004,
+    package_build_spec=TAR_x86_64,
+    remote_machine_specs=[
+        DockerImageInfo("ubuntu:20.04"),
     ],
 )
 

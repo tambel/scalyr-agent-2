@@ -423,7 +423,7 @@ class PackageBuilder(abc.ABC):
     # The type of the installation. For more info, see the 'InstallType' in the scalyr_agent/__scalyr__.py
     INSTALL_TYPE: agent_common.InstallType
 
-    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES: Dict[constants.Architecture, str] = {}
+    PACKAGE_FILENAME_ARCHITECTURE_NAMES: Dict[constants.Architecture, str] = {}
 
     # Add agent source code as a bundled frozen binary if True, or
     # add the source code as it is.
@@ -1072,7 +1072,7 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
         fpm_command = [
             "fpm",
             "-s", "dir",
-            "-a", self.PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES[self._architecture],
+            "-a", self.PACKAGE_FILENAME_ARCHITECTURE_NAMES[self._architecture],
             "-t", self.PACKAGE_FPM_TYPE,
             "-n", "scalyr-agent-2",
             "-v", self._package_version,
@@ -1229,7 +1229,7 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
 
 class DebPackageBuilder(FpmBasedPackageBuilder):
     #PACKAGE_TYPE = constants.PackageType.DEB
-    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
+    PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: "amd64",
         constants.Architecture.ARM64: "arm64"
     }
@@ -1237,7 +1237,7 @@ class DebPackageBuilder(FpmBasedPackageBuilder):
 
 
 class RpmPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
+    PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: "x86_64",
         constants.Architecture.ARM64: "aarch64"
     }
@@ -1249,9 +1249,9 @@ class TarballPackageBuilder(LinuxPackageBuilder):
     The builder for the tarball packages.
     """
 
-    PACKAGE_TYPE = "tar"
-    INSTALL_TYPE = "packageless"
-    PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
+    #PACKAGE_TYPE = "tar"
+    INSTALL_TYPE = agent_common.InstallType.TARBALL_INSTALL
+    PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: constants.Architecture.X86_64.value,
         constants.Architecture.ARM64: constants.Architecture.ARM64.value
     }
@@ -1282,18 +1282,16 @@ class TarballPackageBuilder(LinuxPackageBuilder):
         self._build_frozen_binary(bin_path)
 
         if self._variant is None:
-            base_archive_name = "scalyr-agent-%s" % self._package_version
+            version_string = self._package_version
         else:
-            base_archive_name = "scalyr-agent-%s.%s" % (
-                self._package_version,
-                self._variant,
-            )
+            version_string = f"{self._package_version}.{self._variant}"
 
-        output_name = (
-            "%s.tar.gz" % base_archive_name
-            if not self._no_versioned_file_name
-            else "scalyr-agent.tar.gz"
-        )
+        base_archive_name = f"scalyr-agent"
+
+        if self._no_versioned_file_name:
+            output_name = f"{base_archive_name}_{self._architecture.value}.tar.gz"
+        else:
+            output_name = f"{base_archive_name}-{version_string}_{self._architecture.value}.tar.gz"
 
         tarball_output_path = self._build_output_path / output_name
 
@@ -1304,8 +1302,7 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 
 
 class MsiWindowsPackageBuilder(PackageBuilder):
-    PACKAGE_TYPE = "msi"
-    INSTALL_TYPE = "package"
+    INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able

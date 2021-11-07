@@ -201,7 +201,10 @@ def __determine_install_root_and_type() -> Tuple[str, agent_common.InstallType]:
 
         install_type = agent_common.InstallType(install_type_str)
 
-        if install_type == agent_common.InstallType.PACKAGE_INSTALL:
+        if install_type in [
+            agent_common.InstallType.PACKAGE_INSTALL,
+            agent_common.InstallType.TARBALL_INSTALL
+        ]:
             # The package has to contain frozen binary.
 
             if not __is_frozen__:

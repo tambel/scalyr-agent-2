@@ -198,7 +198,7 @@ def run_test_from_spec(
         ]:
             deb_rpm_tar_msi_test.run(
                 package_path=final_package_path,
-                package_type=spec.package_build_spec.package_type,
+                package_build_spec=spec.package_build_spec,
                 scalyr_api_key=scalyr_api_key
             )
             return

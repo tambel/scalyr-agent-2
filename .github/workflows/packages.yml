@@ -29,3 +29,10 @@ jobs:
       package_name: rpm_x86_64
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+
+  tar_x86_64:
+    uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
+    with:
+      package_name: tar_x86_64
+    secrets:
+      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
