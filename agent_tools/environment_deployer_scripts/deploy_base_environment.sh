@@ -17,10 +17,9 @@ set -e
 
 PARENT_DIR="$(dirname "$0")"
 SOURCE_ROOT=$(dirname "$(dirname "$PARENT_DIR")")
-
 source "$PARENT_DIR/cache_lib.sh"
 
-CACHE_DIR="${1}"
+#CACHE_DIR="${1}"
 
 #use_cache=false
 #save_cache=false
