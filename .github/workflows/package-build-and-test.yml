@@ -52,7 +52,7 @@ jobs:
 
   build:
     runs-on: ${{ inputs.os }}
-    needs: init
+    needs: get-build-and-test-specs
     strategy:
       matrix: ${{fromJSON(needs.get-build-and-test-specs.outputs.package-build-spec)}}
 #        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
