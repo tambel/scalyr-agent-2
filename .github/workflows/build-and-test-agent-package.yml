@@ -108,14 +108,14 @@ jobs:
           base-docker-image: ${{ matrix.base-docker-image }}
           architecture: ${{ matrix.architecture }}
 
-#      - name: Build.
-#        id: build
-#        shell: bash
-#        run: |
-#          python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
-#          #echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
-#
-#
+      - name: Build.
+        id: build
+        shell: bash
+        run: |
+          python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
+          #echo "::set-output name=package-filename-glob::$(python build_package.py get-build-spec ${{ matrix.package_type }} package-filename-glob)"
+
+
 #      - name: Save the package.
 #        uses: actions/upload-artifact@v2
 #        with:
