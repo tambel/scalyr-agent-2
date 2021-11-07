@@ -120,6 +120,7 @@ class BadChangeLogFormat(Exception):
     pass
 
 
+# <editor-fold defaultstate="collapsed" desc="Description">
 def parse_date(date_str):
     """Parses a date time string of the format MMM DD, YYYY HH:MM +ZZZZ and returns seconds past epoch.
 
@@ -174,6 +175,7 @@ def parse_date(date_str):
 
     base_time += local_offset_secs - tz_offset_secs
     return base_time
+# </editor-fold>
 
 
 def parse_change_log():
