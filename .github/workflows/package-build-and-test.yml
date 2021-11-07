@@ -145,7 +145,7 @@ jobs:
     needs: [get-build-and-test-specs,build]
     runs-on: ${{ inputs.os }}
     strategy:
-      matrix: ${{fromJSON(needs.get-build-and-test-specs.package-test-specs) }}
+      matrix: ${{fromJSON(needs.get-build-and-test-specs.outputs.package-test-specs) }}
 
     steps:
       - name: Checkout repository
