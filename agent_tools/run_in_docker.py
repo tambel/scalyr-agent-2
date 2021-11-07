@@ -67,8 +67,6 @@ def dockerized_function(
     command_args = [
         "python3",
         "/scalyr-agent-2/agent_tools/run_in_docker.py",
-        #func_module_name,
-        #func.__name__,
         pickled_function_base_64
     ]
 

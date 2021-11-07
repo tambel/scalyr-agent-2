@@ -26,10 +26,8 @@ _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "environment_deployer_scripts"
 
 
 base_environment_used_files = [
-    _AGENT_BUILD_DIR / "requirements.txt",
-    _AGENT_BUILD_DIR / "monitors_requirements.txt",
-    __SOURCE_ROOT__ / "dev-requirements.txt",
-    __SOURCE_ROOT__ / "benchmarks/micro/requirements-compression-algorithms.txt",
+    __SOURCE_ROOT__ / "agent_tools" / "environment_deployer_scripts" / "cache_lib.sh",
+    _AGENT_BUILD_DIR / "requirement-files"
 ]
 
 PYTHON_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(

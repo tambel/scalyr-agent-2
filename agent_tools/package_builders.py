@@ -910,8 +910,8 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
             # Add requirement files.
             tar.add(str(_AGENT_BUILD_PATH / "requirements.txt"), arcname="requirements.txt")
             tar.add(
-                str(_AGENT_BUILD_PATH / "linux/k8s_and_docker/container_requirements.txt"),
-                arcname="container_requirements.txt"
+                str(_AGENT_BUILD_PATH / "linux/k8s_and_docker/docker-and-k8s-requirements.txt"),
+                arcname="docker-and-k8s-requirements.txt"
             )
             # Add container source tarball.
             tar.add(container_tarball_path, arcname="scalyr-agent.tar.gz")

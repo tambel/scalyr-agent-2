@@ -2,8 +2,8 @@ import enum
 
 
 class DockerPlatform(enum.Enum):
-    AMD64 = "amd64"
-    ARM64 = "arm64"
+    AMD64 = "linux/amd64"
+    ARM64 = "linux/arm64"
 
 
 class Architecture(enum.Enum):

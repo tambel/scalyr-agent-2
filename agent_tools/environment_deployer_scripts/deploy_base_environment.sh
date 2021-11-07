@@ -15,30 +15,42 @@
 
 set -e
 
-SOURCE_ROOT=$(dirname "$(dirname "$(dirname "$0")")")
+PARENT_DIR="$(dirname "$0")"
+SOURCE_ROOT=$(dirname "$(dirname "$PARENT_DIR")")
+
+source "$PARENT_DIR/cache_lib.sh"
 
 CACHE_DIR="${1}"
 
-use_cache=false
-save_cache=false
-
-if [ -n "$CACHE_DIR" ]; then
-  if [ ! -d "$CACHE_DIR" ]; then
-    mkdir -p "${CACHE_DIR}"
-    save_cache=true
-  else
-    use_cache=true
-  fi
-fi
+#use_cache=false
+#save_cache=false
+#
+#if [ -n "$CACHE_DIR" ]; then
+#  if [ ! -d "$CACHE_DIR" ]; then
+#    mkdir -p "${CACHE_DIR}"
+#    save_cache=true
+#  else
+#    use_cache=true
+#  fi
+#fi
 
 pip_cache_dir="$(python3 -m pip cache dir)"
 
-if $use_cache ; then
-  mkdir -p "$pip_cache_dir"
-  cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
-fi
+restore_from_cache pip "$pip_cache_dir"
 
-python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
+#if $use_cache ; then
+#  mkdir -p "$pip_cache_dir"
+#  cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
+#fi
+
+save_to_cache pip "$pip_cache_dir"
+
+
+
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/main-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/monitors-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/compression-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/frozen-binaries-requirements.txt"
 
 if $save_cache ; then
   cp -a "$pip_cache_dir" "$CACHE_DIR/pip"

@@ -1,3 +1,2 @@
-zstandard
-brotli
-lz4
+-r ../../agent_build/compression-requirements.txt
+brotli==1.0.9
