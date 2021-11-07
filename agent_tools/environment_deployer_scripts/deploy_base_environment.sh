@@ -35,7 +35,7 @@ source "$PARENT_DIR/cache_lib.sh"
 
 pip_cache_dir="$(python3 -m pip cache dir)"
 
-restore_from_cache pip "$pip_cache_dir"
+restore_from_cache pipi "$pip_cache_dir"
 
 python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/main-requirements.txt"
 python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/monitors-requirements.txt"
@@ -47,7 +47,7 @@ python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/frozen-b
 #  cp -a "$CACHE_DIR/pip/." "$pip_cache_dir"
 #fi
 
-save_to_cache pip "$pip_cache_dir"
+save_to_cache pipi "$pip_cache_dir"
 
 
 #
