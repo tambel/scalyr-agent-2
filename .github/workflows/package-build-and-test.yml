@@ -18,6 +18,10 @@ on:
         required: false
         type: string
 
+    secrets:
+      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN:
+        required: true
+
 env:
   DOCKER_BUILDKIT: 1
 jobs:
