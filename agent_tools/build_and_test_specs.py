@@ -354,13 +354,6 @@ create_test_spec(
     package_builder_spec=DEB_ARM64,
     remote_machine_specs=[
         DockerImageInfo("ubuntu:14.04"),
-        Ec2BasedTestSpec(
-            image_name="Ubuntu Server 14.04 LTS (HVM)",
-            image_id="ami-07957d39ebba800d5",
-            size_id="t2.small",
-            ssh_username="ubuntu",
-            os_family=OSFamily.LINUX
-        )
     ],
 )
 
