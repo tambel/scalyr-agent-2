@@ -265,7 +265,7 @@ MSI_x86_64, = _add_package_build_specs(
     package_type=constants.PackageType.MSI,
     package_builder_cls=package_builders.MsiWindowsPackageBuilder,
     filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
-    used_deployers=[BASE_ENVIRONMENT_DEPLOYER],
+    used_deployers=[BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
     architectures=[constants.Architecture.X86_64]
 )
 
