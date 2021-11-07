@@ -173,8 +173,9 @@ class CentralInstallPathPackageRunner(PackagedAgentRunner):
     def root_path(self) -> pl.Path:
         pass
 
+    @property
     def config_path(self) -> pl.Path:
-        return self.root_path / "config" / "agent.log"
+        return self.root_path / "config" / "agent.json"
 
     @property
     def agent_log_path(self) -> pl.Path:
@@ -188,7 +189,7 @@ class CentralInstallPathPackageRunner(PackagedAgentRunner):
 class TarballAgentRunner(CentralInstallPathPackageRunner):
     def install_package(self):
         tar = tarfile.open(self._package_path)
-        tar.extractall(self.root_path)
+        tar.extractall(pl.Path("~").expanduser())
         tar.close()
 
     @property
