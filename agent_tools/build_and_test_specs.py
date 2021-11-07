@@ -256,7 +256,7 @@ TAR_x86_64, TAR_ARM64 = _add_package_build_specs(
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
-MSI_x86_64 = _add_package_build_specs(
+MSI_x86_64, = _add_package_build_specs(
     package_type=constants.PackageType.MSI,
     package_builder_cls=package_builders.MsiWindowsPackageBuilder,
     filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
@@ -269,6 +269,8 @@ class TargetSystem(enum.Enum):
     UBUNTU_2004 = "ubuntu-2004"
 
     AMAZONLINUX_2 = "amazonlinux-2"
+
+    WINDOWS_2019 = "windows-2019"
 
 
 class OSFamily(enum.Enum):
@@ -376,6 +378,11 @@ create_test_spec(
     remote_machine_specs=[
         DockerImageInfo("ubuntu:20.04"),
     ],
+)
+
+create_test_spec(
+    target_system=TargetSystem.WINDOWS_2019,
+    package_build_spec=MSI_x86_64
 )
 
 if __name__ == '__main__':
