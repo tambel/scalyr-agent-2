@@ -41,17 +41,12 @@ BASE_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
     used_files=base_environment_used_files,
 )
 
+
 BASE_WINDOWS_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
     name="windows_agent_builder",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_base_environment.sh",
+    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
     used_files=base_environment_used_files,
 )
-
-# BASE_WINDOWS_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
-#     name="windows_agent_builder",
-#     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
-#     used_files=base_environment_used_files,
-# )
 
 
 # Map deployers to their names.
