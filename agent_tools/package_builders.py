@@ -688,16 +688,13 @@ class PackageBuilder(abc.ABC):
             cwd=str(__SOURCE_ROOT__)
         )
 
-        print(list(dist_path.iterdir()))
-        raise
-
         frozen_binary_path = dist_path / type(self).FROZEN_BINARY_FILE_NAME
         # Make frozen binary executable.
         frozen_binary_path.chmod(frozen_binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
         # Copy resulting frozen binary to the output.
         output_path.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(frozen_binary_path, output_path / "scalyr-agent-2")
+        shutil.copy2(frozen_binary_path, output_path)
 
 
     def _add_package_info_file(self, output_path: pl.Path):
