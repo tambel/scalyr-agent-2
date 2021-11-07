@@ -29,6 +29,7 @@ function restore_from_cache() {
 
   if [ -d "${full_path}" ]; then
     echo "Directory ${name} in cache. Reuse it."
+    mkdir -p "$(dirname "$path")"
     cp -a "${full_path}/." "${path}"
 
   else
@@ -36,6 +37,7 @@ function restore_from_cache() {
   fi
   if [ -f "${full_path}" ]; then
     echo "File ${name} in cache. Reuse it."
+    mkdir -p "$(dirname "$path")"
     cp -a "${full_path}" "${path}"
 
   else
@@ -57,17 +59,19 @@ function save_to_cache() {
   if [ -f "${path}" ]; then
     if [ ! -f "${full_path}" ]; then
       echo "File ${path} saved to cache"
+      mkdir -p "$(dirname "$full_path")"
       cp -a "${path}" "${full_path}"
     else
       echo "File ${path} not saved to cache"
     fi
   else
     if [ ! -d "${full_path}" ]; then
-      echo "Dir saved to cache"
+      echo "Directory ${path} saved to cache"
+      mkdir -p "$(dirname "$full_path")"
       cp -a "${path}/." "${full_path}"
 
     else
-      echo "Dir not saved to cache"
+      echo "Directory ${path} not saved to cache"
     fi
   fi
 
