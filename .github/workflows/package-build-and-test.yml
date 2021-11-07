@@ -10,13 +10,13 @@ on:
         required: true
         type: string
 
-      package-build-spec:
-        required: true
-        type: string
-
-      test-specs:
-        required: false
-        type: string
+#      package-build-spec:
+#        required: true
+#        type: string
+#
+#      test-specs:
+#        required: false
+#        type: string
 
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN:
@@ -25,11 +25,31 @@ on:
 env:
   DOCKER_BUILDKIT: 1
 jobs:
+  init:
+    runs-on: ${{ inputs.os }}
+    outputs:
+      package-build-spec: ${{ steps.package-info.outputs.package-build-spec }}
+      package-test-specs: ${{ steps.package-info.outputs.package-test-specs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install python.
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.10'
+
+      - id: package-info
+        run: |
+          python3 agent_tools/build_and_test_specs.py get-package-build-spec-info ${{ inputs.package_name }}
+          python3 agent_tools/build_and_test_specs.py get-package-test-specs ${{ inputs.package_name }}
+          echo "::set-output name=package-build-spec::$(python3 agent_tools/build_and_test_specs.py get-package-build-spec-info ${{ inputs.package_name }})"
+          echo "::set-output name=package-test-specs::$(python3 agent_tools/build_and_test_specs.py get-package-test-specs ${{ inputs.package_name }})"
 
   build:
     runs-on: ${{ inputs.os }}
     strategy:
-      matrix: ${{fromJSON(inputs.package-build-spec)}}
+      matrix: ${{fromJSON(jobs.init.outputs.package-build-spec)}}
 #        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
 #        os: [ubuntu-20.04]
 #        python-version: ["3.8"]
