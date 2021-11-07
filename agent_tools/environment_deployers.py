@@ -96,24 +96,23 @@ class EnvironmentDeployer:
 
         # Prepare the environment on the current system.
 
-        for script_path in self._deployment_script_path:
-            # Choose the shell according to the operation system.
-            if script_path.suffix == ".ps1":
-                shell = "powershell"
-            else:
-                shell = shutil.which("bash")
+        # Choose the shell according to the operation system.
+        if self._deployment_script_path.suffix == ".ps1":
+            shell = "powershell"
+        else:
+            shell = shutil.which("bash")
 
-            command = [shell, str(script_path)]
+        command = [shell, str(self._deployment_script_path)]
 
-            # If cache directory is presented, then we pass it as an additional argument to the
-            # 'prepare build environment' script, so it can use the cache too.
-            if cache_dir:
-                command.append(str(pl.Path(cache_dir)))
+        # If cache directory is presented, then we pass it as an additional argument to the
+        # 'prepare build environment' script, so it can use the cache too.
+        if cache_dir:
+            command.append(str(pl.Path(cache_dir)))
 
-            # Run the 'prepare build environment' script in previously chosen shell.
-            subprocess.check_call(
-                command,
-            )
+        # Run the 'prepare build environment' script in previously chosen shell.
+        subprocess.check_call(
+            command,
+        )
 
     def deploy_in_docker(
         self,
