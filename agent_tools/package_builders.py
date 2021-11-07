@@ -674,11 +674,22 @@ class PackageBuilder(abc.ABC):
                 "-n", type(self).FROZEN_BINARY_FILE_NAME,
                 "--paths", ":".join(paths_to_include),
                 *add_data_options,
-                *hidden_import_options
+                *hidden_import_options,
+                "--exclude-module", "asyncio",
+                "--exclude-module", "FixTk",
+                "--exclude-module", "tcl",
+                "--exclude-module", "tk",
+                "--exclude-module", "_tkinter",
+                "--exclude-module", "tkinter",
+                "--exclude-module", "Tkinter",
+                "--exclude-module", "sqlite",
 
             ],
             cwd=str(__SOURCE_ROOT__)
         )
+
+        print(list(dist_path.iterdir()))
+        raise
 
         frozen_binary_path = dist_path / type(self).FROZEN_BINARY_FILE_NAME
         # Make frozen binary executable.
