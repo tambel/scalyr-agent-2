@@ -43,9 +43,15 @@ BASE_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
 
 BASE_WINDOWS_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
     name="windows_agent_builder",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
+    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_base_environment.sh",
     used_files=base_environment_used_files,
 )
+
+# BASE_WINDOWS_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
+#     name="windows_agent_builder",
+#     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
+#     used_files=base_environment_used_files,
+# )
 
 
 # Map deployers to their names.
@@ -264,7 +270,7 @@ MSI_x86_64, = _add_package_build_specs(
     package_type=constants.PackageType.MSI,
     package_builder_cls=package_builders.MsiWindowsPackageBuilder,
     filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
-    used_deployers=[BASE_WINDOWS_ENVIRONMENT_DEPLOYER],
+    used_deployers=[BASE_ENVIRONMENT_DEPLOYER],
     architectures=[constants.Architecture.X86_64]
 )
 
