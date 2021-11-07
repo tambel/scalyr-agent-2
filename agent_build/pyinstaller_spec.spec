@@ -15,7 +15,8 @@
 
 import os
 import platform
-import pathlib
+import pathlib as pl
+import sys
 
 from PyInstaller.building.build_main import Analysis  # pylint: disable=import-error
 from PyInstaller.building.api import (  # pylint: disable=import-error
@@ -65,6 +66,17 @@ elif is_linux():
 datas=[
     (os.path.join("..", "VERSION"), "."),
 ]
+
+# Get path for this spec file. PyInstaller handles it in a different way, but it's possible to get it
+# from the command line arguments.
+this_file_path = pl.Path(sys.argv[1])
+__SOURCE_ROOT__ = this_file_path.absolute().parent.parent
+
+package_info_file_path = __SOURCE_ROOT__ / "scalyr_agent" / "package_info.json"
+
+# if not package_info_file_path.exists():
+#     raise ValueError(str(package_info_file_path))
+
 
 # Add tcollectors.
 if is_linux():
@@ -144,20 +156,20 @@ main_exe = EXE(
     console=True,
 )
 
-config_exe = EXE(
-    config_pyz,
-    agent_config_analysis.scripts,
-    agent_config_analysis.binaries,
-    agent_config_analysis.zipfiles,
-    agent_config_analysis.datas,
-    exclude_binaries=False,
-    name=config_executable_name,
-    debug=IS_DEBUG,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=True,
-)
+# config_exe = EXE(
+#     config_pyz,
+#     agent_config_analysis.scripts,
+#     agent_config_analysis.binaries,
+#     agent_config_analysis.zipfiles,
+#     agent_config_analysis.datas,
+#     exclude_binaries=False,
+#     name=config_executable_name,
+#     debug=IS_DEBUG,
+#     bootloader_ignore_signals=False,
+#     strip=False,
+#     upx=True,
+#     console=True,
+# )
 
 windows_service_exe = None
 

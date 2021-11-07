@@ -137,6 +137,8 @@ class PackageBuildSpec:
         return wrapped_func
 
     def build(self, output_path: pl.Path):
+
+
         wrapped_func = self.get_dockerized_function(
             func=self.build_package_from_spec,
             build_stage="build",

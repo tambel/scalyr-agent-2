@@ -13,11 +13,13 @@
 # limitations under the License.
 import dataclasses
 import enum
+import json
 import pathlib as pl
 import tarfile
 import abc
 import shutil
 import subprocess
+import tempfile
 import time
 import sys
 import stat
@@ -25,6 +27,7 @@ import uuid
 import os
 import re
 import io
+import platform
 import shlex
 from typing import Union, Optional, Type, List, Dict, Callable
 
@@ -35,6 +38,7 @@ __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
+
 
 def cat_files(file_paths, destination, convert_newlines=False):
     """Concatenates the contents of the specified files and writes it to a new file at destination.
@@ -594,17 +598,126 @@ class PackageBuilder(abc.ABC):
 
         # Run the PyInstaller.
 
+        package_info_file = self._intermediate_results_path / "package_info.json"
+
+        package_info = {"install_type": "package"}
+        package_info_file.write_text(json.dumps(package_info))
+
+        dest_path = pl.Path("scalyr_agent")
+
+        dest = f"{package_info_file}:{dest_path}"
+
+        print(dest)
+
+        # subprocess.check_call(
+        #     [sys.executable, "-m", "PyInstaller", str(spec_file_path)],
+        #     cwd=str(pyinstaller_output),
+        # )
+
+        agent_main_path = __SOURCE_ROOT__ / "scalyr_agent" / "agent_main.py"
+
+        dist_path = pyinstaller_output / "dist"
+
+        frozen_binary_name = "scalyr-agent-2"
+
+        scalyr_agent_package_path = __SOURCE_ROOT__ / "scalyr_agent"
+
+        paths_to_include = [
+            str(scalyr_agent_package_path),
+            str(scalyr_agent_package_path / "builtin_monitors")
+        ]
+
+        hidden_imports = [
+            "scalyr_agent.builtin_monitors.apache_monitor",
+            "scalyr_agent.builtin_monitors.graphite_monitor",
+            "scalyr_agent.builtin_monitors.mysql_monitor",
+            "scalyr_agent.builtin_monitors.nginx_monitor",
+            "scalyr_agent.builtin_monitors.shell_monitor",
+            "scalyr_agent.builtin_monitors.syslog_monitor",
+            "scalyr_agent.builtin_monitors.test_monitor",
+            "scalyr_agent.builtin_monitors.url_monitor",
+        ]
+
+        add_data = {
+            str(package_info_file): "scalyr_agent"
+        }
+
+        if platform.system().lower().startswith("linux"):
+            hidden_imports.extend([
+                "scalyr_agent.builtin_monitors.linux_system_metrics",
+                "scalyr_agent.builtin_monitors.linux_process_metrics",
+            ])
+
+            tcollectors_path = pl.Path(__SOURCE_ROOT__, "scalyr_agent", "third_party", "tcollector", "collectors")
+            add_data.update({
+                tcollectors_path: tcollectors_path.relative_to(__SOURCE_ROOT__)
+            })
+        elif platform.system().lower().startswith("win"):
+            hidden_imports.extend([
+                "scalyr_agent.builtin_monitors.windows_event_log_monitor",
+                "scalyr_agent.builtin_monitors.windows_system_metrics",
+                "scalyr_agent.builtin_monitors.windows_process_metrics",
+            ])
+
+        hidden_import_options = []
+        for h in hidden_imports:
+            hidden_import_options.append("--hidden-import")
+            hidden_import_options.append(str(h))
+
+        add_data_options = []
+
+        for src, dest in add_data.items():
+            add_data_options.append("--add-data")
+            add_data_options.append(f"{src}{os.path.pathsep}{dest_path}")
+
+        print(add_data_options)
+        raise
         subprocess.check_call(
-            [sys.executable, "-m", "PyInstaller", str(spec_file_path)],
-            cwd=str(pyinstaller_output),
+            [
+                sys.executable,
+                "-m",
+                "PyInstaller",
+                str(agent_main_path),
+                "--onefile",
+                "--distpath", str(dist_path),
+                "--workpath", str(pyinstaller_output / "build"),
+                "-n", frozen_binary_name,
+                "--paths", ":".join(paths_to_include),
+                *add_data_options,
+                *hidden_import_options
+
+            ],
+            cwd=str(__SOURCE_ROOT__)
         )
+
+        # found_files = list(dist_path.glob("agent_main*"))
+        # if not found_files:
+        #     raise FileNotFoundError(f"Can not find frozen binary after build.")
+        #
+        # frozen_binary_path = found_files[0]
+        frozen_binary_path = dist_path / frozen_binary_name
+        frozen_binary_path.chmod(frozen_binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
+        shutil.copy2(frozen_binary_path, output_path / "scalyr-agent-2")
+
 
         output_path.mkdir(parents=True, exist_ok=True)
 
-        # Make frozen binaries executable and copy them into output folder.
-        for child_path in frozen_binary_output.iterdir():
-            child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
-            shutil.copy2(child_path, output_path)
+
+
+        # # Make frozen binaries executable and copy them into output folder.
+        # for child_path in frozen_binary_output.iterdir():
+        #     child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
+        #     shutil.copy2(child_path, output_path)
+
+    def _add_package_info_file(self, output_path: pl.Path):
+
+        output_path = pl.Path(output_path)
+        # Add package_info file.
+        package_info = {"install_type": type(self).INSTALL_TYPE}
+
+
+        package_type_file_path = output_path / "install_type"
+        package_type_file_path.write_text()
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
@@ -644,9 +757,6 @@ class PackageBuilder(abc.ABC):
 
         # Add VERSION file.
         shutil.copy2(__SOURCE_ROOT__ / "VERSION", output_path / "VERSION")
-
-        package_type_file_path = output_path / "install_type"
-        package_type_file_path.write_text(type(self).INSTALL_TYPE)
 
         # Create bin directory with executables.
         bin_path = output_path / "bin"

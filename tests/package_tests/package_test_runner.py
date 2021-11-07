@@ -175,6 +175,10 @@ def run_test_from_spec(
 
         package_output_dir_path = build_dir_path / "package"
 
+        if package_output_dir_path.exists():
+            shutil.rmtree(package_output_dir_path)
+        package_output_dir_path.mkdir(parents=True)
+
         test_spec.package_build_spec.build(
             output_path=package_output_dir_path
         )
@@ -201,6 +205,10 @@ def run_test_from_spec(
 
     build_dir_path = _prepare_build_dir(build_dir_path)
     frozen_test_runner_output_dir_path = build_dir_path / "frozen_test_runner"
+
+    if frozen_test_runner_output_dir_path.exists():
+        shutil.rmtree(frozen_test_runner_output_dir_path)
+    frozen_test_runner_output_dir_path.mkdir(parents=True)
 
     build_func = test_spec.package_build_spec.get_dockerized_function(
         func=build_test_runner_frozen_binary,

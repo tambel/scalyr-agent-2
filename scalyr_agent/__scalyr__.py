@@ -19,7 +19,7 @@ from __future__ import absolute_import
 
 __author__ = "czerwin@scalyr.com"
 
-
+import json
 import platform
 import os
 import sys
@@ -107,6 +107,7 @@ class InstallType(enum.Enum):
 
     # Those package types contain Scalyr Agent as frozen binary.
     PACKAGE_INSTALL = "package"  # Indicates it was installed via a package manager such as RPM or Windows executable.
+    SOURCE_PACKAGE = "source_package"
     TARBALL_INSTALL = "packageless"  # Indicates it was installed via a tarball.
 
     # This type runs Scalyr Agent from the source code.
@@ -129,7 +130,7 @@ def __read_install_type_from_type_file(path: pl.Path) -> InstallType:
     return InstallType(install_type)
 
 
-def __determine_install_root_and_type() -> Tuple[str, InstallType]:
+def __determine_install_root_and_type2() -> Tuple[str, InstallType]:
     """
     Determine the path for the install root and type of the installation.
     """
@@ -183,6 +184,107 @@ def __determine_install_root_and_type() -> Tuple[str, InstallType]:
             # The name of the parent folder of the 'scalyr_agent' package is not 'py', so it is likely that it
             # started from source code.
             return str(source_code_root), InstallType.DEV_INSTALL
+
+def __determine_install_root_and_type() -> Tuple[str, InstallType]:
+    """
+    Determine the path for the install root and type of the installation.
+    """
+
+    source_root = pl.Path(__file__).absolute().parent.parent
+    package_info_path = source_root / "scalyr_agent" / "package_info.json"
+
+    # package_info file is not found, so it has to be no installation. (DEV_INSTALL)
+    if not package_info_path.is_file():
+
+        if not __is_frozen__:
+            return str(source_root), InstallType.DEV_INSTALL
+        else:
+            raise FileNotFoundError(
+                f"The required file '{package_info_path}' is not found. "
+                f"The development installation mode is not implemented for frozen binary"
+            )
+    else:
+        package_info = json.loads(package_info_path.read_text())
+        print(package_info_path.read_text())
+        install_type_str = package_info.get("install_type")
+        if not install_type_str:
+            raise ValueError(f"The required 'install_type' field is not found in the '{package_info_path}' file.")
+
+        install_type = InstallType(install_type_str)
+
+        if install_type == InstallType.PACKAGE_INSTALL:
+            # The package has to contain frozen binary.
+
+            if not __is_frozen__:
+                # Raise an error if the executable somehow is not a frozen binary.
+                raise RuntimeError(
+                    f"The type of installation is '{install_type.value}' but the executable is not a frozen binary."
+                )
+
+            # Determine install root.
+            # Since the package contains frozen binary, the path to the binary is 'sys.executable.'
+            # In the packages with the frozen binary the frozen binaries located in the '<install_root>/bin' folder.
+            install_root = pl.Path(sys.executable).parent.parent
+            return str(install_root), install_type
+
+
+
+
+
+
+
+
+
+    # if __is_frozen__:
+    #     # All installation types that use frozen binary of the Scalyr agent follow the same file structure,
+    #     # so it's just needed to specify the relative path to the install root from the current executable binary path.
+    #
+    #     # The executable frozen binary should be in the <install-root>/bin folder.
+    #     # Since it is a frozen binary, then the 'sys.executable' has to work as a path for the frozen binary itself,
+    #     # so we can find the 'bin' folder from it.
+    #     bin_dir = pl.Path(sys.executable).parent
+    #
+    #     # Get the install root - the parent directory of the 'bin' folder.
+    #     install_root = bin_dir.parent
+    #
+    #     # All agent packages have the special file 'install_type' which contains the type of the package.
+    #     # This file is always located in the install root, so it is a good way to verify if it is a install root or not.
+    #     install_type_file_path = install_root / "install_type"
+    #
+    #     return str(install_root), __read_install_type_from_type_file(
+    #         install_type_file_path
+    #     )
+    #
+    # else:
+    #     # The agent code is not frozen. The main task here is determine whether the agent has been started from the
+    #     # source code (aka DEV_INSTALL) or from the package installation. In packages, the source code is located in the
+    #     # '<install_root>/py' folder, so it has to be enough to verify if the parent folder of the 'scalyr_agent'
+    #     # package is a folder named 'py'.
+    #
+    #     import scalyr_agent
+    #     scalyr_agent_module_path = pl.Path(scalyr_agent.__file__)
+    #     source_code_root = scalyr_agent_module_path.parent.parent
+    #     script_path = pl.Path(sys.argv[0])
+    #
+    #     # # First of all get the real path of the executed script if it is a symlink.
+    #     # while script_path.is_symlink():
+    #     #     script_path = pl.Path(script_path.parent, os.readlink(script_path)).resolve()
+    #
+    #     # # parent folder of the script has to be a 'scalyr_agent' package folder.
+    #     # package_folder = script_path.parent
+    #
+    #     # # Get the source code root. The name of the folder has to be 'py'
+    #     # source_code_root = package_folder.parent
+    #
+    #     if source_code_root.name == "py":
+    #         install_root = source_code_root.parent
+    #         install_type_file_path = install_root / "install_type"
+    #
+    #         return str(install_root), __read_install_type_from_type_file(install_type_file_path)
+    #     else:
+    #         # The name of the parent folder of the 'scalyr_agent' package is not 'py', so it is likely that it
+    #         # started from source code.
+    #         return str(source_code_root), InstallType.DEV_INSTALL
 
 
 __install_root__, INSTALL_TYPE = __determine_install_root_and_type()
