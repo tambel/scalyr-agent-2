@@ -4,47 +4,16 @@ on: [push]
 
 env:
   DOCKER_BUILDKIT: 1
+  python-version: 3.8.10
+
 jobs:
-
-#  get-info:
-#    runs-on: ubuntu-20.04
-#    strategy:
-#      matrix:
-#        package_name: [deb_x86_64]
-#    outputs:
-#      package-build-spec: ${{ steps.package-info.outputs.package-build-spec }}
-#      package-test-specs: ${{ steps.package-info.outputs.package-test-specs }}
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v2
-#
-#      - name: Install python.
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: '3.8.10'
-#
-##      - name: Prepare environment for the tests.
-##        id: prepare
-##        uses: ./.github/actions/run-environment-deployer
-##        with:
-##          names: 'base_environment'
-#
-#      - id: package-info
-#        run: |
-#          python3 agent_tools/build_and_test_specs.py get-package-build-spec-info deb_x86_64
-#          python3 agent_tools/build_and_test_specs.py get-package-test-specs deb_x86_64
-#          echo "::set-output name=package-build-spec::$(python3 agent_tools/build_and_test_specs.py get-package-build-spec-info deb_x86_64)"
-#          echo "::set-output name=package-test-specs::$(python3 agent_tools/build_and_test_specs.py get-package-test-specs deb_x86_64)"
-
-
   deb_x86_64:
     name: deb_x86_64
     uses: scalyr/scalyr-agent-2/.github/workflows/package-build-and-test.yml@refactor-tests
     with:
       package_name: deb_x86_64
       os: ubuntu-20.04
-      #package-build-spec: ${{ needs.get-info.outputs.package-build-spec }}
-      #test-specs: ${{ needs.get-info.outputs.package-test-specs }}
+      python-version: ${{ env.python-version }}
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
 
