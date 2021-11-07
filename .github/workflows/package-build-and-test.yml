@@ -165,7 +165,7 @@ jobs:
 #          path: ~/package_test
 #
       - name: Start minikube for the test of the kubernetes build.
-        if: ${{ inputs.package_name }} == 'k8s'
+        if: inputs.package_name == 'k8s'
         shell: bash
         run: |
           minikube start
