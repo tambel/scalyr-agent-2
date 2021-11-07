@@ -52,7 +52,7 @@ def dockerized_function(
     func_module = inspect.getmodule(func)
 
     if func_module.__name__ == "__main__":
-        module_path = pl.Path(func_module.__file__).relative_to(__SOURCE_ROOT__)
+        module_path = pl.Path(func_module.__file__).absolute().relative_to(__SOURCE_ROOT__)
 
         module_path = module_path.parent / module_path.stem
         func_module_name = ".".join(str(module_path).split(os.path.sep))
