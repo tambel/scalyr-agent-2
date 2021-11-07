@@ -4,7 +4,6 @@ on: [push]
 
 env:
   DOCKER_BUILDKIT: 1
-  python-version: 3.8.10
 
 jobs:
   deb_x86_64:
@@ -13,7 +12,6 @@ jobs:
     with:
       package_name: deb_x86_64
       os: ubuntu-20.04
-      python-version: ${{ env.python-version }}
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
 

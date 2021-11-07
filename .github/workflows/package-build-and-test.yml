@@ -10,8 +10,9 @@ on:
         required: true
         type: string
       python-version:
-        required: true
+        required: false
         type: string
+        default: 3.8.10
 
     #      package-build-spec:
 #        required: true
