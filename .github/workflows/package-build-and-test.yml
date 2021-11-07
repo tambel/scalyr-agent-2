@@ -193,7 +193,7 @@ jobs:
             run \
             ${{ matrix.spec_name }} \
             --package-path ~/package/* \
-            --scalyr-api-key "0v7dW1EIPpglMcSjGywUdgY9xTNWQP/kas6qHEmiUG5w-"
+            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
 
 
 
