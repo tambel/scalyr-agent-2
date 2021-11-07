@@ -32,7 +32,9 @@ import shlex
 from typing import Union, Optional, Type, List, Dict, Callable
 
 
+import agent_common
 from agent_tools import constants
+
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
@@ -419,7 +421,7 @@ class PackageBuilder(abc.ABC):
     # PACKAGE_TYPE = None
 
     # The type of the installation. For more info, see the 'InstallType' in the scalyr_agent/__scalyr__.py
-    INSTALL_TYPE = None
+    INSTALL_TYPE: agent_common.InstallType
 
     PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES: Dict[constants.Architecture, str] = {}
 
@@ -589,46 +591,26 @@ class PackageBuilder(abc.ABC):
         """
         output_path = pl.Path(output_path)
 
-        spec_file_path = __SOURCE_ROOT__ / "agent_build" / "pyinstaller_spec.spec"
-
         # Create the special folder in the package output directory where the Pyinstaller's output will be stored.
         # That may be useful during the debugging.
         pyinstaller_output = self._intermediate_results_path / "frozen_binary"
         pyinstaller_output.mkdir(parents=True, exist_ok=True)
 
-        frozen_binary_output = pyinstaller_output / "dist"
-
-        # Run the PyInstaller.
-
-        package_info_file = self._intermediate_results_path / "package_info.json"
-
-        package_info = {"install_type": "package"}
-        package_info_file.write_text(json.dumps(package_info))
-
-        dest_path = pl.Path("scalyr_agent")
-
-        dest = f"{package_info_file}:{dest_path}"
-
-        print(dest)
-
-        # subprocess.check_call(
-        #     [sys.executable, "-m", "PyInstaller", str(spec_file_path)],
-        #     cwd=str(pyinstaller_output),
-        # )
-
-        agent_main_path = __SOURCE_ROOT__ / "scalyr_agent" / "agent_main.py"
-
-        dist_path = pyinstaller_output / "dist"
-
-        frozen_binary_name = "scalyr-agent-2"
-
         scalyr_agent_package_path = __SOURCE_ROOT__ / "scalyr_agent"
 
-        paths_to_include = [
-            str(scalyr_agent_package_path),
-            str(scalyr_agent_package_path / "builtin_monitors")
-        ]
+        # Create package info file. It will be read by agent in order to determine the package type and install root.
+        # See '__determine_install_root_and_type' function in scalyr_agent/__scalyr__.py file.
+        package_info_file = self._intermediate_results_path / "package_info.json"
 
+        package_info = {"install_type": type(self).INSTALL_TYPE.value}
+        package_info_file.write_text(json.dumps(package_info))
+
+        # Add this package_info file in the 'scalyr_agent' package directory, near the __scalyr__.py file.
+        add_data = {
+            str(package_info_file): "scalyr_agent"
+        }
+
+        # Add monitor modules as hidden imports, since they are not directly imported in the agent's code.
         hidden_imports = [
             "scalyr_agent.builtin_monitors.apache_monitor",
             "scalyr_agent.builtin_monitors.graphite_monitor",
@@ -640,10 +622,13 @@ class PackageBuilder(abc.ABC):
             "scalyr_agent.builtin_monitors.url_monitor",
         ]
 
-        add_data = {
-            str(package_info_file): "scalyr_agent"
-        }
+        # Add packages to frozen binary paths.
+        paths_to_include = [
+            str(scalyr_agent_package_path),
+            str(scalyr_agent_package_path / "builtin_monitors")
+        ]
 
+        # Add platform specific things.
         if platform.system().lower().startswith("linux"):
             hidden_imports.extend([
                 "scalyr_agent.builtin_monitors.linux_system_metrics",
@@ -661,25 +646,28 @@ class PackageBuilder(abc.ABC):
                 "scalyr_agent.builtin_monitors.windows_process_metrics",
             ])
 
+        # Create --add-data options from previously added files.
+        add_data_options = []
+        for src, dest in add_data.items():
+            add_data_options.append("--add-data")
+            add_data_options.append(f"{src}{os.path.pathsep}{dest}")
+
+        # Create --hidden-import options from previously created hidden imports list.
         hidden_import_options = []
         for h in hidden_imports:
             hidden_import_options.append("--hidden-import")
             hidden_import_options.append(str(h))
 
-        add_data_options = []
+        frozen_binary_name = "scalyr-agent-2"
+        dist_path = pyinstaller_output / "dist"
 
-        for src, dest in add_data.items():
-            add_data_options.append("--add-data")
-            add_data_options.append(f"{src}{os.path.pathsep}{dest_path}")
-
-        print(add_data_options)
-        raise
+        # Run the PyInstaller.
         subprocess.check_call(
             [
                 sys.executable,
                 "-m",
                 "PyInstaller",
-                str(agent_main_path),
+                str(scalyr_agent_package_path / "agent_main.py"),
                 "--onefile",
                 "--distpath", str(dist_path),
                 "--workpath", str(pyinstaller_output / "build"),
@@ -692,24 +680,14 @@ class PackageBuilder(abc.ABC):
             cwd=str(__SOURCE_ROOT__)
         )
 
-        # found_files = list(dist_path.glob("agent_main*"))
-        # if not found_files:
-        #     raise FileNotFoundError(f"Can not find frozen binary after build.")
-        #
-        # frozen_binary_path = found_files[0]
         frozen_binary_path = dist_path / frozen_binary_name
+        # Make frozen binary executable.
         frozen_binary_path.chmod(frozen_binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
+
+        # Copy resulting frozen binary to the output.
+        output_path.mkdir(parents=True, exist_ok=True)
         shutil.copy2(frozen_binary_path, output_path / "scalyr-agent-2")
 
-
-        output_path.mkdir(parents=True, exist_ok=True)
-
-
-
-        # # Make frozen binaries executable and copy them into output folder.
-        # for child_path in frozen_binary_output.iterdir():
-        #     child_path.chmod(child_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
-        #     shutil.copy2(child_path, output_path)
 
     def _add_package_info_file(self, output_path: pl.Path):
 
@@ -1025,7 +1003,8 @@ class DockerApiPackageBuilder(ContainerPackageBuilder):
 
 
 class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
-    PACKAGE_TYPE: constants.PackageType
+    INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
+    #PACKAGE_TYPE: constants.PackageType
     PACKAGE_FPM_TYPE: str
     """
     Base image builder for packages which are produced by the 'fpm' packager.
@@ -1249,23 +1228,20 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
 
 
 class DebPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_TYPE = constants.PackageType.DEB
+    #PACKAGE_TYPE = constants.PackageType.DEB
     PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
         constants.Architecture.X86_64: "amd64",
         constants.Architecture.ARM64: "arm64"
     }
     PACKAGE_FPM_TYPE = "deb"
-    # DOCKERIZED = True
 
 
 class RpmPackageBuilder(FpmBasedPackageBuilder):
-    PACKAGE_TYPE = constants.PackageType.RPM
     PACKAGE_FILENAME_ARCHITECTURE_SUFFIXES = {
         constants.Architecture.X86_64: "x86_64",
         constants.Architecture.ARM64: "aarch64"
     }
     PACKAGE_FPM_TYPE = "rpm"
-    # DOCKERIZED = True
 
 
 class TarballPackageBuilder(LinuxPackageBuilder):

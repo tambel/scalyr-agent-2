@@ -99,7 +99,8 @@ def get_build_revision():
     instead.
     """
     # NOTE: We use lazy import to avoid import time side affects
-    from scalyr_agent.__scalyr__ import INSTALL_TYPE, InstallType
+    from scalyr_agent.__scalyr__ import INSTALL_TYPE
+    from agent_common import InstallType
 
     if INSTALL_TYPE == InstallType.DEV_INSTALL:
         if not pl.Path(BUILD_INFO_FILE_PATH).is_file():

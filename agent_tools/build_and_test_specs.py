@@ -267,6 +267,8 @@ MSI_x86_64 = _add_specs(
 class TargetSystem(enum.Enum):
     UBUNTU_1404 = "ubuntu-1404"
 
+    AMAZONLINUX_2 = "amazonlinux-2"
+
 
 class OSFamily(enum.Enum):
     WINDOWS = 1
@@ -330,7 +332,7 @@ def create_test_spec(
         spec = PackageTestSpec(
             name=test_spec_name,
             target_system=target_system,
-            package_builder_spec=package_builder_spec,
+            package_build_spec=package_builder_spec,
         )
 
         TEST_SPECS[test_spec_name] = spec
@@ -356,6 +358,14 @@ create_test_spec(
     package_builder_spec=DEB_ARM64,
     remote_machine_specs=[
         DockerImageInfo("ubuntu:14.04"),
+    ],
+)
+
+create_test_spec(
+    target_system=TargetSystem.AMAZONLINUX_2,
+    package_builder_spec=RPM_x86_64,
+    remote_machine_specs=[
+        DockerImageInfo("amazonlinux:2"),
     ],
 )
 

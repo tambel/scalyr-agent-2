@@ -100,7 +100,7 @@ def start_agent(package_type: constants.PackageType):
     if package_type in [
         constants.PackageType.DEB,
         constants.PackageType.RPM,
-        constants.PackageType.TAR
+        constants.PackageType.MSI
     ]:
 
         if package_type == constants.PackageType.MSI:

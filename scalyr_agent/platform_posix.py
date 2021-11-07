@@ -21,6 +21,7 @@ from __future__ import print_function
 
 __author__ = "czerwin@scalyr.com"
 
+import argparse
 import errno
 import fcntl
 import sys
@@ -35,6 +36,7 @@ from io import open
 
 import six
 
+import agent_common
 from scalyr_agent import __scalyr__
 from scalyr_agent import scalyr_logging
 from scalyr_agent.platform_controller import (
@@ -94,21 +96,20 @@ class PosixPlatformController(PlatformController):
         """
         return __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.POSIX
 
-    def add_options(self, options_parser):
+    def add_options(self, options_parser: argparse.ArgumentParser):
         """Invoked by the main method to allow the platform to add in platform-specific options to the
         OptionParser used to parse the commandline options.
 
         @param options_parser:
         @type options_parser: optparse.OptionParser
         """
-        options_parser.add_option(
+        options_parser.add_argument(
             "-p",
             "--pid-file",
             dest="pid_file",
             help="The path storing the running agent's process id.  Only used if config cannot be parsed.",
         )
-        options_parser.add_option(
-            "",
+        options_parser.add_argument(
             "--no-change-user",
             action="store_true",
             dest="no_change_user",
@@ -118,7 +119,7 @@ class PosixPlatformController(PlatformController):
             "in changing to the correct user.  Users should not need to set this option.",
         )
 
-    def consume_options(self, options):
+    def consume_options(self, options: argparse.Namespace):
         """Invoked by the main method to allow the platform to consume any command line options previously requested
         in the 'add_options' call.
 
@@ -165,13 +166,13 @@ class PosixPlatformController(PlatformController):
         """
         # TODO: Change this to something that is not Linux-specific.  Maybe we should always just default
         # to the home directory location.
-        if self._install_type == __scalyr__.InstallType.PACKAGE_INSTALL:
+        if self._install_type == agent_common.InstallType.PACKAGE_INSTALL:
             return DefaultPaths(
                 "/var/log/scalyr-agent-2",
                 "/etc/scalyr-agent-2/agent.json",
                 "/var/lib/scalyr-agent-2",
             )
-        elif self._install_type == __scalyr__.InstallType.TARBALL_INSTALL:
+        elif self._install_type == agent_common.InstallType.TARBALL_INSTALL:
             install_location = __scalyr__.get_install_root()
             return DefaultPaths(
                 os.path.join(install_location, "log"),
@@ -179,7 +180,7 @@ class PosixPlatformController(PlatformController):
                 os.path.join(install_location, "data"),
             )
         else:
-            assert self._install_type == __scalyr__.InstallType.DEV_INSTALL
+            assert self._install_type == agent_common.InstallType.DEV_INSTALL
             # For developers only.  We default to a directory ~/scalyr-agent-dev for storing
             # all log/data information, and then require a log, config, and data subdirectory in each of those.
             base_dir = os.path.join(os.path.expanduser("~"), "scalyr-agent-dev")
@@ -282,6 +283,11 @@ class PosixPlatformController(PlatformController):
         # Do the first fork.
 
         debug_logger("Forking service")
+
+        # Flush standard outputs before the fork. If not flushed, then all output, that is done before fork,
+        # will be duplicated by child process.
+        sys.stdout.flush()
+        sys.stderr.flush()
         try:
             pid = os.fork()
             if pid > 0:
