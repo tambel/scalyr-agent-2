@@ -32,19 +32,19 @@ base_environment_used_files = [
 
 PYTHON_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
     name="python",
-    deployment_script_paths=[_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"]
+    deployment_script_path=_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"
 )
 
 BASE_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
     name="base_environment",
-    deployment_script_paths=[_SCRIPTS_DIR_PATH / "deploy_base_environment.sh"],
+    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_base_environment.sh",
     used_files=base_environment_used_files,
 )
 
 
 WINDOWS_INSTALL_WIX = deployers.EnvironmentDeployer(
     name="windows_agent_builder",
-    deployment_script_paths=[_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1"],
+    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
     used_files=base_environment_used_files,
 )
 

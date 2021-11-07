@@ -72,11 +72,11 @@ class EnvironmentDeployer:
     def __init__(
             self,
             name: str,
-            deployment_script_paths: List[Union[str, pl.Path]],
+            deployment_script_path: Union[str, pl.Path],
             used_files: list = None,
     ):
         self._name = name
-        self._deployment_script_paths = deployment_script_paths
+        self._deployment_script_path = deployment_script_path
         self._used_files = used_files or []
 
         self._used_files_checksum: Optional[str] = None
@@ -96,7 +96,7 @@ class EnvironmentDeployer:
 
         # Prepare the environment on the current system.
 
-        for script_path in self._deployment_script_paths:
+        for script_path in self._deployment_script_path:
             # Choose the shell according to the operation system.
             if script_path.suffix == ".ps1":
                 shell = "powershell"
