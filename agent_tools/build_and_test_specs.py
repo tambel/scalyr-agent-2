@@ -135,7 +135,8 @@ class PackageBuildSpec:
             path_mappings: Dict[Union[str, pl.Path], Union[str, pl.Path]] = None
     ):
 
-        self.deployment.deploy()
+        if self.deployment.in_docker:
+            self.deployment.deploy()
 
         base_image = self.deployment.image_name
         image_name = f"agent-builder-{self.name}-{base_image}".lower()
