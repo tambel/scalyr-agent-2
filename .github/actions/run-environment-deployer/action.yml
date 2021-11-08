@@ -41,7 +41,8 @@ runs:
       if: inputs.base-docker-image
       shell: bash
       run: |
-        echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture "${{ inputs.architecture }}")"
+        echo "FFFF"
+        echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "${{ steps.deployer-info.outputs.current-deployer-name }}" result-image-name --architecture "${{ inputs.architecture }}")"
 
 
     - name: Restore cached dependensies of the environment deployer.
