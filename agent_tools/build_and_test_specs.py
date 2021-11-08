@@ -309,8 +309,7 @@ class FollowingDeployment(Deployment):
 
     @property
     def base_docker_image(self) -> Optional[str]:
-        if self.initial_docker_image:
-            return self.previous_deployment.image_name
+        return self.previous_deployment.image_name
 
 
     def deploy(
