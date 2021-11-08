@@ -417,7 +417,7 @@ class PackageBuilder(abc.ABC):
     where the code runs. It may be very useful, because there is no need to prepare the current system to be able to
     perform the build. That also provides more consistent build results, no matter what is the host system.
     """
-    #FROZEN_BINARY_FILE_NAME = "scalyr-agent-2"
+    # FROZEN_BINARY_FILE_NAME = "scalyr-agent-2"
     # # The name of the package type
     # PACKAGE_TYPE = None
 
