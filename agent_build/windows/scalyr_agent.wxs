@@ -145,7 +145,6 @@
         <!-- -->
         <Feature Id='ScalyrApplication' Title='Scalyr Application' Level='1'>
             <ComponentRef Id='scalyr_agent_2' />
-            <ComponentRef Id='scalyr_agent_2_config' />
             <ComponentRef Id='ScalyrAgentService' />
             <ComponentRef Id='ScalyrShell' />
             <ComponentRef Id='ApplicationShortcut' />
@@ -154,7 +153,6 @@
             <ComponentRef Id='log_dir' />
             <ComponentRef Id='data_dir' />
             <ComponentRef Id='config_d_dir' />
-            <ComponentRef Id='install_type_file' />
             <ComponentRef Id='version_file' />
             <ComponentRef Id='build_info_file' />
             <!--<ComponentGroupRef Id='BIN' /> -->
