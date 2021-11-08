@@ -7,7 +7,7 @@ import logging
 import argparse
 import json
 import shutil
-from typing import Dict, Type, List, Callable, Union
+from typing import Dict, Type, List, Callable, Union, Optional
 
 
 __PARENT_DIR__ = pl.Path(__file__).parent.absolute()
@@ -15,7 +15,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent
 
 sys.path.append(str(__SOURCE_ROOT__))
 
-from agent_tools import environment_deployers as deployers
+from agent_tools import environment_deployers as env_deployers
 from agent_tools import constants
 from agent_tools import package_builders
 from agent_tools import run_in_docker
@@ -30,25 +30,25 @@ base_environment_used_files = [
     _AGENT_BUILD_DIR / "requirement-files"
 ]
 
-PYTHON_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
+PYTHON_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(
     name="python",
     deployment_script_path=_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"
 )
 
-BASE_ENVIRONMENT_DEPLOYER = deployers.EnvironmentDeployer(
+BASE_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(
     name="base_environment",
     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_base_environment.sh",
     used_files=base_environment_used_files,
 )
 
 
-WINDOWS_INSTALL_WIX = deployers.EnvironmentDeployer(
+WINDOWS_INSTALL_WIX = env_deployers.EnvironmentDeployer(
     name="windows_agent_builder",
     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
     used_files=base_environment_used_files,
 )
 
-TEST_ENVIRONMENT = deployers.EnvironmentDeployer(
+TEST_ENVIRONMENT = env_deployers.EnvironmentDeployer(
     name="test_environment",
     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
     used_files=base_environment_used_files,
@@ -56,7 +56,7 @@ TEST_ENVIRONMENT = deployers.EnvironmentDeployer(
 
 
 # Map deployers to their names.
-DEPLOYERS: Dict[str, deployers.EnvironmentDeployer] = {
+DEPLOYERS: Dict[str, env_deployers.EnvironmentDeployer] = {
     dep.name: dep for dep in [
         PYTHON_ENVIRONMENT_DEPLOYER,
         BASE_ENVIRONMENT_DEPLOYER,
@@ -96,7 +96,7 @@ class DockerImageInfo:
 class PackageBuildSpec:
     package_type: constants.PackageType
     package_builder_cls: Type[package_builders.PackageBuilder]
-    used_deployers: List[deployers.EnvironmentDeployer]
+    used_deployers: List[env_deployers.EnvironmentDeployer]
     filename_glob: str
     architecture: constants.Architecture
     base_image: DockerImageInfo = None
@@ -108,22 +108,22 @@ class PackageBuildSpec:
             architecture=self.architecture
         )
 
-    @property
-    def used_deployers_string_array(self):
-        used_deployer_names = [d.name for d in self.used_deployers]
-        return ",".join(used_deployer_names)
+    # @property
+    # def used_deployers_string_array(self):
+    #     used_deployer_names = [d.name for d in self.used_deployers]
+    #     return ",".join(used_deployer_names)
 
-    @property
-    def used_deployers_info_as_dict(self):
-        result = {
-            "deployers": self.used_deployers_string_array,
-            "architecture": package_build_spec.architecture.value
-        }
-
-        if package_build_spec.base_image:
-            result["base-docker-image"] = package_build_spec.base_image.image_name
-
-        return result
+    # @property
+    # def used_deployers_info_as_dict(self):
+    #     result = {
+    #         "deployers": self.used_deployers_string_array,
+    #         "architecture": package_build_spec.architecture.value
+    #     }
+    #
+    #     if package_build_spec.base_image:
+    #         result["base-docker-image"] = package_build_spec.base_image.image_name
+    #
+    #     return result
 
     def get_dockerized_function(
             self,
@@ -206,7 +206,7 @@ def _add_package_build_specs(
         package_builder_cls: Type[package_builders.PackageBuilder],
         filename_glob_format: str,
         architectures: List[constants.Architecture],
-        used_deployers: List[deployers.EnvironmentDeployer] = None,
+        used_deployers: List[env_deployers.EnvironmentDeployer] = None,
         base_docker_image: str = None,
 
 ):
@@ -305,6 +305,33 @@ class PackageTestSpec:
     target_system: TargetSystem
     package_build_spec: PackageBuildSpec
     remote_machine_spec: Union[DockerImageInfo, Ec2BasedTestSpec] = None
+    additional_deployers: List[env_deployers.EnvironmentDeployer] = None
+
+
+    # @property
+    # def all_deployers(self) -> List[env_deployers.EnvironmentDeployer]:
+    #     result = self.package_build_spec.used_deployers
+    #     if self.additional_deployers:
+    #         result.extend(self.additional_deployers)
+    #
+    #     return result
+
+    # @property
+    # def all_deployers_string_array(self):
+    #     used_deployer_names = [d.name for d in self.all_deployers]
+    #     return ",".join(used_deployer_names)
+
+    # @property
+    # def deployers_info_as_dict(self):
+    #     result = {
+    #         "deployers": self.all_deployers_string_array,
+    #         "architecture": package_build_spec.architecture.value
+    #     }
+    #
+    #     if package_build_spec.base_image:
+    #         result["base-docker-image"] = package_build_spec.base_image.image_name
+    #
+    #     return result
 
 
 TEST_SPECS: Dict[str, PackageTestSpec] = {}
@@ -314,7 +341,8 @@ PACKAGE_BUILDER_TO_TEST_SPEC: Dict[str, List[PackageTestSpec]] = collections.def
 def create_test_spec(
         target_system: TargetSystem,
         package_build_spec: PackageBuildSpec,
-        remote_machine_specs: List[Union[DockerImageInfo, Ec2BasedTestSpec]] = None
+        remote_machine_specs: List[Union[DockerImageInfo, Ec2BasedTestSpec]] = None,
+        additional_deployers: List[env_deployers.EnvironmentDeployer] = None
 ):
 
     global TEST_SPECS, PACKAGE_BUILDER_TO_TEST_SPEC
@@ -339,7 +367,8 @@ def create_test_spec(
                 name=full_name,
                 target_system=target_system,
                 package_build_spec=package_build_spec,
-                remote_machine_spec=remote_machine_spec
+                remote_machine_spec=remote_machine_spec,
+                additional_deployers=additional_deployers
             )
             TEST_SPECS[full_name] = spec
             PACKAGE_BUILDER_TO_TEST_SPEC[package_build_spec_name].append(spec)
@@ -348,6 +377,7 @@ def create_test_spec(
             name=test_spec_name,
             target_system=target_system,
             package_build_spec=package_build_spec,
+            additional_deployers=additional_deployers
         )
 
         TEST_SPECS[test_spec_name] = spec
@@ -394,8 +424,32 @@ create_test_spec(
 
 create_test_spec(
     target_system=TargetSystem.WINDOWS_2019,
-    package_build_spec=MSI_x86_64
+    package_build_spec=MSI_x86_64,
+    additional_deployers=[TEST_ENVIRONMENT]
 )
+
+
+def get_deployer_names_as_string_array(
+        deployers: List[env_deployers.EnvironmentDeployer],
+):
+    deployer_names = [d.name for d in deployers]
+    return ",".join(deployer_names)
+
+
+def deployers_info_as_dict(
+        deployers: List[env_deployers.EnvironmentDeployer],
+        architecture: constants.Architecture,
+        base_docker_image: Optional[DockerImageInfo] = None
+):
+    result = {
+        "deployers": get_deployer_names_as_string_array(deployers),
+        "architecture": architecture.value
+    }
+
+    if base_docker_image:
+        result["base-docker-image"] = base_docker_image.image_name
+
+    return result
 
 if __name__ == '__main__':
 
@@ -438,7 +492,12 @@ if __name__ == '__main__':
 
     if args.command == "get-package-build-spec-info":
         package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
-        package_build_spec_dict = package_build_spec.used_deployers_info_as_dict
+        #package_build_spec_dict = package_build_spec.used_deployers_info_as_dict
+        package_build_spec_dict = deployers_info_as_dict(
+            deployers=package_build_spec.used_deployers,
+            architecture=package_build_spec.architecture,
+            base_docker_image=package_build_spec.base_image
+        )
         package_build_spec_dict["package-filename-glob"] = package_build_spec.filename_glob
         matrix = {"include": [package_build_spec_dict]}
         print(
@@ -453,11 +512,20 @@ if __name__ == '__main__':
 
         result_spec_infos = []
 
-        for spec in test_specs:
+        for test_spec in test_specs:
             spec_info = {}
-            spec_info.update(package_build_spec.used_deployers_info_as_dict)
 
-            spec_info["spec_name"] = spec.name
+            all_deployers = package_build_spec.used_deployers[:]
+            if test_spec.additional_deployers:
+                all_deployers.extend(test_spec.additional_deployers)
+
+            spec_info = deployers_info_as_dict(
+                deployers=all_deployers,
+                architecture=package_build_spec.architecture,
+                base_docker_image=package_build_spec.base_image
+            )
+
+            spec_info["spec_name"] = test_spec.name
 
             result_spec_infos.append(spec_info)
 
