@@ -2111,11 +2111,10 @@ if __name__ == "__main__":
         config_main.parse_config_options(other_argv)
         exit(0)
 
-    if __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS:
-        if command_args.command == "service":
-            from scalyr_agent import platform_windows
-            platform_windows.parse_options()
-            exit(0)
+    if command_args.command == "service":
+        from scalyr_agent import platform_windows
+        platform_windows.parse_options()
+        exit(0)
 
 
     parser = argparse.ArgumentParser()
