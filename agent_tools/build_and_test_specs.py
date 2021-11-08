@@ -66,7 +66,7 @@ DEPLOYERS: Dict[str, env_deployers.EnvironmentDeployer] = {
 }
 
 _LINUX_SPECS_BASE_IMAGE = "centos:7"
-_LINUX_SPECS_DEPLOYERS = [
+_LINUX_BUILDER_DEPLOYERS = [
     PYTHON_ENVIRONMENT_DEPLOYER,
     BASE_ENVIRONMENT_DEPLOYER
 ]
@@ -257,7 +257,6 @@ class Deployment:
 
 
 
-
 @dataclasses.dataclass
 class InitialDeployment(Deployment):
     architecture_: constants.Architecture
@@ -275,12 +274,8 @@ class InitialDeployment(Deployment):
     def name(self):
         name = f"{self.deployer.name}-{self.architecture.value}"
         if self.base_docker_image:
-            image_name = self.base_docker_image.replace(":", "_")
-            name = f"{name}-{image_name}"
+            name = f"{name}-{self.base_docker_image}"
         return name
-
-
-
 
 
 @dataclasses.dataclass
@@ -297,8 +292,10 @@ class FollowingDeployment(Deployment):
 
     @property
     def base_docker_image(self) -> Optional[str]:
-        if self.previous_deployment.base_docker_image:
-            return self.previous_deployment.image_name
+        if isinstance(self.previous_deployment, InitialDeployment):
+            return self.previous_deployment.initial_docker_image
+        else:
+            return self.base_docker_image
 
 
     def deploy(
@@ -463,7 +460,7 @@ DEB_x86_64, DEB_ARM64 = _add_package_build_specs(
     package_type=constants.PackageType.DEB,
     package_builder_cls=package_builders.DebPackageBuilder,
     filename_glob_format="scalyr-agent-2_*.*.*_{arch}.deb",
-    used_deployers=_LINUX_SPECS_DEPLOYERS,
+    used_deployers=_LINUX_BUILDER_DEPLOYERS,
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
@@ -471,7 +468,7 @@ RPM_x86_64, RPM_ARM64 = _add_package_build_specs(
     package_type=constants.PackageType.RPM,
     package_builder_cls=package_builders.RpmPackageBuilder,
     filename_glob_format="scalyr-agent-2-*.*.*-*.{arch}.rpm",
-    used_deployers=_LINUX_SPECS_DEPLOYERS,
+    used_deployers=_LINUX_BUILDER_DEPLOYERS,
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
@@ -479,7 +476,7 @@ TAR_x86_64, TAR_ARM64 = _add_package_build_specs(
     package_type=constants.PackageType.TAR,
     package_builder_cls=package_builders.TarballPackageBuilder,
     filename_glob_format="scalyr-agent-*.*.*_{arch}.tar.gz",
-    used_deployers=_LINUX_SPECS_DEPLOYERS,
+    used_deployers=_LINUX_BUILDER_DEPLOYERS,
     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
     architectures=_DEFAULT_ARCHITECTURES
 )
@@ -516,11 +513,16 @@ class Ec2BasedTestSpec:
 
 @dataclasses.dataclass
 class PackageTestSpec:
-    name: str
     target_system: TargetSystem
     package_build_spec: PackageBuildSpec
+    deployment: Deployment
     remote_machine_spec: Union[DockerImageInfo, Ec2BasedTestSpec] = None
-    additional_deployers: List[env_deployers.EnvironmentDeployer] = None
+
+
+    @property
+    def name(self):
+        return f"{self.package_build_spec.package_type.value}_{self.target_system.value}_{self.package_build_spec.architecture.value}"
+
 
 
     # @property
@@ -550,7 +552,7 @@ class PackageTestSpec:
 
 
 TEST_SPECS: Dict[str, PackageTestSpec] = {}
-PACKAGE_BUILDER_TO_TEST_SPEC: Dict[str, List[PackageTestSpec]] = collections.defaultdict(list)
+PACKAGE_BUILD_TO_TEST_SPECS: Dict[str, List[PackageTestSpec]] = collections.defaultdict(list)
 
 
 def create_test_spec(
@@ -560,7 +562,7 @@ def create_test_spec(
         additional_deployers: List[env_deployers.EnvironmentDeployer] = None
 ):
 
-    global TEST_SPECS, PACKAGE_BUILDER_TO_TEST_SPEC
+    global TEST_SPECS, PACKAGE_BUILD_TO_TEST_SPECS
 
     package_build_spec_name = create_build_spec_name(
         package_type=package_build_spec.package_type,
@@ -586,7 +588,7 @@ def create_test_spec(
                 additional_deployers=additional_deployers
             )
             TEST_SPECS[full_name] = spec
-            PACKAGE_BUILDER_TO_TEST_SPEC[package_build_spec_name].append(spec)
+            PACKAGE_BUILD_TO_TEST_SPECS[package_build_spec_name].append(spec)
     else:
         spec = PackageTestSpec(
             name=test_spec_name,
@@ -596,7 +598,7 @@ def create_test_spec(
         )
 
         TEST_SPECS[test_spec_name] = spec
-        PACKAGE_BUILDER_TO_TEST_SPEC[package_build_spec_name].append(spec)
+        PACKAGE_BUILD_TO_TEST_SPECS[package_build_spec_name].append(spec)
 
 def create_test_specs(
         target_system: TargetSystem,
@@ -605,11 +607,18 @@ def create_test_specs(
         additional_deployers: List[env_deployers.EnvironmentDeployer] = None
 ):
 
-    global TEST_SPECS, PACKAGE_BUILDER_TO_TEST_SPEC
+    global TEST_SPECS, PACKAGE_BUILD_TO_TEST_SPECS
 
     remote_machine_arch_specs = remote_machine_arch_specs or {}
 
     for build_spec in package_build_specs:
+
+        deployment = _create_new_deployment(
+            architecture=build_spec.architecture,
+            deployers=additional_deployers,
+            base_docker_image=build_spec.deployment.base_docker_image
+        )
+
         test_spec_name = f"{build_spec.package_type.value}_{target_system.value}_{build_spec.architecture.value}"
 
         remote_machine_specs = remote_machine_arch_specs.get(build_spec.architecture)
@@ -625,24 +634,22 @@ def create_test_specs(
                 full_name = f"{test_spec_name}_{remote_machine_suffix}"
 
                 spec = PackageTestSpec(
-                    name=full_name,
                     target_system=target_system,
                     package_build_spec=build_spec,
                     remote_machine_spec=remote_machine_spec,
-                    additional_deployers=additional_deployers
+                    deployment=deployment
                 )
                 TEST_SPECS[full_name] = spec
-                PACKAGE_BUILDER_TO_TEST_SPEC[build_spec.name].append(spec)
+                PACKAGE_BUILD_TO_TEST_SPECS[build_spec.name].append(spec)
         else:
             spec = PackageTestSpec(
-                name=test_spec_name,
                 target_system=target_system,
                 package_build_spec=build_spec,
-                additional_deployers=additional_deployers
+                deployment=deployment
             )
 
             TEST_SPECS[test_spec_name] = spec
-            PACKAGE_BUILDER_TO_TEST_SPEC[build_spec.name].append(spec)
+            PACKAGE_BUILD_TO_TEST_SPECS[build_spec.name].append(spec)
 
 
 create_test_specs(
@@ -656,7 +663,7 @@ create_test_specs(
             DockerImageInfo("ubuntu:14.04")
         ]
     },
-    additional_deployers=[TEST_ENVIRONMENT]
+    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
 )
 
 create_test_specs(
@@ -760,110 +767,110 @@ def deployers_info_as_dict(
 
     return result
 
-if __name__ == '__main__':
-
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
-
-    parser = argparse.ArgumentParser()
-
-    subparsers = parser.add_subparsers(dest="command")
-
-    # build_frozen_test_runner = subparsers.add_parser("build-frozen-test-runner")
-    # build_frozen_test_runner.add_argument("spec_name", choices=SPECS.keys())
-    # build_frozen_test_runner.add_argument("--output-dir", dest="output_dir")
-    # build_frozen_test_runner.add_argument("--locally", required=False, action="store_true")
-
-    test_specs_info_parser = subparsers.add_parser("get-package-test-specs")
-    test_specs_info_parser.add_argument("package_type", choices=PACKAGE_BUILD_SPECS.keys())
-
-    package_deployers_parser = subparsers.add_parser("get-package-build-spec-info")
-    package_deployers_parser.add_argument("package_type", choices=PACKAGE_BUILD_SPECS.keys())
-
-    deployer_parser = subparsers.add_parser("deployer")
-    deployer_parser.add_argument("deployer_name", choices=DEPLOYERS.keys())
-    deployer_parser.add_argument("deployer_command", choices=["deploy", "checksum", "result-image-name"])
-    deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
-    deployer_parser.add_argument("--cache-dir", dest="cache_dir")
-    deployer_parser.add_argument("--architecture")
-
-    # deployer_subparsers = deployer_parser.add_subparsers(dest="deployer_command")
-    #
-    # deploy_parser = deployer_subparsers.add_parser("deploy")
-
-
-    # deployer_parser.add_argument("name", choices=DEPLOYERS.keys())
-    # deployer_parser.add_argument("action", choices=["deploy", "checksum"])
-    # deployer_parser.add_argument("--cache-dir", dest="cache_dir")
-    # deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
-    # deployer_parser.add_argument("--architecture")
-
-    args = parser.parse_args()
-
-    if args.command == "get-package-build-spec-info":
-        package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
-        #package_build_spec_dict = package_build_spec.used_deployers_info_as_dict
-        package_build_spec_dict = deployers_info_as_dict(
-            deployers=package_build_spec.used_deployers,
-            architecture=package_build_spec.architecture,
-            base_docker_image=package_build_spec.base_image
-        )
-        package_build_spec_dict["package-filename-glob"] = package_build_spec.filename_glob
-        matrix = {"include": [package_build_spec_dict]}
-        print(
-            json.dumps(matrix)
-        )
-        exit(0)
-
-    if args.command == "get-package-test-specs":
-
-        package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
-        test_specs = PACKAGE_BUILDER_TO_TEST_SPEC[args.package_type]
-
-        result_spec_infos = []
-
-        for test_spec in test_specs:
-            spec_info = {}
-
-            all_deployers = package_build_spec.used_deployers[:]
-            if test_spec.additional_deployers:
-                all_deployers.extend(test_spec.additional_deployers)
-
-            spec_info = deployers_info_as_dict(
-                deployers=all_deployers,
-                architecture=package_build_spec.architecture,
-                base_docker_image=package_build_spec.base_image
-            )
-
-            spec_info["spec_name"] = test_spec.name
-
-            result_spec_infos.append(spec_info)
-
-        print(json.dumps({"include": result_spec_infos}))
-
-        sys.exit(0)
-
-    if args.command == "deployer":
-        deployer = DEPLOYERS[args.deployer_name]
-        if args.deployer_command == "deploy":
-            if args.base_docker_image:
-                deployer.run_in_docker(
-                    base_docker_image=args.base_docker_image,
-                    architecture=constants.Architecture(args.architecture),
-                    cache_dir=args.cache_dir,
-                )
-            else:
-                deployer.run(
-                    cache_dir=args.cache_dir
-                )
-
-            exit(0)
-
-        if args.deployer_command == "checksum":
-            checksum = deployer.get_used_files_checksum()
-            print(checksum)
-            exit(0)
-
-        if args.deployer_command == "result-image-name":
-            image_name = deployer.get_image_name(constants.Architecture(args.architecture))
-            print(image_name)
+# if __name__ == '__main__':
+#
+#     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
+#
+#     parser = argparse.ArgumentParser()
+#
+#     subparsers = parser.add_subparsers(dest="command")
+#
+#     # build_frozen_test_runner = subparsers.add_parser("build-frozen-test-runner")
+#     # build_frozen_test_runner.add_argument("spec_name", choices=SPECS.keys())
+#     # build_frozen_test_runner.add_argument("--output-dir", dest="output_dir")
+#     # build_frozen_test_runner.add_argument("--locally", required=False, action="store_true")
+#
+#     test_specs_info_parser = subparsers.add_parser("get-package-test-specs")
+#     test_specs_info_parser.add_argument("package_type", choices=PACKAGE_BUILD_SPECS.keys())
+#
+#     package_deployers_parser = subparsers.add_parser("get-package-build-spec-info")
+#     package_deployers_parser.add_argument("package_type", choices=PACKAGE_BUILD_SPECS.keys())
+#
+#     deployer_parser = subparsers.add_parser("deployer")
+#     deployer_parser.add_argument("deployer_name", choices=DEPLOYERS.keys())
+#     deployer_parser.add_argument("deployer_command", choices=["deploy", "checksum", "result-image-name"])
+#     deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
+#     deployer_parser.add_argument("--cache-dir", dest="cache_dir")
+#     deployer_parser.add_argument("--architecture")
+#
+#     # deployer_subparsers = deployer_parser.add_subparsers(dest="deployer_command")
+#     #
+#     # deploy_parser = deployer_subparsers.add_parser("deploy")
+#
+#
+#     # deployer_parser.add_argument("name", choices=DEPLOYERS.keys())
+#     # deployer_parser.add_argument("action", choices=["deploy", "checksum"])
+#     # deployer_parser.add_argument("--cache-dir", dest="cache_dir")
+#     # deployer_parser.add_argument("--base-docker-image", dest="base_docker_image")
+#     # deployer_parser.add_argument("--architecture")
+#
+#     args = parser.parse_args()
+#
+#     if args.command == "get-package-build-spec-info":
+#         package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
+#         #package_build_spec_dict = package_build_spec.used_deployers_info_as_dict
+#         package_build_spec_dict = deployers_info_as_dict(
+#             deployers=package_build_spec.used_deployers,
+#             architecture=package_build_spec.architecture,
+#             base_docker_image=package_build_spec.base_image
+#         )
+#         package_build_spec_dict["package-filename-glob"] = package_build_spec.filename_glob
+#         matrix = {"include": [package_build_spec_dict]}
+#         print(
+#             json.dumps(matrix)
+#         )
+#         exit(0)
+#
+#     if args.command == "get-package-test-specs":
+#
+#         package_build_spec = PACKAGE_BUILD_SPECS[args.package_type]
+#         test_specs = PACKAGE_BUILD_TO_TEST_SPECS[args.package_type]
+#
+#         result_spec_infos = []
+#
+#         for test_spec in test_specs:
+#             spec_info = {}
+#
+#             all_deployers = package_build_spec.used_deployers[:]
+#             if test_spec.additional_deployers:
+#                 all_deployers.extend(test_spec.additional_deployers)
+#
+#             spec_info = deployers_info_as_dict(
+#                 deployers=all_deployers,
+#                 architecture=package_build_spec.architecture,
+#                 base_docker_image=package_build_spec.base_image
+#             )
+#
+#             spec_info["spec_name"] = test_spec.name
+#
+#             result_spec_infos.append(spec_info)
+#
+#         print(json.dumps({"include": result_spec_infos}))
+#
+#         sys.exit(0)
+#
+#     if args.command == "deployer":
+#         deployer = DEPLOYERS[args.deployer_name]
+#         if args.deployer_command == "deploy":
+#             if args.base_docker_image:
+#                 deployer.run_in_docker(
+#                     base_docker_image=args.base_docker_image,
+#                     architecture=constants.Architecture(args.architecture),
+#                     cache_dir=args.cache_dir,
+#                 )
+#             else:
+#                 deployer.run(
+#                     cache_dir=args.cache_dir
+#                 )
+#
+#             exit(0)
+#
+#         if args.deployer_command == "checksum":
+#             checksum = deployer.get_used_files_checksum()
+#             print(checksum)
+#             exit(0)
+#
+#         if args.deployer_command == "result-image-name":
+#             image_name = deployer.get_image_name(constants.Architecture(args.architecture))
+#             print(image_name)
 
