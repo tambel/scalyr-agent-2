@@ -17,6 +17,7 @@ runs:
 
           echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
           echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
+          echo "::set-output name=cache-path::~/dependencies_cache-${{ inputs.name }}"
 
 
     - name: Run base deployment if specified.
@@ -30,23 +31,25 @@ runs:
       env:
         cache-version: v1
       with:
-        path: ~/dependencies_cache
+        path: ${{ steps.deployer-info.outputs.cache-path }}
         key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
+      env:
+        cache_path: ~/dependencies_cache-${{ inputs.name }}
       shell: bash
       run: |
         python3 .github/scripts/get-deployment.py \
           deploy \
           ${{ inputs.name }} \
-          --cache-dir ~/dependencies_cache \
+          --cache-dir ${{ steps.deployer-info.outputs.cache-path }} \
           --only-this
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
         # variable to be able to use those tools.
-        if [ -f ~/dependencies_cache/paths.txt ]; then
-          cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
+        if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
+          cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
 
-        ls ~/dependencies_cache
+        ls ${{ steps.deployer-info.outputs.cache-path }}
