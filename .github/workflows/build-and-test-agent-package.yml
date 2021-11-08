@@ -73,7 +73,6 @@ jobs:
 
       - id: deployers-info
         run: |
-          python3 .github/scripts/get-package-build-spec.py ${{ inputs.package_name }}
           echo "::set-output name=package-build-deployer_name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
 
 
