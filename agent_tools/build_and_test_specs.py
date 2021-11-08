@@ -51,7 +51,7 @@ WINDOWS_INSTALL_WIX = env_deployers.EnvironmentDeployer(
 TEST_ENVIRONMENT = env_deployers.EnvironmentDeployer(
     name="test_environment",
     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
-    used_files=base_environment_used_files,
+    used_files=base_environment_used_files + [__SOURCE_ROOT__ / "dev-requirements.txt"],
 )
 
 
@@ -383,50 +383,143 @@ def create_test_spec(
         TEST_SPECS[test_spec_name] = spec
         PACKAGE_BUILDER_TO_TEST_SPEC[package_build_spec_name].append(spec)
 
+def create_test_specs(
+        target_system: TargetSystem,
+        package_build_specs: List[PackageBuildSpec],
+        remote_machine_arch_specs: Dict[constants.Architecture, List[Union[DockerImageInfo, Ec2BasedTestSpec]]] = None,
+        additional_deployers: List[env_deployers.EnvironmentDeployer] = None
+):
 
-create_test_spec(
+    global TEST_SPECS, PACKAGE_BUILDER_TO_TEST_SPEC
+
+    remote_machine_arch_specs = remote_machine_arch_specs or {}
+
+    for build_spec in package_build_specs:
+        test_spec_name = f"{build_spec.package_type.value}_{target_system.value}_{build_spec.architecture.value}"
+
+        remote_machine_specs = remote_machine_arch_specs.get(build_spec.architecture)
+        if remote_machine_specs:
+            for remote_machine_spec in remote_machine_specs:
+                if isinstance(remote_machine_spec, DockerImageInfo):
+                    remote_machine_suffix = "docker"
+                elif isinstance(remote_machine_spec, Ec2BasedTestSpec):
+                    remote_machine_suffix = "ec2"
+                else:
+                    raise ValueError(f"Wrong remote machine spec: {remote_machine_spec}")
+
+                full_name = f"{test_spec_name}_{remote_machine_suffix}"
+
+                spec = PackageTestSpec(
+                    name=full_name,
+                    target_system=target_system,
+                    package_build_spec=build_spec,
+                    remote_machine_spec=remote_machine_spec,
+                    additional_deployers=additional_deployers
+                )
+                TEST_SPECS[full_name] = spec
+                PACKAGE_BUILDER_TO_TEST_SPEC[build_spec.name].append(spec)
+        else:
+            spec = PackageTestSpec(
+                name=test_spec_name,
+                target_system=target_system,
+                package_build_spec=build_spec,
+                additional_deployers=additional_deployers
+            )
+
+            TEST_SPECS[test_spec_name] = spec
+            PACKAGE_BUILDER_TO_TEST_SPEC[build_spec.name].append(spec)
+
+
+create_test_specs(
     target_system=TargetSystem.UBUNTU_1404,
-    package_build_spec=DEB_x86_64,
-    remote_machine_specs=[
-        DockerImageInfo("ubuntu:14.04"),
-        # Ec2BasedTestSpec(
-        #     image_name="Ubuntu Server 14.04 LTS (HVM)",
-        #     image_id="ami-07957d39ebba800d5",
-        #     size_id="t2.small",
-        #     ssh_username="ubuntu",
-        #     os_family=OSFamily.LINUX
-        # )
-    ],
-)
-create_test_spec(
-    target_system=TargetSystem.UBUNTU_1404,
-    package_build_spec=DEB_ARM64,
-    remote_machine_specs=[
-        DockerImageInfo("ubuntu:14.04"),
-    ],
-)
-
-create_test_spec(
-    target_system=TargetSystem.AMAZONLINUX_2,
-    package_build_spec=RPM_x86_64,
-    remote_machine_specs=[
-        DockerImageInfo("amazonlinux:2"),
-    ],
-)
-
-create_test_spec(
-    target_system=TargetSystem.UBUNTU_2004,
-    package_build_spec=TAR_x86_64,
-    remote_machine_specs=[
-        DockerImageInfo("ubuntu:20.04"),
-    ],
-)
-
-create_test_spec(
-    target_system=TargetSystem.WINDOWS_2019,
-    package_build_spec=MSI_x86_64,
+    package_build_specs=[DEB_x86_64, DEB_ARM64],
+    remote_machine_arch_specs={
+        constants.Architecture.X86_64: [
+            DockerImageInfo("ubuntu:14.04")
+        ],
+        constants.Architecture.ARM64: [
+            DockerImageInfo("ubuntu:14.04")
+        ]
+    },
     additional_deployers=[TEST_ENVIRONMENT]
 )
+
+create_test_specs(
+    target_system=TargetSystem.AMAZONLINUX_2,
+    package_build_specs=[RPM_x86_64, RPM_ARM64],
+    remote_machine_arch_specs={
+        constants.Architecture.X86_64: [
+            DockerImageInfo("amazonlinux:2")
+        ],
+        constants.Architecture.ARM64: [
+            DockerImageInfo("amazonlinux:2")
+        ]
+    },
+    additional_deployers=[TEST_ENVIRONMENT]
+)
+
+create_test_specs(
+    target_system=TargetSystem.UBUNTU_2004,
+    package_build_specs=[TAR_x86_64, TAR_ARM64],
+    remote_machine_arch_specs={
+        constants.Architecture.X86_64: [
+            DockerImageInfo("ubuntu:20.04")
+        ],
+    }
+)
+
+create_test_specs(
+    target_system=TargetSystem.WINDOWS_2019,
+    package_build_specs=[MSI_x86_64],
+    additional_deployers=[TEST_ENVIRONMENT]
+)
+
+
+# create_test_spec(
+#     target_system=TargetSystem.UBUNTU_1404,
+#     package_build_spec=DEB_x86_64,
+#     remote_machine_specs=[
+#         DockerImageInfo("ubuntu:14.04"),
+#         # Ec2BasedTestSpec(
+#         #     image_name="Ubuntu Server 14.04 LTS (HVM)",
+#         #     image_id="ami-07957d39ebba800d5",
+#         #     size_id="t2.small",
+#         #     ssh_username="ubuntu",
+#         #     os_family=OSFamily.LINUX
+#         # )
+#     ],
+#     additional_deployers=[TEST_ENVIRONMENT]
+# )
+# create_test_spec(
+#     target_system=TargetSystem.UBUNTU_1404,
+#     package_build_spec=DEB_ARM64,
+#     remote_machine_specs=[
+#         DockerImageInfo("ubuntu:14.04"),
+#     ],
+#     additional_deployers=[TEST_ENVIRONMENT]
+# )
+#
+# create_test_spec(
+#     target_system=TargetSystem.AMAZONLINUX_2,
+#     package_build_spec=RPM_x86_64,
+#     remote_machine_specs=[
+#         DockerImageInfo("amazonlinux:2"),
+#     ],
+# )
+#
+# create_test_spec(
+#     target_system=TargetSystem.UBUNTU_2004,
+#     package_build_spec=TAR_x86_64,
+#     remote_machine_specs=[
+#         DockerImageInfo("ubuntu:20.04"),
+#     ],
+# )
+#
+# create_test_spec(
+#     target_system=TargetSystem.WINDOWS_2019,
+#     package_build_spec=MSI_x86_64,
+#     additional_deployers=[TEST_ENVIRONMENT]
+# )
 
 
 def get_deployer_names_as_string_array(
