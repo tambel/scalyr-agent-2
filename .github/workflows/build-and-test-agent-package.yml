@@ -171,6 +171,7 @@ jobs:
           chmod +x ~/package/*
 
       - name: Set up QEMU
+        if: ${{ !startsWith(inputs.package_name, 'msi') }}
         id: qemu
         uses: docker/setup-qemu-action@v1
         with:
