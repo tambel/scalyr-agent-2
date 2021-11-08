@@ -309,6 +309,7 @@ class FollowingDeployment(Deployment):
                 cache_dir=cache_dir
             )
 
+        print(self)
         super(FollowingDeployment, self).deploy(
             cache_dir=cache_dir
         )
