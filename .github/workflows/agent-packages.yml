@@ -7,6 +7,23 @@ env:
 
 
 jobs:
+  job1:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - id: set-matrix
+        run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
+
+
+      - name: Prepare build environment by running appropriate deployer.
+        id: prepare
+        uses: ./.github/actions/run-environment-deployer
+        with: ${{fromJson(steps.outputs.set-matrix.outputs.matrix)}}
+
+
+
   deb_x86_64:
     uses: scalyr/scalyr-agent-2/.github/workflows/build-and-test-agent-package.yml@refactor-tests
     with:
