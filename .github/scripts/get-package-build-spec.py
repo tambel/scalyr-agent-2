@@ -25,7 +25,7 @@ if __name__ == '__main__':
     get_package_test_specs_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
 
     package_filename_glob_parser = subparsers.add_parser("package-filename-glob")
-    get_package_test_specs_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
+    package_filename_glob_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
 
 
     args = parser.parse_args()
