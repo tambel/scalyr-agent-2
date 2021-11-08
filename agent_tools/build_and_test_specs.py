@@ -274,7 +274,7 @@ class InitialDeployment(Deployment):
     def name(self):
         name = f"{self.deployer.name}-{self.architecture.value}"
         if self.base_docker_image:
-            docker_image_name = self.base_docker_image.replace(":", "")
+            docker_image_name = self.base_docker_image.replace(":", "_")
             name = f"{name}-{docker_image_name}"
         return name
 
