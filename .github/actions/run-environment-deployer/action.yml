@@ -28,9 +28,17 @@ runs:
           current_deployer_name=$(cut -d "," -f -1 <<< $names)
           other_deployer_names=$(cut -d "," -f 2- <<< $names)
           echo "::set-output name=checksum::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" checksum)"
-          echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture "${{ inputs.architecture }}")"
+          #echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture "${{ inputs.architecture }}")"
           echo "::set-output name=current-deployer-name::$current_deployer_name"
           echo "::set-output name=other-deployer-names::$other_deployer_names"
+
+    - name: Get checksum of the deployer and its base deployer (if exists).
+      id: get-deployer-result-image-name
+      if: inputs.base-docker-image
+      shell: bash
+      run: |
+        echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture "${{ inputs.architecture }}")"
+
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
@@ -71,5 +79,5 @@ runs:
       uses: ./.github/actions/run-environment-deployer
       with:
         names: ${{ steps.deployer-info.outputs.other-deployer-names }}
-        base-docker-image: ${{ steps.deployer-info.outputs.result-image-name }}
+        base-docker-image: ${{ steps.get-deployer-result-image-name.outputs.result-image-name }}
         architecture: ${{ inputs.architecture }}
