@@ -48,3 +48,5 @@ runs:
         if [ -f ~/dependencies_cache/paths.txt ]; then
           cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
         fi
+
+        ls ~/dependencies_cache

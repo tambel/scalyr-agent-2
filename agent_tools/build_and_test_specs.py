@@ -111,10 +111,6 @@ class PackageBuildSpec:
             architecture=self.architecture
         )
 
-    @property
-    def in_docker(self) -> bool:
-        return self.deployment.base_docker_image is not None
-
     # @property
     # def used_deployers_string_array(self):
     #     used_deployer_names = [d.name for d in self.used_deployers]
@@ -158,7 +154,7 @@ class PackageBuildSpec:
 
     def build(self, output_path: pl.Path):
 
-        if self.in_docker:
+        if self.deployment.in_docker:
             build_func = self.get_dockerized_function(
                 func=self.build_package_from_spec,
                 build_stage="build",
@@ -228,6 +224,10 @@ class Deployment:
     @property
     def base_docker_image(self) -> Optional[str]:
         pass
+
+    @property
+    def in_docker(self) -> bool:
+        return self.base_docker_image is None
 
     @property
     def image_name(self):
