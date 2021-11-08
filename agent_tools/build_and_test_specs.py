@@ -229,7 +229,7 @@ class Deployment:
 
     @property
     def in_docker(self) -> bool:
-        return self.base_docker_image is None
+        return self.base_docker_image is not None
 
     @property
     def image_name(self):
