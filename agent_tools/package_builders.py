@@ -1348,14 +1348,13 @@ class MsiWindowsPackageBuilder(PackageBuilder):
 
         # Build frozen binaries and copy them into bin folder.
         bin_path = scalyr_dir / "bin"
+        filename = "scalyr-agent-2.exe"
         self._build_frozen_binary(
             bin_path,
-            filename="scalyr-agent-2.exe"
+            filename=filename
         )
-        self._build_frozen_binary(
-            bin_path,
-            filename="ScalyrAgentService.exe"
-        )
+
+        shutil.copy2(bin_path / filename, bin_path / "ScalyrAgentService.exe")
 
         shutil.copy(_AGENT_BUILD_PATH / "windows/files/ScalyrShell.cmd", bin_path)
 
