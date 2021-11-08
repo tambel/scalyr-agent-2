@@ -50,8 +50,6 @@ jobs:
   build:
     runs-on: ${{ inputs.os }}
     needs: get-deployments
-    strategy:
-      matrix: ${{fromJSON(needs.get-build-and-test-specs.outputs.package-build-spec)}}
 #        package_type: ["deb_x86_64", "rpm_x86_64", "tar_x86_64", "deb_arm64", "rpm_arm64", "tar_arm64"]
 #        os: [ubuntu-20.04]
 #        python-version: ["3.8"]
@@ -111,12 +109,12 @@ jobs:
           python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
 
 
-      - name: Save the package.
-        uses: actions/upload-artifact@v2
-        with:
-          name: package-${{ inputs.package_name }}
-          path: |
-            agent-build-output/${{ matrix.package-filename-glob }}*
+#      - name: Save the package.
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: package-${{ inputs.package_name }}
+#          path: |
+#            agent-build-output/${{ matrix.package-filename-glob }}*
 
 
   test:
