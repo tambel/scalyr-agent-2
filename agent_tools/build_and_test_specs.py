@@ -239,6 +239,7 @@ class Deployment:
     def deploy(
             self,
             cache_dir: pl.Path=None,
+            only_this: bool = False
     ):
         if self.base_docker_image:
             self.deployer.run_in_docker(
@@ -251,6 +252,8 @@ class Deployment:
             self.deployer.run(
                 cache_dir=cache_dir
             )
+
+
 
 
 @dataclasses.dataclass
@@ -297,11 +300,14 @@ class FollowingDeployment(Deployment):
 
     def deploy(
             self,
-            cache_dir: pl.Path=None
+            cache_dir: pl.Path=None,
+            only_this: bool = False
     ):
-        self.previous_deployment.deploy(
-            cache_dir=cache_dir
-        )
+
+        if not only_this:
+            self.previous_deployment.deploy(
+                cache_dir=cache_dir
+            )
 
         super(FollowingDeployment, self).deploy(
             cache_dir=cache_dir

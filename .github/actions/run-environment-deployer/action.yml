@@ -19,7 +19,7 @@ runs:
           echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
 
 
-    - name: Run base deployer if specified.
+    - name: Run base deployment if specified.
       if: steps.deployer-info.outputs.previous-deployment
       uses: ./.github/actions/run-environment-deployer
       with:
@@ -40,6 +40,7 @@ runs:
           deploy \
           ${{ inputs.name }} \
           --cache-dir ~/dependencies_cache
+          --only-this
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
