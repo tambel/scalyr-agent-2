@@ -17,13 +17,13 @@ jobs:
         run: echo "::set-output name=matrix::{\"project\":\"foo\",\"config\":\"Debug\"}"
 
 
-      - run: echo "${{steps.outputs.set-matrix.outputs.matrix}}"
+      - run: echo "${{steps.set-matrix.outputs.matrix}}"
 
 
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
         uses: ./.github/actions/run-environment-deployer
-        with: ${{fromJson(steps.outputs.set-matrix.outputs.matrix)}}
+        with: ${{fromJson(steps.set-matrix.outputs.matrix)}}
 
 
 
