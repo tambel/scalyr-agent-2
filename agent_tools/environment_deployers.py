@@ -224,13 +224,6 @@ class EnvironmentDeployer:
                 subprocess.check_call(["docker", "save", result_image_name], stdout=f)
 
 
-    def get_image_name(
-            self,
-            architecture: constants.Architecture,
-    ):
-        return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}-{architecture.value}".lower()
-
-
     def _get_used_files(self) -> List[pl.Path]:
         """
             Get the list of all files which are used in the deployment.

@@ -24,11 +24,20 @@ if __name__ == '__main__':
     get_package_test_specs_parser = subparsers.add_parser("package-test-specs-matrix")
     get_package_test_specs_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
 
+    package_filename_glob_parser = subparsers.add_parser("package-filename-glob")
+    get_package_test_specs_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
+
+
     args = parser.parse_args()
 
     if args.command == "deployment-name":
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
         print(build_spec.deployment.name)
+        exit(0)
+
+    if args.command == "package-filename-glob":
+        build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
+        print(build_spec.filename_glob)
         exit(0)
 
     if args.command == "package-test-specs-matrix":
