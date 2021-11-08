@@ -300,7 +300,7 @@ class FollowingDeployment(Deployment):
 
     def deploy(
             self,
-            cache_dir: pl.Path=None,
+            cache_dir: pl.Path = None,
             only_this: bool = False
     ):
 
@@ -310,6 +310,7 @@ class FollowingDeployment(Deployment):
             )
 
         print(self)
+        print(self.base_docker_image)
         super(FollowingDeployment, self).deploy(
             cache_dir=cache_dir
         )
