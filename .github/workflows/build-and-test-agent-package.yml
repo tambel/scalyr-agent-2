@@ -99,6 +99,7 @@ jobs:
         shell: bash
         run: |
           python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
+          python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }}
           echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }})"
 
 

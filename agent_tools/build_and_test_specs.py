@@ -224,6 +224,10 @@ class Deployment:
         pass
 
     @property
+    def initial_docker_image(self) -> Optional[str]:
+        pass
+
+    @property
     def base_docker_image(self) -> Optional[str]:
         pass
 
@@ -260,15 +264,19 @@ class Deployment:
 @dataclasses.dataclass
 class InitialDeployment(Deployment):
     architecture_: constants.Architecture
-    initial_docker_image: str = None
+    initial_docker_image_: str = None
 
     @property
     def architecture(self) -> constants.Architecture:
         return self.architecture_
 
     @property
+    def initial_docker_image(self) -> Optional[str]:
+        return self.initial_docker_image_
+
+    @property
     def base_docker_image(self) -> Optional[str]:
-        return self.initial_docker_image
+        return self.initial_docker_image_
 
     @property
     def name(self):
@@ -292,11 +300,12 @@ class FollowingDeployment(Deployment):
         return f"{self.deployer.name}-{self.previous_deployment.name}"
 
     @property
+    def initial_docker_image(self):
+        return self.previous_deployment.initial_docker_image
+
+    @property
     def base_docker_image(self) -> Optional[str]:
-        if isinstance(self.previous_deployment, InitialDeployment):
-            return self.previous_deployment.initial_docker_image
-        else:
-            return self.base_docker_image
+        return self.previous_deployment.image_name
 
 
     def deploy(
@@ -376,7 +385,7 @@ def _create_new_deployment(
     initial_deployment = InitialDeployment(
         deployer=deployers.pop(0),
         architecture_=architecture,
-        initial_docker_image=base_docker_image
+        initial_docker_image_=base_docker_image
     )
 
     existing_deployment = DEPLOYMENTS.get(initial_deployment.name)

@@ -168,7 +168,7 @@ class EnvironmentDeployer:
                 # image has to be saved to the cache.
                 save_to_cache = True
 
-        logging.info(f"Build image '{result_image_name}' with the deployer '{self._name}'.")
+        logging.info(f"Build image '{result_image_name}' from base image '{base_docker_image}' with the deployer '{self._name}'.")
 
         # Create the builder image.
         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
