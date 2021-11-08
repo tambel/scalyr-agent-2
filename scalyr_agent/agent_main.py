@@ -2092,22 +2092,31 @@ class WorkerThread(object):
 if __name__ == "__main__":
     my_controller = PlatformController.new_platform()
 
-    agent_commands = ["start", "stop", "status", "restart", "condrestart", "version"]
-    all_commands = [*agent_commands, "config"]
+    commands = ["start", "stop", "status", "restart", "condrestart", "version", "config"]
+
+    if __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS:
+        commands.append("service")
 
     command_parser = argparse.ArgumentParser(
-        usage=f"Usage: scalyr-agent-2 [options] ({all_commands})",
+        usage=f"Usage: scalyr-agent-2 [options] ({commands})",
         #version="scalyr-agent v" + __scalyr__.SCALYR_VERSION,
     )
     command_parser.add_argument(
         "command",
-        choices=all_commands
+        choices=commands
     )
 
     command_args, other_argv = command_parser.parse_known_args()
     if command_args.command == "config":
         config_main.parse_config_options(other_argv)
         exit(0)
+
+    if __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS:
+        if command_args.command == "service":
+            from scalyr_agent import platform_windows
+            platform_windows.parse_options()
+            exit(0)
+
 
     parser = argparse.ArgumentParser()
 

@@ -43,9 +43,6 @@
         </DirectoryRef>
 
         <DirectoryRef Id='APPLICATIONROOTDIRECTORY'>
-            <Component Id='install_type_file' Guid='cefb4270-f19a-4b0d-931b-970643273a86'>
-                <File Id='install_type_file' Name='install_type' KeyPath='yes' Checksum='yes' Source='Scalyr\install_type' />
-            </Component>
             <Component Id='version_file' Guid='2c6bbb53-4c83-41cf-b5d8-2855cf86c15c'>
                 <File Id='version_file' Name='VERSION' KeyPath='yes' Checksum='yes' Source='Scalyr\VERSION' />
             </Component>
@@ -85,12 +82,8 @@
                       Value="[APPLICATIONROOTDIRECTORY]" Permanent="no" Part="all"/>
             </Component>
 
-            <Component Id='scalyr_agent_2_config' Guid='87f0aa3c-f5be-49bd-9fd3-5d735f3793f2' >
-              <File Id='scalyr_agent_2_config_exe' DiskId='1' KeyPath='yes' Checksum='yes'  Source='Scalyr\bin\scalyr-agent-2-config.exe' />
-            </Component>
-
             <Component Id='ScalyrAgentService' Guid='cf5da252-7803-45c0-b33b-e1745925cd09' >
-              <File Id='ScalyrAgentService_exe' DiskId='1' KeyPath='yes' Checksum='yes'  Source='Scalyr\bin\ScalyrAgentService.exe' />
+              <File Id='ScalyrAgentService_exe' DiskId='1' KeyPath='yes' Checksum='yes'  Source='Scalyr\bin\scalyr-agent-2.exe' />
               <ServiceInstall Id="ServiceInstaller" Type="ownProcess" Vital="yes" Name="ScalyrAgentService"
                               DisplayName="Scalyr Agent Service"
                               Description="The Scalyr Agent sends logs and metrics to Scalyr."
