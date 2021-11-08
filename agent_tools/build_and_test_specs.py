@@ -60,7 +60,8 @@ DEPLOYERS: Dict[str, deployers.EnvironmentDeployer] = {
     dep.name: dep for dep in [
         PYTHON_ENVIRONMENT_DEPLOYER,
         BASE_ENVIRONMENT_DEPLOYER,
-        WINDOWS_INSTALL_WIX
+        WINDOWS_INSTALL_WIX,
+        TEST_ENVIRONMENT
     ]
 }
 
