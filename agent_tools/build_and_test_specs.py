@@ -311,9 +311,6 @@ class FollowingDeployment(Deployment):
 
     @property
     def checksum(self) -> str:
-        if not self.in_docker:
-            return super(FollowingDeployment, self).checksum
-
         return self.deployer.get_used_files_checksum(
             additional_seed=self.previous_deployment.image_name
         )
