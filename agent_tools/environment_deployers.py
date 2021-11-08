@@ -269,7 +269,7 @@ class EnvironmentDeployer:
 
     def get_used_files_checksum(
             self,
-            additional_seed: str,
+            additional_seed: str = None,
     ):
         """
         Calculate the sha256 checksum of all files which are used in the deployment.
@@ -288,61 +288,62 @@ class EnvironmentDeployer:
             sha256.update(str(file_path.stat().st_mode).encode())
             sha256.update(file_path.read_bytes())
 
-        sha256.update(additional_seed.encode())
+        if additional_seed:
+            sha256.update(additional_seed.encode())
         self._used_files_checksum = sha256.hexdigest()
         return self._used_files_checksum
 
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
-
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command")
-
-    deploy_parser = subparsers.add_parser("deploy")
-    get_info_parser = subparsers.add_parser("get-info")
-
-    for p in [deploy_parser, get_info_parser]:
-        p.add_argument("deployer_name", choices=DEPLOYERS.keys())
-        p.add_argument("--architecture", required=False)
-
-    get_info_parser.add_argument("info", choices=["checksum", "image-name"])
-
-    deploy_parser.add_argument("--base-docker-image", dest="base_docker_image")
-
-    deploy_parser.add_argument(
-        "--cache-dir",
-        dest="cache_dir",
-        help="Path to the directory which will be considered by the script is a cache. "
-        "All 'cachable' intermediate results will be stored in it.",
-    )
-
-    args = parser.parse_args()
-
-    # Find the deployer.
-    deployer = DEPLOYERS[args.deployer_name]
-
-    if args.command == "get-info":
-        if args.info == "checksum":
-            checksum = deployer.get_used_files_checksum()
-            print(checksum)
-
-        if args.info == "image-name":
-            deployer.get_image_name(architecture=args.architecture)
-
-        exit(0)
-
-    if args.command == "deploy":
-        if args.base_docker_image:
-            deployer.run_in_docker(
-                base_docker_image=args.base_docker_image,
-                architecture=constants.Architecture(args.architecture),
-                cache_dir=args.cache_dir
-            )
-        else:
-            deployer.run(
-                cache_dir=args.cache_dir
-            )
-
-
-        exit(0)
+# if __name__ == '__main__':
+#     logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
+#
+#     parser = argparse.ArgumentParser()
+#     subparsers = parser.add_subparsers(dest="command")
+#
+#     deploy_parser = subparsers.add_parser("deploy")
+#     get_info_parser = subparsers.add_parser("get-info")
+#
+#     for p in [deploy_parser, get_info_parser]:
+#         p.add_argument("deployer_name", choices=DEPLOYERS.keys())
+#         p.add_argument("--architecture", required=False)
+#
+#     get_info_parser.add_argument("info", choices=["checksum", "image-name"])
+#
+#     deploy_parser.add_argument("--base-docker-image", dest="base_docker_image")
+#
+#     deploy_parser.add_argument(
+#         "--cache-dir",
+#         dest="cache_dir",
+#         help="Path to the directory which will be considered by the script is a cache. "
+#         "All 'cachable' intermediate results will be stored in it.",
+#     )
+#
+#     args = parser.parse_args()
+#
+#     # Find the deployer.
+#     deployer = DEPLOYERS[args.deployer_name]
+#
+#     if args.command == "get-info":
+#         if args.info == "checksum":
+#             checksum = deployer.get_used_files_checksum()
+#             print(checksum)
+#
+#         if args.info == "image-name":
+#             deployer.get_image_name(architecture=args.architecture)
+#
+#         exit(0)
+#
+#     if args.command == "deploy":
+#         if args.base_docker_image:
+#             deployer.run_in_docker(
+#                 base_docker_image=args.base_docker_image,
+#                 architecture=constants.Architecture(args.architecture),
+#                 cache_dir=args.cache_dir
+#             )
+#         else:
+#             deployer.run(
+#                 cache_dir=args.cache_dir
+#             )
+#
+#
+#         exit(0)

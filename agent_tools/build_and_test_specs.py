@@ -236,15 +236,13 @@ class Deployment:
         return self.initial_docker_image is not None
 
     @property
-    def in_docker(self) -> bool:
-        return self.initial_docker_image is not None
+    def image_name(self):
+        return f"{self.name}-{self.checksum}"
+
 
     @property
-    def image_name(self):
-        return f"{self.name}-{self.deployer.get_used_files_checksum()}"
-
-    def deploy2(self, cache_dir: pl.Path=None,):
-        pass
+    def checksum(self) -> str:
+        return self.deployer.get_used_files_checksum()
 
     def deploy(
             self,
@@ -310,6 +308,15 @@ class FollowingDeployment(Deployment):
     @property
     def base_docker_image(self) -> Optional[str]:
         return self.previous_deployment.image_name
+
+    @property
+    def checksum(self) -> str:
+        if not self.in_docker:
+            return super(FollowingDeployment, self).checksum
+
+        return self.deployer.get_used_files_checksum(
+            additional_seed=self.previous_deployment.image_name
+        )
 
 
     def deploy(

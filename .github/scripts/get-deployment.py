@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     if args.command == "checksum":
         deployment = build_and_test_specs.DEPLOYMENTS[args.name]
-        checksum = deployment.deployer.get_used_files_checksum()
+        checksum = deployment.checksum
         print(checksum)
         exit(0)
 
