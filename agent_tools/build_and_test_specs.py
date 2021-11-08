@@ -65,7 +65,7 @@ DEPLOYERS: Dict[str, env_deployers.EnvironmentDeployer] = {
     ]
 }
 
-_LINUX_SPECS_BASE_IMAGE = "python:3.8"
+_LINUX_SPECS_BASE_IMAGE = "centos:7"
 _LINUX_SPECS_DEPLOYERS = [
     PYTHON_ENVIRONMENT_DEPLOYER,
     BASE_ENVIRONMENT_DEPLOYER
