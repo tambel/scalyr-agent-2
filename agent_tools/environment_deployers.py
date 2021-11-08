@@ -86,7 +86,7 @@ class EnvironmentDeployer:
         return self._name
 
 
-    def deploy(
+    def run(
         self,
         cache_dir: Union[str, pl.Path] = None,
     ):
@@ -114,9 +114,10 @@ class EnvironmentDeployer:
             command,
         )
 
-    def deploy_in_docker(
+    def run_in_docker(
         self,
         base_docker_image: str,
+        result_image_name: str,
         architecture: constants.Architecture,
         cache_dir: Union[str, pl.Path] = None,
 
@@ -129,14 +130,14 @@ class EnvironmentDeployer:
         # file and that file will be stored in the cache.
 
         # Get the name of the builder image.
-        image_name = self.get_image_name(
-            architecture=architecture
-        )
+        # image_name = self.get_image_name(
+        #     architecture=architecture
+        # )
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
         # of all files which are used in it, so the name identity also guarantees the content identity.
         output = (
-            subprocess.check_output(["docker", "images", "-q", image_name])
+            subprocess.check_output(["docker", "images", "-q", result_image_name])
             .decode()
             .strip()
         )
@@ -144,7 +145,7 @@ class EnvironmentDeployer:
         if output:
             # The image already exists, skip the build.
             logging.info(
-                f"Image '{image_name}' already exists, skip the build and reuse it."
+                f"Image '{result_image_name}' already exists, skip the build and reuse it."
             )
             return
 
@@ -153,10 +154,10 @@ class EnvironmentDeployer:
         # If cache directory is specified, then check if the image file is already there and we can reuse it.
         if cache_dir:
             cache_dir = pl.Path(cache_dir)
-            cached_image_path = cache_dir / image_name
+            cached_image_path = cache_dir / result_image_name
             if cached_image_path.is_file():
                 logging.info(
-                    f"Cached image {image_name} file for the deployer '{self._name}' has been found, loading and reusing it instead of building."
+                    f"Cached image {result_image_name} file with the deployer '{self._name}' has been found, loading and reusing it instead of building."
                 )
                 subprocess.check_call(
                     ["docker", "load", "-i", str(cached_image_path)]
@@ -167,7 +168,7 @@ class EnvironmentDeployer:
                 # image has to be saved to the cache.
                 save_to_cache = True
 
-        logging.info(f"Build image '{image_name}' for the deployer '{self._name}'.")
+        logging.info(f"Build image '{result_image_name}' with the deployer '{self._name}'.")
 
         # Create the builder image.
         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
@@ -212,19 +213,21 @@ class EnvironmentDeployer:
         )
 
         # Save the current state of the container into image.
-        subprocess.check_call(["docker", "commit", container_name, image_name])
+        subprocess.check_call(["docker", "commit", container_name, result_image_name])
 
         # Save image if caching is enabled.
         if cache_dir and save_to_cache:
             cache_dir.mkdir(parents=True, exist_ok=True)
-            cached_image_path = cache_dir / image_name
-            logging.info(f"Saving '{image_name}' image file into cache.")
+            cached_image_path = cache_dir / result_image_name
+            logging.info(f"Saving '{result_image_name}' image file into cache.")
             with cached_image_path.open("wb") as f:
-                subprocess.check_call(["docker", "save", image_name], stdout=f)
+                subprocess.check_call(["docker", "save", result_image_name], stdout=f)
 
 
-    def get_image_name(self, architecture: constants.Architecture):
-
+    def get_image_name(
+            self,
+            architecture: constants.Architecture,
+    ):
         return f"scalyr-build-deployer-{self._name}-{self.get_used_files_checksum()}-{architecture.value}".lower()
 
 
@@ -327,13 +330,13 @@ if __name__ == '__main__':
 
     if args.command == "deploy":
         if args.base_docker_image:
-            deployer.deploy_in_docker(
+            deployer.run_in_docker(
                 base_docker_image=args.base_docker_image,
                 architecture=constants.Architecture(args.architecture),
                 cache_dir=args.cache_dir
             )
         else:
-            deployer.deploy(
+            deployer.run(
                 cache_dir=args.cache_dir
             )
 

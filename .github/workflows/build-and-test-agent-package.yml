@@ -31,8 +31,8 @@ jobs:
   get-build-and-test-specs:
     runs-on: ${{ inputs.os }}
     outputs:
-      package-build-spec: ${{ steps.package-info.outputs.package-build-spec }}
-      package-test-specs: ${{ steps.package-info.outputs.package-test-specs }}
+      package-build-deployer_name: ${{ steps.deployers-info.outputs.package-build-deployer_name }}
+      #package-test-specs: ${{ steps.deployers-info.outputs.package-test-specs }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -42,12 +42,10 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - id: package-info
+      - id: deployers-info
         run: |
-          python3 agent_tools/build_and_test_specs.py get-package-build-spec-info ${{ inputs.package_name }}
-          python3 agent_tools/build_and_test_specs.py get-package-test-specs ${{ inputs.package_name }}
-          echo "::set-output name=package-build-spec::$(python3 agent_tools/build_and_test_specs.py get-package-build-spec-info ${{ inputs.package_name }})"
-          echo "::set-output name=package-test-specs::$(python3 agent_tools/build_and_test_specs.py get-package-test-specs ${{ inputs.package_name }})"
+          python3 .github/scripts/get-package-build-spec.py ${{ inputs.package_name }}
+          echo "::set-output name=package-build-deployer_name::$(python3 .github/scripts/get-package-build-spec.py ${{ inputs.package_name }})"
 
   build:
     runs-on: ${{ inputs.os }}
@@ -100,13 +98,11 @@ jobs:
           platforms: all
 
       - name: Prepare build environment by running appropriate deployer.
-        if: ${{ matrix.deployers }}
+        if: ${{ jobs.get-build-and-test-specs.outputspackage-build-deployer_name }}
         id: prepare
         uses: ./.github/actions/run-environment-deployer
         with:
-          names: ${{ matrix.deployers }}
-          base-docker-image: ${{ matrix.base-docker-image }}
-          architecture: ${{ matrix.architecture }}
+          name: ${{ jobs.get-build-and-test-specs.outputspackage-build-deployer_name }}
 
       - name: Build.
         id: build

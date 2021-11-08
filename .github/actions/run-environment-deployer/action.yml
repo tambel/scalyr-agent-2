@@ -3,16 +3,9 @@ description: |
   Prepares current machine by running set of the 'deployers', which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
   For more info, please look at the docs in the same file.
 inputs:
-  names:
+  name:
     description: 'Names of the deployers.'
     required: true
-  base-docker-image:
-    description: "Name of the base docker image. If specified, then the deployer will be executed inside this image."
-    required: false
-  architecture:
-    description: ""
-    default: "x86_64"
-    required: false
 
 runs:
   using: "composite"
@@ -21,29 +14,16 @@ runs:
       id: deployer-info
       shell: bash
       run: |
-          names="${{ inputs.names }}"
-          if [[ $names != *, ]]; then
-            names="$names,"
-          fi
-          current_deployer_name=$(cut -d "," -f -1 <<< $names)
-          other_deployer_names=$(cut -d "," -f 2- <<< $names)
 
-          echo "${names}"
-          echo "${current_deployer_name}"
+          echo "::set-output name=checksum::$(python3 .github/scripts get-deployment.py checksum ${{ inputs.name }})"
+          echo "::set-output name=previous-deployment::$(python3 .github/scripts get-deployment.py previous-deployment ${{ inputs.name }})"
 
-          echo "::set-output name=checksum::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" checksum)"
-          #echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "$current_deployer_name" result-image-name --architecture "${{ inputs.architecture }}")"
-          echo "::set-output name=current-deployer-name::$current_deployer_name"
-          echo "::set-output name=other-deployer-names::$other_deployer_names"
 
-    - name: Get checksum of the deployer and its base deployer (if exists).
-      id: get-deployer-result-image-name
-      if: inputs.base-docker-image
-      shell: bash
-      run: |
-        echo "FFFF"
-        echo "::set-output name=result-image-name::$(python3 agent_tools/build_and_test_specs.py deployer "${{ steps.deployer-info.outputs.current-deployer-name }}" result-image-name --architecture "${{ inputs.architecture }}")"
-
+    - name: Run base deployer if specified.
+      if: steps.deployer-info.outputs.previous-deployment
+      uses: ./.github/actions/run-environment-deployer
+      with:
+        names: steps.deployer-info.outputs.previous-deployment
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
@@ -51,20 +31,14 @@ runs:
         cache-version: v1
       with:
         path: ~/dependencies_cache
-        key: deployer-${{ steps.deployer-info.outputs.current-deployer-name }}-${{ inputs.base-docker-image }}-${{ inputs.architecture }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+        key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
       run: |
-        echo "FFF"
-        echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
-        echo "${{ steps.deployer-info.outputs.current-deployer-name }}"
-        python3 agent_tools/build_and_test_specs.py \
-          deployer \
-          ${{ steps.deployer-info.outputs.current-deployer-name }} \
+        python3 .github/scripts get-deployment.py \
           deploy \
-          --base-docker-image  "${{ inputs.base-docker-image }}" \
-          --architecture "${{ inputs.architecture }}" \
+          ${{ inputs.name }} \
           --cache-dir ~/dependencies_cache
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
@@ -73,16 +47,3 @@ runs:
         if [ -f ~/dependencies_cache/paths.txt ]; then
           cat ~/dependencies_cache/paths.txt >> $GITHUB_PATH
         fi
-
-        echo "RRRR"
-        echo "${{ steps.deployer-info.outputs.other-deployer-names }}"
-        ## Remove checksum file, it is not needed anymore.
-        #rm checksum.txt
-
-    - name: Run base deployer if specified.
-      if: steps.deployer-info.outputs.other-deployer-names
-      uses: ./.github/actions/run-environment-deployer
-      with:
-        names: ${{ steps.deployer-info.outputs.other-deployer-names }}
-        base-docker-image: ${{ steps.get-deployer-result-image-name.outputs.result-image-name }}
-        architecture: ${{ inputs.architecture }}

@@ -21,6 +21,7 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import constants
 from agent_tools import environment_deployers as deployers
+from agent_tools import build_and_test_specs
 
 
 def dockerized_function(
@@ -29,7 +30,6 @@ def dockerized_function(
         base_image: str,
         architecture: constants.Architecture,
         build_stage: str,
-        used_deployers: List[deployers.EnvironmentDeployer] = None,
         path_mappings: Dict[Union[str, pl.Path], Union[str, pl.Path]] = None
 ):
     path_mappings = path_mappings or dict()
@@ -37,17 +37,6 @@ def dockerized_function(
 
     for host_path, container_path in path_mappings.items():
         final_path_mappings[pl.Path(host_path)] = pl.Path(container_path)
-
-    used_deployers = used_deployers or []
-    current_base_image = base_image
-    for deployer in used_deployers:
-
-        deployer.deploy_in_docker(
-            base_docker_image=current_base_image,
-            architecture=architecture
-        )
-        current_base_image = deployer.get_image_name(architecture=architecture)
-
 
     func_module = inspect.getmodule(func)
 
@@ -115,7 +104,7 @@ def dockerized_function(
                 "-t",
                 image_name,
                 "--build-arg",
-                f"BASE_IMAGE_NAME={current_base_image}",
+                f"BASE_IMAGE_NAME={base_image}",
                 "--build-arg",
                 f"BUILD_COMMAND={command}",
                 "--build-arg",
@@ -165,24 +154,15 @@ def dockerized_function(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument("module_name")
-    # parser.add_argument("function_name")
     parser.add_argument("pickled_function")
     parser.add_argument("args_json")
 
     args = parser.parse_args()
 
-    # module_name = args.module_name
-    #
-    # module = importlib.import_module(module_name)
-    #
-    # module_function = getattr(module, args.function_name)
-
     pickled_func = base64.b64decode(args.pickled_function)
     func = pickle.loads(pickled_func)
 
     all_args = json.loads(args.args_json)
-
 
     function_args = all_args["args"]
     function_kwargs = all_args["kwargs"]

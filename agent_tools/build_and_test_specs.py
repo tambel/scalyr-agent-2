@@ -65,7 +65,7 @@ DEPLOYERS: Dict[str, env_deployers.EnvironmentDeployer] = {
     ]
 }
 
-_LINUX_SPECS_BASE_IMAGE = "centos:7"
+_LINUX_SPECS_BASE_IMAGE = "python:3.8"
 _LINUX_SPECS_DEPLOYERS = [
     PYTHON_ENVIRONMENT_DEPLOYER,
     BASE_ENVIRONMENT_DEPLOYER
@@ -96,10 +96,13 @@ class DockerImageInfo:
 class PackageBuildSpec:
     package_type: constants.PackageType
     package_builder_cls: Type[package_builders.PackageBuilder]
-    used_deployers: List[env_deployers.EnvironmentDeployer]
+    deployment: 'Deployment'
     filename_glob: str
-    architecture: constants.Architecture
-    base_image: DockerImageInfo = None
+
+
+    @property
+    def architecture(self) -> constants.Architecture:
+        return self.deployment.architecture
 
     @property
     def name(self) -> str:
@@ -107,6 +110,10 @@ class PackageBuildSpec:
             package_type=self.package_type,
             architecture=self.architecture
         )
+
+    @property
+    def in_docker(self) -> bool:
+        return self.deployment.base_docker_image is not None
 
     # @property
     # def used_deployers_string_array(self):
@@ -131,14 +138,18 @@ class PackageBuildSpec:
             build_stage: str,
             path_mappings: Dict[Union[str, pl.Path], Union[str, pl.Path]] = None
     ):
-        image_name = f"agent-builder-spec-{self.name}".lower()
+
+        self.deployment.deploy()
+
+        base_image = self.deployment.image_name
+        image_name = f"agent-builder-{self.name}-{base_image}".lower()
+
         wrapped_func = run_in_docker.dockerized_function(
             func=func,
             image_name=image_name,
-            base_image=self.base_image.image_name,
+            base_image=self.deployment.image_name,
             architecture=self.architecture,
             build_stage=build_stage,
-            used_deployers=self.used_deployers,
             path_mappings=path_mappings
 
         )
@@ -147,7 +158,7 @@ class PackageBuildSpec:
 
     def build(self, output_path: pl.Path):
 
-        if self.base_image:
+        if self.in_docker:
             build_func = self.get_dockerized_function(
                 func=self.build_package_from_spec,
                 build_stage="build",
@@ -185,7 +196,6 @@ class PackageBuildSpec:
         )
 
 
-
 def get_package_build_spec(
         package_build_spec: PackageBuildSpec
 ):
@@ -200,6 +210,195 @@ def get_package_build_spec(
 
 PACKAGE_BUILD_SPECS: Dict[str, PackageBuildSpec] = {}
 
+DEPLOYMENTS = {}
+
+
+@dataclasses.dataclass
+class Deployment:
+    deployer: env_deployers.EnvironmentDeployer
+
+    @property
+    def architecture(self) -> constants.Architecture:
+        pass
+
+    @property
+    def name(self) -> str:
+        pass
+
+    @property
+    def base_docker_image(self) -> Optional[str]:
+        pass
+
+    @property
+    def image_name(self):
+        return f"{self.name}-{self.deployer.get_used_files_checksum()}"
+
+    def deploy2(self, cache_dir: pl.Path=None,):
+        pass
+
+    def deploy(
+            self,
+            cache_dir: pl.Path=None,
+    ):
+        if self.base_docker_image:
+            self.deployer.run_in_docker(
+                base_docker_image=self.base_docker_image,
+                result_image_name=self.image_name,
+                architecture=self.architecture,
+                cache_dir=cache_dir
+            )
+        else:
+            self.deployer.run(
+                cache_dir=cache_dir
+            )
+
+
+@dataclasses.dataclass
+class InitialDeployment(Deployment):
+    architecture_: constants.Architecture
+    initial_docker_image: str = None
+
+    @property
+    def architecture(self) -> constants.Architecture:
+        return self.architecture_
+
+    @property
+    def base_docker_image(self) -> Optional[str]:
+        return self.initial_docker_image
+
+    @property
+    def name(self):
+        name = f"{self.deployer.name}-{self.architecture.value}"
+        if self.base_docker_image:
+            image_name = self.base_docker_image.replace(":", "_")
+            name = f"{name}-{image_name}"
+        return name
+
+
+
+
+
+@dataclasses.dataclass
+class FollowingDeployment(Deployment):
+    previous_deployment: Deployment
+
+    @property
+    def architecture(self) -> constants.Architecture:
+        return self.previous_deployment.architecture
+
+    @property
+    def name(self) -> str:
+        return f"{self.deployer.name}-{self.previous_deployment.name}"
+
+    @property
+    def base_docker_image(self) -> Optional[str]:
+        return self.previous_deployment.image_name
+
+
+    def deploy(
+            self,
+            cache_dir: pl.Path=None
+    ):
+        self.previous_deployment.deploy(
+            cache_dir=cache_dir
+        )
+
+        super(FollowingDeployment, self).deploy(
+            cache_dir=cache_dir
+        )
+
+
+
+
+# def _add_package_build_specs(
+#         package_type: constants.PackageType,
+#         package_builder_cls: Type[package_builders.PackageBuilder],
+#         filename_glob_format: str,
+#         architectures: List[constants.Architecture],
+#         used_deployers: List[env_deployers.EnvironmentDeployer] = None,
+#         base_docker_image: str = None,
+#
+# ):
+#     global PACKAGE_BUILD_SPECS
+#
+#     specs = []
+#
+#     for arch in architectures:
+#         used_deployers = used_deployers or []
+#
+#         if base_docker_image:
+#             base_docker_image_spec = DockerImageInfo(
+#                 image_name=base_docker_image,
+#             )
+#         else:
+#             base_docker_image_spec = None
+#
+#         package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(arch, "")
+#
+#         spec = PackageBuildSpec(
+#             package_type=package_type,
+#             package_builder_cls=package_builder_cls,
+#             filename_glob=filename_glob_format.format(arch=package_arch_name),
+#             used_deployers=used_deployers,
+#             architecture=arch,
+#             base_image=base_docker_image_spec
+#         )
+#         spec_name = create_build_spec_name(
+#             package_type=package_type,
+#             architecture=arch
+#         )
+#         PACKAGE_BUILD_SPECS[spec_name] = spec
+#         specs.append(spec)
+#
+#
+#
+#     return specs
+
+def _create_new_deployment(
+    architecture: constants.Architecture,
+    deployers: List[env_deployers.EnvironmentDeployer],
+    base_docker_image: str = None
+) -> Deployment:
+
+    global DEPLOYMENTS
+
+    deployers = deployers[:]
+
+    initial_deployment = InitialDeployment(
+        deployer=deployers.pop(0),
+        architecture_=architecture,
+        initial_docker_image=base_docker_image
+    )
+
+    existing_deployment = DEPLOYMENTS.get(initial_deployment.name)
+
+    if existing_deployment:
+        initial_deployment = existing_deployment
+    else:
+        DEPLOYMENTS[initial_deployment.name] = initial_deployment
+
+    previous_deployment = initial_deployment
+
+    all_deployments = [initial_deployment]
+
+    for deployer in deployers:
+        deployment = FollowingDeployment(
+            deployer=deployer,
+            previous_deployment=previous_deployment
+        )
+
+        existing_deployment = DEPLOYMENTS.get(deployment.name)
+        if existing_deployment:
+            deployment = existing_deployment
+        else:
+            DEPLOYMENTS[deployment.name] = deployment
+
+        previous_deployment = deployment
+        all_deployments.append(deployment)
+        DEPLOYMENTS[deployment.name] = deployment
+
+    return all_deployments[-1]
+
 
 def _add_package_build_specs(
         package_type: constants.PackageType,
@@ -210,19 +409,24 @@ def _add_package_build_specs(
         base_docker_image: str = None,
 
 ):
-    global PACKAGE_BUILD_SPECS
+    global PACKAGE_BUILD_SPECS, DEPLOYMENTS
 
     specs = []
 
     for arch in architectures:
-        used_deployers = used_deployers or []
 
-        if base_docker_image:
-            base_docker_image_spec = DockerImageInfo(
-                image_name=base_docker_image,
-            )
-        else:
-            base_docker_image_spec = None
+        # if base_docker_image:
+        #     base_docker_image_spec = DockerImageInfo(
+        #         image_name=base_docker_image,
+        #     )
+        # else:
+        #     base_docker_image_spec = None
+
+        deployment = _create_new_deployment(
+            architecture=arch,
+            deployers=used_deployers,
+            base_docker_image=base_docker_image
+        )
 
         package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(arch, "")
 
@@ -230,15 +434,15 @@ def _add_package_build_specs(
             package_type=package_type,
             package_builder_cls=package_builder_cls,
             filename_glob=filename_glob_format.format(arch=package_arch_name),
-            used_deployers=used_deployers,
-            architecture=arch,
-            base_image=base_docker_image_spec
+            deployment=deployment,
+            # architecture=arch,
+            # base_image=base_docker_image_spec
         )
-        spec_name = create_build_spec_name(
-            package_type=package_type,
-            architecture=arch
-        )
-        PACKAGE_BUILD_SPECS[spec_name] = spec
+        # spec_name = create_build_spec_name(
+        #     package_type=package_type,
+        #     architecture=arch
+        # )
+        PACKAGE_BUILD_SPECS[spec.name] = spec
         specs.append(spec)
 
     return specs
@@ -631,13 +835,13 @@ if __name__ == '__main__':
         deployer = DEPLOYERS[args.deployer_name]
         if args.deployer_command == "deploy":
             if args.base_docker_image:
-                deployer.deploy_in_docker(
+                deployer.run_in_docker(
                     base_docker_image=args.base_docker_image,
                     architecture=constants.Architecture(args.architecture),
                     cache_dir=args.cache_dir,
                 )
             else:
-                deployer.deploy(
+                deployer.run(
                     cache_dir=args.cache_dir
                 )
 
