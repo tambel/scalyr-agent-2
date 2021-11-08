@@ -465,7 +465,8 @@ create_test_specs(
         constants.Architecture.X86_64: [
             DockerImageInfo("ubuntu:20.04")
         ],
-    }
+    },
+    additional_deployers=[TEST_ENVIRONMENT]
 )
 
 create_test_specs(
