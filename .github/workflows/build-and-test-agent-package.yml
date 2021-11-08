@@ -120,7 +120,7 @@ jobs:
 
 
   test:
-    needs: [get-build-and-test-specs,build]
+    needs: [get-deployments,build]
     runs-on: ${{ inputs.os }}
     strategy:
       matrix: ${{fromJSON(needs.get-build-and-test-specs.outputs.package-test-specs) }}
