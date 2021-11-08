@@ -233,6 +233,10 @@ class Deployment:
 
     @property
     def in_docker(self) -> bool:
+        return self.initial_docker_image is not None
+
+    @property
+    def in_docker(self) -> bool:
         return self.base_docker_image is not None
 
     @property
@@ -247,7 +251,7 @@ class Deployment:
             cache_dir: pl.Path=None,
             only_this: bool = False
     ):
-        if self.base_docker_image:
+        if self.in_docker:
             self.deployer.run_in_docker(
                 base_docker_image=self.base_docker_image,
                 result_image_name=self.image_name,
@@ -305,7 +309,8 @@ class FollowingDeployment(Deployment):
 
     @property
     def base_docker_image(self) -> Optional[str]:
-        return self.previous_deployment.image_name
+        if self.initial_docker_image:
+            return self.previous_deployment.image_name
 
 
     def deploy(
