@@ -14,10 +14,10 @@ jobs:
         uses: actions/checkout@v2
 
       - id: set-matrix
-        run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
+        run: echo "::set-output name=matrix::{\"project\":\"foo\",\"config\":\"Debug\"}"
 
 
-        run: echo "${{steps.outputs.set-matrix.outputs.matrix}}"
+      - run: echo "${{steps.outputs.set-matrix.outputs.matrix}}"
 
 
       - name: Prepare build environment by running appropriate deployer.
