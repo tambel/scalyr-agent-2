@@ -210,9 +210,11 @@ def run_test_from_spec(
         shutil.rmtree(frozen_test_runner_output_dir_path)
     frozen_test_runner_output_dir_path.mkdir(parents=True)
 
-    build_func = test_spec.package_build_spec.get_dockerized_function(
+    build_func = run_in_docker.dockerized_function(
         func=build_test_runner_frozen_binary,
+        architecture=test_spec.package_build_spec.architecture,
         build_stage="test",
+        used_deployers=test_spec.package_build_spec.used_deployers + test_spec.additional_deployers,
         path_mappings={frozen_test_runner_output_dir_path: "/tmp/build"}
     )
     build_func(
