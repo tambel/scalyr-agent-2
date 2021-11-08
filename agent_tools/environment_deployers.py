@@ -191,7 +191,7 @@ class EnvironmentDeployer:
             ),
         )
 
-        container_name = self.get_image_name(architecture)
+        container_name = result_image_name
 
         # Remove if such container exists.
         subprocess.check_call(["docker", "rm", "-f", container_name])
@@ -267,7 +267,10 @@ class EnvironmentDeployer:
 
         return used_files
 
-    def get_used_files_checksum(self):
+    def get_used_files_checksum(
+            self,
+            additional_seed: str,
+    ):
         """
         Calculate the sha256 checksum of all files which are used in the deployment.
         """
@@ -285,6 +288,7 @@ class EnvironmentDeployer:
             sha256.update(str(file_path.stat().st_mode).encode())
             sha256.update(file_path.read_bytes())
 
+        sha256.update(additional_seed.encode())
         self._used_files_checksum = sha256.hexdigest()
         return self._used_files_checksum
 

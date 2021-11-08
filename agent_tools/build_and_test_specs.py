@@ -323,8 +323,6 @@ class FollowingDeployment(Deployment):
                 cache_dir=cache_dir
             )
 
-        print(self)
-        print(self.base_docker_image)
         super(FollowingDeployment, self).deploy(
             cache_dir=cache_dir
         )
