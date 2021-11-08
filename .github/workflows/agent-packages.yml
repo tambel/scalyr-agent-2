@@ -17,6 +17,9 @@ jobs:
         run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
 
 
+        run: echo "${{steps.outputs.set-matrix.outputs.matrix}}"
+
+
       - name: Prepare build environment by running appropriate deployer.
         id: prepare
         uses: ./.github/actions/run-environment-deployer
