@@ -48,6 +48,12 @@ WINDOWS_INSTALL_WIX = deployers.EnvironmentDeployer(
     used_files=base_environment_used_files,
 )
 
+TEST_ENVIRONMENT = deployers.EnvironmentDeployer(
+    name="test_environment",
+    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
+    used_files=base_environment_used_files,
+)
+
 
 # Map deployers to their names.
 DEPLOYERS: Dict[str, deployers.EnvironmentDeployer] = {
