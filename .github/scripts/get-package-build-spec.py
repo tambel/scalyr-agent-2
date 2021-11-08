@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 import pathlib as pl
 import logging
@@ -20,6 +21,8 @@ if __name__ == '__main__':
     get_test_deployments_parser = subparsers.add_parser("test-deployment-names")
     get_test_deployments_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
 
+    get_package_test_specs_parser = subparsers.add_parser("package-test-specs-matrix")
+    get_package_test_specs_parser.add_argument("build_spec_name", choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys())
 
     args = parser.parse_args()
 
@@ -27,6 +30,13 @@ if __name__ == '__main__':
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
         print(build_spec.deployment.name)
         exit(0)
+
+    if args.command == "package-test-specs-matrix":
+        build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
+        test_specs = build_and_test_specs.PACKAGE_BUILD_TO_TEST_SPECS[args.build_spec_name]
+        test_specs_names = [s.name for s in test_specs]
+        matrix = {"include": {"test-name": test_specs_names}}
+        print(matrix)
 
     if args.command == "test-deployment-names":
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
