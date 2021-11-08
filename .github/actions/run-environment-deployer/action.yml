@@ -23,7 +23,7 @@ runs:
       if: steps.deployer-info.outputs.previous-deployment
       uses: ./.github/actions/run-environment-deployer
       with:
-        name: steps.deployer-info.outputs.previous-deployment
+        name: ${{ steps.deployer-info.outputs.previous-deployment }}
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
