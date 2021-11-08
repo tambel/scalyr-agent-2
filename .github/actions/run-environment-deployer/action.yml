@@ -39,7 +39,7 @@ runs:
         python3 .github/scripts/get-deployment.py \
           deploy \
           ${{ inputs.name }} \
-          --cache-dir ~/dependencies_cache
+          --cache-dir ~/dependencies_cache \
           --only-this
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
