@@ -417,7 +417,7 @@ class PackageBuilder(abc.ABC):
     where the code runs. It may be very useful, because there is no need to prepare the current system to be able to
     perform the build. That also provides more consistent build results, no matter what is the host system.
     """
-    # FROZEN_BINARY_FILE_NAME = "scalyr-agent-2"
+    FROZEN_BINARY_FILE_NAME = "scalyr-agent-2"
     # # The name of the package type
     # PACKAGE_TYPE = None
 
@@ -589,7 +589,6 @@ class PackageBuilder(abc.ABC):
     def _build_frozen_binary(
             self,
             output_path: Union[str, pl.Path],
-            filename: str = "scalyr-agent-2"
     ):
         """
         Build the frozen binary using the PyInstaller library.
@@ -675,7 +674,7 @@ class PackageBuilder(abc.ABC):
                 "--onefile",
                 "--distpath", str(dist_path),
                 "--workpath", str(pyinstaller_output / "build"),
-                "-n", filename,
+                "-n", type(self).FROZEN_BINARY_FILE_NAME,
                 "--paths", ":".join(paths_to_include),
                 *add_data_options,
                 *hidden_import_options,
@@ -692,7 +691,7 @@ class PackageBuilder(abc.ABC):
             cwd=str(__SOURCE_ROOT__)
         )
 
-        frozen_binary_path = dist_path / filename
+        frozen_binary_path = dist_path / type(self).FROZEN_BINARY_FILE_NAME
         # Make frozen binary executable.
         frozen_binary_path.chmod(frozen_binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
@@ -1315,7 +1314,7 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 
 class MsiWindowsPackageBuilder(PackageBuilder):
     INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
-    #FROZEN_BINARY_FILE_NAME = "scalyr-agent-2.exe"
+    FROZEN_BINARY_FILE_NAME = "scalyr-agent-2.exe"
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able
@@ -1346,15 +1345,18 @@ class MsiWindowsPackageBuilder(PackageBuilder):
         certs_path = scalyr_dir / "certs"
         self._add_certs(certs_path, intermediate_certs=False, copy_other_certs=False)
 
-        # Build frozen binaries and copy them into bin folder.
         bin_path = scalyr_dir / "bin"
-        filename = "scalyr-agent-2.exe"
-        self._build_frozen_binary(
-            bin_path,
-            filename=filename
-        )
+        # # Build frozen binaries and copy them into bin folder.
 
-        shutil.copy2(bin_path / filename, bin_path / "ScalyrAgentService.exe")
+        # filename = "scalyr-agent-2.exe"
+        # self._build_frozen_binary(
+        #     bin_path,
+        # )
+
+        shutil.copy2(
+            bin_path / type(self).FROZEN_BINARY_FILE_NAME,
+            bin_path / "ScalyrAgentService.exe"
+        )
 
         shutil.copy(_AGENT_BUILD_PATH / "windows/files/ScalyrShell.cmd", bin_path)
 
