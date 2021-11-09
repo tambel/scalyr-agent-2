@@ -242,7 +242,7 @@ class Deployment:
 
     @property
     def image_name(self):
-        return f"{self.name}-{self.checksum}"
+        return f"{self.name}_{self.checksum}"
 
 
     @property
@@ -290,10 +290,10 @@ class InitialDeployment(Deployment):
 
     @property
     def name(self):
-        name = f"{self.deployer.name}-{self.architecture.value}"
+        name = f"{self.deployer.name}_{self.architecture.value}"
         if self.in_docker:
             docker_image_name = self.initial_docker_image.replace(":", "_")
-            name = f"{name}-{docker_image_name}"
+            name = f"{name}_{docker_image_name}"
         return name
 
 
@@ -307,7 +307,7 @@ class FollowingDeployment(Deployment):
 
     @property
     def name(self) -> str:
-        return f"{self.deployer.name}-{self.previous_deployment.name}"
+        return f"{self.deployer.name}_{self.previous_deployment.name}"
 
     @property
     def initial_docker_image(self):
