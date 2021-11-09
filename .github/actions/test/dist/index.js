@@ -60755,6 +60755,7 @@ const fs = __nccwpck_require__(5747);
 const path = __nccwpck_require__(5622)
 const os = __nccwpck_require__(2087)
 const child_process = __nccwpck_require__(3129)
+const buffer = __nccwpck_require__(4293)
 
 
 async function f() {
@@ -60767,7 +60768,9 @@ async function f() {
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
     const code = child_process.execSync('node -v');
-    console.log(code)
+
+
+    console.log(buffer.Buffer.from(code, 'utf8'))
     console.log("11111111")
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {

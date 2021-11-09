@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path')
 const os = require('os')
 const child_process = require('child_process')
+const buffer = require('buffer')
 
 
 async function f() {
@@ -17,7 +18,9 @@ async function f() {
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
     const code = child_process.execSync('node -v');
-    console.log(code)
+
+
+    console.log(buffer.Buffer.from(code, 'utf8'))
     console.log("11111111")
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
