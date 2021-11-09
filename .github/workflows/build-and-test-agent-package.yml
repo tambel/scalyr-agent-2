@@ -41,7 +41,8 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - id: Determine the name of the deployment.
+      - name: Determine the name of the deployment.
+        id: deployment-name
         shell: bash
         run: |
           echo "::set-output name=deployment-name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
@@ -75,67 +76,67 @@ jobs:
             agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
 
 
-#  test:
-#    needs: [build]
-#    runs-on: ${{ inputs.os }}
-#    strategy:
-#      matrix: ${{fromJSON(needs.build.outputs.package-tests-matrix) }}
-#
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v2
-#
-#      - name: Install python.
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: ${{ inputs.python-version }}
-#
-#      - name: Prepare build environment by running appropriate deployer.
-#        if: ${{ matrix.deployers }}
-#        uses: ./.github/actions/run-environment-deployer
-#        with:
-#          name: ${{ matrix.deployers }}
-#          base-docker-image: ${{ matrix.base-docker-image }}
-#          architecture: ${{ matrix.architecture }}
-#
-#      - name: Prepare environment for the tests.
-#        uses: ./.github/actions/run-environment-deployer
-#        with:
-#          names: 'test_environment'
-#
-#      - name: Download package.
-#        uses: actions/download-artifact@v2
-#        with:
-#          nam: package-${{ inputs.package_name }}
-#          path: ~/package
-#
-#      - name: Start minikube for the test of the kubernetes build.
-#        if: inputs.package_name == 'k8s'
-#        shell: bash
-#        run: |
-#          minikube start
-#
-#      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
-#      - name: Make Kubernetes and docker package builder scripts executable.
-#        if: inputs.package_name == 'k8s' || inputs.package_name == 'docker-json'
-#        run: |
-#          chmod +x ~/package/*
-#
-#      - name: Set up QEMU
-#        if: ${{ !startsWith(inputs.package_name, 'msi') }}
-#        id: qemu
-#        uses: docker/setup-qemu-action@v1
-#        with:
-#          platforms: all
-#
-#      - name: Test.
-#        shell: bash
-#        env:
-#          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-#        run: |
-#
-#          python3 tests/package_tests/package_test_runner.py \
-#            run \
-#            ${{ matrix.spec_name }} \
-#            --package-path ~/package/* \
-#            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+  test:
+    needs: [build]
+    runs-on: ${{ inputs.os }}
+    strategy:
+      matrix: ${{fromJSON(needs.build.outputs.package-tests-matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install python.
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Prepare build environment by running appropriate deployer.
+        if: ${{ matrix.deployers }}
+        uses: ./.github/actions/run-environment-deployer
+        with:
+          name: ${{ matrix.deployers }}
+          base-docker-image: ${{ matrix.base-docker-image }}
+          architecture: ${{ matrix.architecture }}
+
+      - name: Prepare environment for the tests.
+        uses: ./.github/actions/run-environment-deployer
+        with:
+          names: 'test_environment'
+
+      - name: Download package.
+        uses: actions/download-artifact@v2
+        with:
+          nam: package-${{ inputs.package_name }}
+          path: ~/package
+
+      - name: Start minikube for the test of the kubernetes build.
+        if: inputs.package_name == 'k8s'
+        shell: bash
+        run: |
+          minikube start
+
+      # All downloaded artifacts lose their permissions, so we have to make script executable once more.
+      - name: Make Kubernetes and docker package builder scripts executable.
+        if: inputs.package_name == 'k8s' || inputs.package_name == 'docker-json'
+        run: |
+          chmod +x ~/package/*
+
+      - name: Set up QEMU
+        if: ${{ !startsWith(inputs.package_name, 'msi') }}
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+
+      - name: Test.
+        shell: bash
+        env:
+          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+        run: |
+
+          python3 tests/package_tests/package_test_runner.py \
+            run \
+            ${{ matrix.spec_name }} \
+            --package-path ~/package/* \
+            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
