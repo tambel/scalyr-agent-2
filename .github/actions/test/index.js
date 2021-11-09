@@ -27,6 +27,8 @@ async function f() {
 
     console.log(deployer_cache_names)
 
+    const cache_hits = {}
+
     for (let name of deployer_cache_names) {
         console.log(name)
 
@@ -34,8 +36,10 @@ async function f() {
         console.log(cache_path)
         const result = await cache.restoreCache([cache_path], name)
         console.log(result)
+        cache_hits[name] = result
 
     }
+    console.log(cache_hits)
     console.log("GGG")
 
     // deployer_cache_names.x(function(value){
