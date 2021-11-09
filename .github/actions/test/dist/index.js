@@ -60782,11 +60782,11 @@ async function f() {
 
         const cache_path = path.join(cacheDir, name)
         console.log(cache_path)
-        const r = await cache.restoreCache([cache_path], name)
-        console.log("GGG")
-        console.log(r)
+        const result = await cache.restoreCache([cache_path], name)
+        console.log(result)
 
     }
+    console.log("GGG")
 
     // deployer_cache_names.x(function(value){
     //   console.log(value);
