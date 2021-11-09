@@ -60784,7 +60784,7 @@ async function f() {
           const key = path.basename(child)
           console.log(key)
           //const cacheId = await cache.saveCache([full_child_path], key)
-          cache.restoreCache([full_child_path],)
+          //cache.restoreCache([full_child_path],)
         }
       }
     } else {
