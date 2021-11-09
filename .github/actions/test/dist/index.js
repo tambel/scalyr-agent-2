@@ -60796,7 +60796,7 @@ async function f() {
 
     child_process.execFileSync(
         "python3",
-        [deployment_helper_script_path,"deploy", deploymentName],
+        [deployment_helper_script_path,"deploy", deploymentName, "--cache-dir", cacheDir],
         {stdio: 'inherit'}
     );
 
