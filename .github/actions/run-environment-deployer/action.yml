@@ -44,32 +44,32 @@ runs:
 #        path: ${{ steps.deployer-info.outputs.cache-path }}
 #        key: deployment-${{ steps.deployer-info.outputs.current-deployment }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
-    - name: Prepare build environment.
-      shell: bash
-      run: |
-
-        echo "LS"
-        #ls ${{ steps.deployer-info2.outputs.cache-path }}
-        echo "CACHE: ${{ steps.deployer-info2.outputs.cache-path }}"
-        python3 .github/scripts/get-deployment.py \
-          deploy \
-          ${{ steps.deployer-info.outputs.current-deployment }} \
-          --cache-dir ${{ steps.deployer-info2.outputs.cache-path }}
+#    - name: Prepare build environment.
+#      shell: bash
+#      run: |
+#
+#        echo "LS"
+#        #ls ${{ steps.deployer-info2.outputs.cache-path }}
+#        echo "CACHE: ${{ steps.deployer-info2.outputs.cache-path }}"
+#        python3 .github/scripts/get-deployment.py \
+#          deploy \
+#          ${{ steps.deployer-info.outputs.current-deployment }} \
+#          --cache-dir ${{ steps.deployer-info2.outputs.cache-path }}
 
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
         # variable to be able to use those tools.
-        if [ -f ${{ steps.deployer-info2.outputs.cache-path }}/paths.txt ]; then
-          cat ${{ steps.deployer-info2.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
-        fi
-
-        echo "DOCKER"
-        docker image ls
-
-        echo "44444"
-        echo "qqqq"
-        echo ${{ steps.deployer-info2.outputs.cache-path }}
+#        if [ -f ${{ steps.deployer-info2.outputs.cache-path }}/paths.txt ]; then
+#          cat ${{ steps.deployer-info2.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
+#        fi
+#
+#        echo "DOCKER"
+#        docker image ls
+#
+#        echo "44444"
+#        echo "qqqq"
+#        echo ${{ steps.deployer-info2.outputs.cache-path }}
 
 
 #    - name: Run base deployment if specified.

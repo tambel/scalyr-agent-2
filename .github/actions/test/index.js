@@ -12,7 +12,7 @@ async function f() {
   try {
     // `who-to-greet` input defined in action metadata file
     const nameToGreet = core.getInput('who-to-greet');
-    const cacheDir = core.getInput('cache-dir');
+    const cacheDir = "deployment_caches"
     const time = (new Date()).toTimeString();
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)

@@ -5,9 +5,6 @@ inputs:
     description: 'Who to greet'
     required: true
     default: 'World'
-  cache-dir:
-    description: ""
-    required: true
 
 outputs:
   time: # id of output
