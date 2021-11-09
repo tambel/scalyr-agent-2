@@ -15,6 +15,7 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
+    console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
 
       const filenames = fs.readdirSync(cacheDir);
