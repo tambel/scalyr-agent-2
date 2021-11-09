@@ -49,27 +49,26 @@ runs:
 #          ${{ steps.deployer-info.outputs.current-deployment }} \
 #          --cache-dir ${{ steps.deployer-info.outputs.cache-path }} \
 #          --only-this
+        # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
+        # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
+        # variable to be able to use those tools.
+#        if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
+#          cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
+#        fi
+#
+#        echo "DOCKER"
+#        docker image ls
+#
+#        echo "44444"
+#        ls -al ${{ steps.deployer-info.outputs.cache-path }}
+#        echo "qqqq"
+#        ls -al ~/dependencies_cache
 
     - name: Hello world action step
       id: hello
       uses: .github/actions/test.yml
       with:
         who-to-greet: 'Mona the Octocat'
-
-        # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
-        # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
-        # variable to be able to use those tools.
-        if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
-          cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
-        fi
-
-        echo "DOCKER"
-        docker image ls
-
-        echo "44444"
-        ls -al ${{ steps.deployer-info.outputs.cache-path }}
-        echo "qqqq"
-        ls -al ~/dependencies_cache
 
 
     - name: Run base deployment if specified.
