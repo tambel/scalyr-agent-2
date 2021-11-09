@@ -89,7 +89,7 @@ jobs:
         with:
           who-to-greet: 'Mona the Octocat'
 
-      - run: ls -al deployment_caches
+      - run: ls -al
 
       - name: Set up QEMU
         if: ${{ !startsWith(inputs.package_name, 'msi') }}
