@@ -27,9 +27,11 @@ async function f() {
 
     console.log(deployer_cache_names)
 
-    for (let item of deployer_cache_names) {
-        console.log(item);
-        await cache.restoreCache([item], item)
+    for (let name of deployer_cache_names) {
+        console.log(deployer_cache_names);
+
+        const cache_path = path.join(cacheDir, name)
+        await cache.restoreCache([cache_path], name)
     }
 
     // deployer_cache_names.x(function(value){
