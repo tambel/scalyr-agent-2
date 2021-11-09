@@ -60,7 +60,6 @@ runs:
         docker image ls
 
         echo "44444"
-        ls -al ${{ steps.deployer-info.outputs.cache-path }}
         echo "qqqq"
         ls -al ~/dependencies_cache
 
