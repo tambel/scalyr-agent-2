@@ -33,6 +33,7 @@ async function f() {
         const cache_path = path.join(cacheDir, name)
         console.log(cache_path)
         const r = await cache.restoreCache([cache_path], name)
+        console.log("GGG")
         console.log(r)
 
     }
