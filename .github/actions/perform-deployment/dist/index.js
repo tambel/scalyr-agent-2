@@ -60826,7 +60826,13 @@ async function run() {
 
           if ( ! cache_hits[name] ) {
             console.log(`Save cache for the deployment ${name}.`)
-            await cache.saveCache([full_child_path], key)
+            try {
+              await cache.saveCache([full_child_path], key)
+            } catch (error) {
+
+              console.warn(`Can not save deployment cache by key ${key}. It seems that seesm that it has been
+               saved somewhere else.\nOriginal error: ${error}`)
+            }
           } else {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
           }
