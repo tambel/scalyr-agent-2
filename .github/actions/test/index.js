@@ -20,8 +20,7 @@ async function f() {
     if ( fs.existsSync(cacheDir)) {
 
       const filenames = fs.readdirSync(cacheDir);
-      
-      
+
 
       console.log("\nCurrent directory filenames:");
       for (const child of filenames) {
@@ -32,6 +31,8 @@ async function f() {
           const cacheId = await cache.saveCache(child, key)
         }
       }
+    } else {
+      console.log("NOTEXIST")
     }
   } catch (error) {
     core.setFailed(error.message);
