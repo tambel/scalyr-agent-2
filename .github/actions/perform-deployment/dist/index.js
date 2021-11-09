@@ -60761,33 +60761,36 @@ const github = __nccwpck_require__(4637);
 const cache = __nccwpck_require__(7599);
 const fs = __nccwpck_require__(5747);
 const path = __nccwpck_require__(5622)
-const os = __nccwpck_require__(2087)
 const child_process = __nccwpck_require__(3129)
 const buffer = __nccwpck_require__(4293)
 const readline = __nccwpck_require__(1058)
 
 
-async function f() {
+async function run() {
   try {
     const deploymentName = core.getInput("deployment-name")
     const cacheVersionSuffix = core.getInput("cache-version-suffix")
     const cacheDir = "deployment_caches"
 
+    // Get json list with names of all deployments which are needed for this deployment.
     const deployment_helper_script_path = path.join(".github", "scripts", "get-deployment.py")
+    // Run special github-related helper command which returns names for all deployments, which are used in the current
+    // deployment.
     const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", deploymentName]);
 
+    // Read and decode names from json.
     const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
-
     const deployer_cache_names = JSON.parse(json_encoded_deployment_names)
 
     const cache_hits = {}
 
+    // Run through deployment names and look if the is any existing cache for them.
     for (let name of deployer_cache_names) {
 
         const cache_path = path.join(cacheDir, name)
-
         const key = `${name}-${cacheVersionSuffix}`
 
+        // try to restore the cache.
         const result = await cache.restoreCache([cache_path], key)
 
         if(typeof result !== "undefined") {
@@ -60799,6 +60802,8 @@ async function f() {
 
     }
 
+    // Run the deployment. Also provide cache directory, if there are some found caches, then the deployer
+    // has to reuse them.
     child_process.execFileSync(
         "python3",
         [deployment_helper_script_path,"deploy", deploymentName, "--cache-dir", cacheDir],
@@ -60808,11 +60813,13 @@ async function f() {
     if ( fs.existsSync(cacheDir)) {
       console.log("Cache directory is found.")
 
+      // Run through the cache folder and save any cached directory within, that is not yet cached.
       const filenames = fs.readdirSync(cacheDir);
-
       for (const name of filenames) {
+
         const full_child_path = path.join(cacheDir, name)
 
+        // Skip files. Deployment cache can be only the directory.
         if (fs.lstatSync(full_child_path).isDirectory()) {
 
           const key = `${name}-${cacheVersionSuffix}`
@@ -60845,7 +60852,7 @@ async function f() {
   }
 }
 
-f()
+run()
 
 
 })();
