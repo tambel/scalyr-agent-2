@@ -255,7 +255,6 @@ class Deployment:
     def deploy(
             self,
             cache_dir: pl.Path=None,
-            locally: bool = False
     ):
 
         if cache_dir:
@@ -263,7 +262,7 @@ class Deployment:
         else:
             deployment_cache_dir = None
 
-        if not locally and self.in_docker:
+        if self.in_docker:
             logging.info(f"Perform the deployment '{self.name}' inside the docker.")
             self.deployer.run_in_docker(
                 base_docker_image=self.base_docker_image,

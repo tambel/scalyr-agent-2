@@ -46,7 +46,6 @@ if __name__ == '__main__':
     deploy_parser = subparsers.add_parser("deploy")
     deploy_parser.add_argument("name")
     deploy_parser.add_argument("--cache-dir", dest="cache_dir")
-    deploy_parser.add_argument("--locally", dest="locally", action="store_true")
 
     checksum_parser = subparsers.add_parser("checksum")
     checksum_parser.add_argument("name")
@@ -100,7 +99,6 @@ if __name__ == '__main__':
         deployment = build_and_test_specs.DEPLOYMENTS[args.name]
         deployment.deploy(
             cache_dir=args.cache_dir,
-            locally=args.locally
         )
 
     if args.command == "deployments-as-string-array":
