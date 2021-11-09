@@ -48,7 +48,7 @@ WINDOWS_INSTALL_WIX = env_deployers.EnvironmentDeployer(
     used_files=base_environment_used_files,
 )
 
-TEST_ENVIRONMENT = env_deployers.EnvironmentDeployer(
+TEST_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(
     name="test_environment",
     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
     used_files=base_environment_used_files + [__SOURCE_ROOT__ / "dev-requirements.txt"],
@@ -61,7 +61,7 @@ DEPLOYERS: Dict[str, env_deployers.EnvironmentDeployer] = {
         PYTHON_ENVIRONMENT_DEPLOYER,
         BASE_ENVIRONMENT_DEPLOYER,
         WINDOWS_INSTALL_WIX,
-        TEST_ENVIRONMENT
+        TEST_ENVIRONMENT_DEPLOYER
     ]
 }
 
@@ -255,16 +255,15 @@ class Deployment:
     def deploy(
             self,
             cache_dir: pl.Path=None,
-            only_this: bool = False
+            locally: bool = False
     ):
 
-        logging.info(f"CACHE_DIR: {cache_dir}")
         if cache_dir:
             deployment_cache_dir = pl.Path(cache_dir) / self.cache_name
         else:
             deployment_cache_dir = None
 
-        if self.in_docker:
+        if not locally and self.in_docker:
             logging.info(f"Perform the deployment '{self.name}' inside the docker.")
             self.deployer.run_in_docker(
                 base_docker_image=self.base_docker_image,
@@ -624,7 +623,7 @@ create_test_specs(
             DockerImageInfo("ubuntu:14.04")
         ]
     },
-    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
+    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT_DEPLOYER]
 )
 
 create_test_specs(
@@ -638,7 +637,7 @@ create_test_specs(
             DockerImageInfo("amazonlinux:2")
         ]
     },
-    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
+    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT_DEPLOYER]
 )
 
 create_test_specs(
@@ -649,13 +648,18 @@ create_test_specs(
             DockerImageInfo("ubuntu:20.04")
         ],
     },
-    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
+    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT_DEPLOYER]
 )
 
 create_test_specs(
     target_system=TargetSystem.WINDOWS_2019,
     package_build_specs=[MSI_x86_64],
-    additional_deployers=_WINDOWS_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
+    additional_deployers=_WINDOWS_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT_DEPLOYER]
+)
+
+_create_new_deployment(
+    architecture=constants.Architecture.X86_64,
+    deployers=[TEST_ENVIRONMENT_DEPLOYER]
 )
 
 

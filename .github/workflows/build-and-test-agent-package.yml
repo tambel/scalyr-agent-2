@@ -108,7 +108,7 @@ jobs:
       - name: Prepare environment for the tests.
         uses: ./.github/actions/perform-deployment
         with:
-          deployment-name: 'test_environment'
+          deployment-name: 'test_environment_x86_64'
 
       - name: Download package.
         uses: actions/download-artifact@v2
