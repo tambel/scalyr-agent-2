@@ -42,8 +42,6 @@ runs:
 
         echo "LS"
         #ls ${{ steps.deployer-info.outputs.cache-path }}
-        echo "DOCKER"
-        docker image ls
         echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
         python3 .github/scripts/get-deployment.py \
           deploy \
@@ -58,8 +56,12 @@ runs:
           cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
 
+        echo "DOCKER"
+        docker image ls
+
         echo "44444"
         ls -al ${{ steps.deployer-info.outputs.cache-path }}
+
 
     - name: Run base deployment if specified.
       if: steps.deployer-info.outputs.other-deployments
