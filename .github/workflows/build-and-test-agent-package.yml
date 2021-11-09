@@ -96,7 +96,7 @@ jobs:
         id: hello
         uses: ./.github/actions/perform-deployment
         with:
-          deployment-name: ${{ matrix.deployers }}
+          deployment-name: ${{ matrix.deployment-name }}
 
 #      - name: Prepare build environment by running appropriate deployer.
 #        uses: ./.github/actions/run-environment-deployer
@@ -106,9 +106,9 @@ jobs:
 #          architecture: ${{ matrix.architecture }}
 
       - name: Prepare environment for the tests.
-        uses: ./.github/actions/run-environment-deployer
+        uses: ./.github/actions/perform-deployment
         with:
-          names: 'test_environment'
+          deployment-name: 'test_environment'
 
       - name: Download package.
         uses: actions/download-artifact@v2
