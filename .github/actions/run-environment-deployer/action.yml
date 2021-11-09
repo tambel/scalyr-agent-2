@@ -32,7 +32,7 @@ runs:
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
       env:
-        cache-version: v5
+        cache-version: v6
       with:
         path: ${{ steps.deployer-info.outputs.cache-path }}
         key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
