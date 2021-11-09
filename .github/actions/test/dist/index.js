@@ -60787,6 +60787,12 @@ async function f() {
         const cache_path = path.join(cacheDir, name)
         console.log(cache_path)
         const result = await cache.restoreCache([cache_path], name)
+
+        if(typeof result !== "undefined") {
+          console.log(`Cache for the deployment ${name} is found.`)
+        } else {
+          console.log(`Cache for the deployment ${name} is not found.`)
+        }
         console.log(result)
         cache_hits[name] = result
 
@@ -60815,7 +60821,10 @@ async function f() {
         if (fs.lstatSync(full_child_path).isDirectory()) {
           console.log(name)
           if ( ! cache_hits[name] ) {
+            console.log(`Save cache for the deployment ${name}.`)
             const cacheId = await cache.saveCache([full_child_path], name)
+          } else {
+            console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
           }
         }
       }
