@@ -3,7 +3,7 @@ description: |
   Prepares current machine by running set of the 'deployers', which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
   For more info, please look at the docs in the same file.
 inputs:
-  name:
+  names:
     description: 'Names of the deployers.'
     required: true
 
@@ -16,18 +16,18 @@ runs:
       run: |
 
           echo "!!!!!!"
-          echo "${{ inputs.name }}"
-          python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }}
-          echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
-          echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
-          echo "::set-output name=cache-path::~/dependencies_cache-${{ inputs.name }}"
+          echo "${{ inputs.names }}"
 
+          current_deployment=$(python3 .github/scripts/get-deployment.py get-first-deployment-name-from-array-list ${{ inputs.names }})
+          echo "::set-output name=current-deployment::$current_deployment"
+          echo "::set-output name=other-deployments::$(python3 .github/scripts/get-deployment.py get-other-deployment-names-from-array-list ${{ inputs.names }})"
+          echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum $current_deployment)"
 
-    - name: Run base deployment if specified.
-      if: steps.deployer-info.outputs.previous-deployment
-      uses: ./.github/actions/run-environment-deployer
-      with:
-        name: ${{ steps.deployer-info.outputs.previous-deployment }}
+          #python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }}
+          #echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
+          #echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
+
+          echo "::set-output name=cache-path::~/dependencies_cache-$current-deployment"
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
@@ -35,7 +35,7 @@ runs:
         cache-version: v7
       with:
         path: ${{ steps.deployer-info.outputs.cache-path }}
-        key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+        key: deployment-${{ steps.deployer-info.outputs.current-deployment }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
@@ -48,7 +48,7 @@ runs:
         echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
         python3 .github/scripts/get-deployment.py \
           deploy \
-          ${{ inputs.name }} \
+          steps.deployer-info.outputs.current-deployment \
           --cache-dir ${{ steps.deployer-info.outputs.cache-path }} \
           --only-this
 
@@ -58,5 +58,73 @@ runs:
         if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
           cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
+
+    - name: Run base deployment if specified.
+      if: steps.deployer-info.outputs.other-deployments
+      uses: ./.github/actions/run-environment-deployer
+      with:
+        name: ${{ steps.deployer-info.outputs.other-deployments }}
+
+
+#name: 'Prepare environment'
+#description: |
+#  Prepares current machine by running set of the 'deployers', which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
+#  For more info, please look at the docs in the same file.
+#inputs:
+#  name:
+#    description: 'Names of the deployers.'
+#    required: true
+#
+#runs:
+#  using: "composite"
+#  steps:
+#    - name: Get checksum of the deployer and its base deployer (if exists).
+#      id: deployer-info
+#      shell: bash
+#      run: |
+#
+#          echo "!!!!!!"
+#          echo "${{ inputs.name }}"
+#          python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }}
+#          echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
+#          echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
+#          echo "::set-output name=cache-path::~/dependencies_cache-${{ inputs.name }}"
+#
+#
+#    - name: Run base deployment if specified.
+#      if: steps.deployer-info.outputs.previous-deployment
+#      uses: ./.github/actions/run-environment-deployer
+#      with:
+#        name: ${{ steps.deployer-info.outputs.previous-deployment }}
+#
+#    - name: Restore cached dependensies of the environment deployer.
+#      uses: actions/cache@v2
+#      env:
+#        cache-version: v7
+#      with:
+#        path: ${{ steps.deployer-info.outputs.cache-path }}
+#        key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+#
+#    - name: Prepare build environment.
+#      shell: bash
+#      run: |
+#
+#        echo "LS"
+#        ls ${{ steps.deployer-info.outputs.cache-path }}
+#        echo "DOCKER"
+#        docker image ls
+#        echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
+#        python3 .github/scripts/get-deployment.py \
+#          deploy \
+#          ${{ inputs.name }} \
+#          --cache-dir ${{ steps.deployer-info.outputs.cache-path }} \
+#          --only-this
+#
+#        # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
+#        # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
+#        # variable to be able to use those tools.
+#        if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
+#          cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
+#        fi
 
 

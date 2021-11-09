@@ -53,8 +53,14 @@ if __name__ == '__main__':
     previous_deployer_parser = subparsers.add_parser("previous-deployment")
     previous_deployer_parser.add_argument("name")
 
-    ppp = subparsers.add_parser("ppp")
-    ppp.add_argument("name")
+    deployments_string_array = subparsers.add_parser("deployments-as-string-array")
+    deployments_string_array.add_argument("name")
+
+    first_deployer_name_parser = subparsers.add_parser("get-first-deployment-name-from-array-list")
+    first_deployer_name_parser.add_argument("list")
+
+    other_deployer_names_parser = subparsers.add_parser("get-other-deployment-names-from-array-list")
+    other_deployer_names_parser.add_argument("list")
 
     subparsers.add_parser("list")
 
@@ -94,15 +100,28 @@ if __name__ == '__main__':
             only_this=args.only_this
         )
 
-    if args.command == "ppp":
+    if args.command == "deployments-as-string-array":
         deployment = build_and_test_specs.DEPLOYMENTS[args.name]
 
         curr = deployment
+
+        names = []
         while True:
-            print(curr.image_name)
+            names.append(curr.name)
             if isinstance(curr, build_and_test_specs.InitialDeployment):
                 break
-
             curr = curr.previous_deployment
 
+        print(",".join(reversed(names)))
+
         exit(0)
+
+    if args.command == "get-first-deployment-name-from-array-list":
+        names = args.list.split(",")
+        if names:
+            print(names[0])
+
+    if args.command == "get-other-deployment-names-from-array-list":
+        names = args.list.split(",")
+        if names:
+            print(",".join(names[1:]))
