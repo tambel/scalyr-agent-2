@@ -50,7 +50,7 @@ runs:
         echo "CACHE: ${{ steps.deployer-info2.outputs.cache-path }}"
         python3 .github/scripts/get-deployment.py \
           deploy \
-          ${{ steps.deployer-info2.outputs.current-deployment }} \
+          ${{ steps.deployer-info.outputs.current-deployment }} \
           --cache-dir ${{ steps.deployer-info2.outputs.cache-path }}
 
 
