@@ -49,9 +49,9 @@ runs:
           ${{ steps.deployer-info.outputs.current-deployment }} \
           --cache-dir ${{ steps.deployer-info.outputs.cache-path }}
 
-         in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
-         to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
-         variable to be able to use those tools.
+        # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
+        # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
+        # variable to be able to use those tools.
         if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
           cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
