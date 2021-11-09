@@ -64,7 +64,8 @@ jobs:
         run: |
           #echo "::set-output name=package-build-deployer_name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
           deployer_name=$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})
-          echo "::set-output name=package-build-deployer_name::$(python3 .github/scripts/get-package-build-spec.py deployments-as-string-array $deployer_name)"
+          echo "::set-output name=package-build-deployer_names::$(python3 .github/scripts/get-package-build-spec.py deployments-as-string-array $deployer_name)"
+          echo "$deployer_name"
 
 #      - name: Get information about deployers which are used to build '${{ matrix.package_type }}' package.
 #        id: get-deployers-info
