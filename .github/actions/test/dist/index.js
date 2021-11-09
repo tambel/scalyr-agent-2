@@ -8281,6 +8281,14 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 8686:
+/***/ ((module) => {
+
+module.exports = eval("require")("@actions/cache");
+
+
+/***/ }),
+
 /***/ 7254:
 /***/ ((module) => {
 
@@ -8442,32 +8450,46 @@ var __webpack_exports__ = {};
 (() => {
 const core = __nccwpck_require__(2619);
 const github = __nccwpck_require__(4637);
+const cache = __nccwpck_require__(8686);
 const fs = __nccwpck_require__(5747);
+const path = __nccwpck_require__(5622)
 
-try {
-  // `who-to-greet` input defined in action metadata file
-  const nameToGreet = core.getInput('who-to-greet');
-  const cacheDir = core.getInput('cache-dir');
-  console.log(`Hello ${nameToGreet}!`);
-  const time = (new Date()).toTimeString();
-  core.setOutput("time", time);
-  // Get the JSON webhook payload for the event that triggered the workflow
-  const payload = JSON.stringify(github.context.payload, undefined, 2)
-  console.log(`The event payload: ${payload}`);
 
-  if ( fs.existsSync(cacheDir)) {
 
-    filenames = fs.readdirSync(cacheDir);
+async function f() {
+  try {
+    // `who-to-greet` input defined in action metadata file
+    const nameToGreet = core.getInput('who-to-greet');
+    const cacheDir = core.getInput('cache-dir');
+    console.log(`Hello ${nameToGreet}!`);
+    const time = (new Date()).toTimeString();
+    core.setOutput("time", time);
+    // Get the JSON webhook payload for the event that triggered the workflow
+    const payload = JSON.stringify(github.context.payload, undefined, 2)
+    console.log(`The event payload: ${payload}`);
 
-    console.log("\nCurrent directory filenames:");
-    filenames.forEach(file => {
-      console.log(file);
-    });
+    if ( fs.existsSync(cacheDir)) {
+
+      const filenames = fs.readdirSync(cacheDir);
+
+      console.log("\nCurrent directory filenames:");
+      for (const child of filenames) {
+        console.log(child);
+        if (fs.lstatSync(child).isDirectory()) {
+          const key = path.basename(child)
+          console.log(key)
+          const cacheId = await cache.saveCache(child, key)
+        }
+      }
+    }
+  } catch (error) {
+    core.setFailed(error.message);
   }
-
-} catch (error) {
-  core.setFailed(error.message);
 }
+
+f()
+
+
 })();
 
 module.exports = __webpack_exports__;
