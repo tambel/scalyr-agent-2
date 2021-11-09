@@ -35,10 +35,9 @@ runs:
         key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
-      env:
-        cache_path: ~/dependencies_cache-${{ inputs.name }}
       shell: bash
       run: |
+        echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
         python3 .github/scripts/get-deployment.py \
           deploy \
           ${{ inputs.name }} \
