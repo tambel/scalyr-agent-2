@@ -60761,17 +60761,14 @@ async function f() {
     // `who-to-greet` input defined in action metadata file
     const nameToGreet = core.getInput('who-to-greet');
     const cacheDir = core.getInput('cache-dir');
-    console.log(`Hello ${nameToGreet}!`);
     const time = (new Date()).toTimeString();
-    core.setOutput("time", time);
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
     if ( fs.existsSync(cacheDir)) {
 
       const filenames = fs.readdirSync(cacheDir);
-      
-      
+
 
       console.log("\nCurrent directory filenames:");
       for (const child of filenames) {
@@ -60782,7 +60779,11 @@ async function f() {
           const cacheId = await cache.saveCache(child, key)
         }
       }
+    } else {
+      console.log("NOTEXIST")
     }
+    core.setOutput("time", time);
+    console.log(`Hello ${nameToGreet}!`);
   } catch (error) {
     core.setFailed(error.message);
   }
