@@ -58,6 +58,9 @@ runs:
           cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
 
+        echo "44444"
+        ls -al ${{ steps.deployer-info.outputs.cache-path }}
+
     - name: Run base deployment if specified.
       if: steps.deployer-info.outputs.other-deployments
       uses: ./.github/actions/run-environment-deployer
