@@ -30,7 +30,7 @@ async function f() {
     for (let name of deployer_cache_names) {
         console.log(name)
         const cache_path = path.join(cacheDir, name)
-        await cache.restoreCache([cache_path], name)
+        cache.restoreCache([cache_path], name)
     }
 
     // deployer_cache_names.x(function(value){
