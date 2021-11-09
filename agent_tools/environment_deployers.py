@@ -268,9 +268,6 @@ class EnvironmentDeployer:
         Calculate the sha256 checksum of all files which are used in the deployment.
         """
 
-        if self._used_files_checksum:
-            return self._used_files_checksum
-
         used_files = self._get_used_files()
 
         # Calculate the sha256 for each file's content, filename and permissions.
@@ -283,8 +280,7 @@ class EnvironmentDeployer:
 
         if additional_seed:
             sha256.update(additional_seed.encode())
-        self._used_files_checksum = sha256.hexdigest()
-        return self._used_files_checksum
+        return sha256.hexdigest()
 
 
 # if __name__ == '__main__':
