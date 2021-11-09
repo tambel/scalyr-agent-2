@@ -4,7 +4,7 @@ const cache = require('@actions/cache');
 const fs = require('fs');
 const path = require('path')
 const os = require('os')
-
+const child_process = require('child_process')
 
 
 async function f() {
@@ -16,6 +16,8 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
+    const code = child_process.execSync('node -v');
+    console.log(code)
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
 
@@ -30,7 +32,8 @@ async function f() {
         if (fs.lstatSync(full_child_path).isDirectory()) {
           const key = path.basename(child)
           console.log(key)
-          const cacheId = await cache.saveCache([full_child_path], key)
+          //const cacheId = await cache.saveCache([full_child_path], key)
+          cache.restoreCache([full_child_path],)
         }
       }
     } else {

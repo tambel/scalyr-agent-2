@@ -60754,7 +60754,7 @@ const cache = __nccwpck_require__(7599);
 const fs = __nccwpck_require__(5747);
 const path = __nccwpck_require__(5622)
 const os = __nccwpck_require__(2087)
-
+const child_process = __nccwpck_require__(3129)
 
 
 async function f() {
@@ -60766,6 +60766,8 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
+    const code = child_process.execSync('node -v');
+    console.log(code)
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
 
@@ -60780,7 +60782,8 @@ async function f() {
         if (fs.lstatSync(full_child_path).isDirectory()) {
           const key = path.basename(child)
           console.log(key)
-          const cacheId = await cache.saveCache([full_child_path], key)
+          //const cacheId = await cache.saveCache([full_child_path], key)
+          cache.restoreCache([full_child_path],)
         }
       }
     } else {
