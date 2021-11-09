@@ -107,6 +107,7 @@ class EnvironmentDeployer:
         # If cache directory is presented, then we pass it as an additional argument to the
         # 'prepare build environment' script, so it can use the cache too.
         if cache_dir:
+            logging.error(f"CACHEPATTTT: {str(pl.Path(cache_dir))}")
             command.append(str(pl.Path(cache_dir)))
 
         # Run the 'prepare build environment' script in previously chosen shell.
