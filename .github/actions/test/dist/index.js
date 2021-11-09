@@ -60762,15 +60762,23 @@ async function f() {
   try {
     // `who-to-greet` input defined in action metadata file
     const nameToGreet = core.getInput('who-to-greet');
+    const deploymentName = "base_environment_windows_agent_builder_x86_64"
     const cacheDir = "deployment_caches"
     const time = (new Date()).toTimeString();
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
     const deployment_helper_script_path = path.join(".github", "scripts", "get-deployment.py")
-    const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", "base_environment_windows_agent_builder_x86_64"]);
+    const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", deploymentName]);
 
     const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
+
+    child_process.execFileSync(
+        "python3",
+        [deployment_helper_script_path,"deploy", deploymentName],
+        {stdio: 'inherit'}
+    );
+
 
 
     const deployer_cache_names = JSON.parse(json_encoded_deployment_names)
