@@ -66,7 +66,7 @@ runs:
 
     - name: Hello world action step
       id: hello
-      uses: .github/actions/test
+      uses: ./.github/actions/test
       with:
         who-to-greet: 'Mona the Octocat'
 
