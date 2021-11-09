@@ -60773,12 +60773,6 @@ async function f() {
 
     const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
 
-    child_process.execFileSync(
-        "python3",
-        [deployment_helper_script_path,"deploy", deploymentName],
-        {stdio: 'inherit'}
-    );
-
 
 
     const deployer_cache_names = JSON.parse(json_encoded_deployment_names)
@@ -60800,39 +60794,28 @@ async function f() {
     console.log(cache_hits)
     console.log("GGG")
 
-    // deployer_cache_names.x(function(value){
-    //   console.log(value);
-    // });
+    child_process.execFileSync(
+        "python3",
+        [deployment_helper_script_path,"deploy", deploymentName],
+        {stdio: 'inherit'}
+    );
 
-    // deployer_cache_names.forEach(obj => {
-    //     Object.entries(obj).forEach(([key, value]) => {
-    //         console.log(`${key} ${value}`);
-    //     });
-    //     console.log('-------------------');
-    // });
 
-    for (const deployer_cache_name in deployer_cache_names) {
-
-    }
-
-    //console.log()
-    console.log("11111111")
-    console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
 
       const filenames = fs.readdirSync(cacheDir);
 
 
       console.log("\nCurrent directory filenames:");
-      for (const child of filenames) {
-        const full_child_path = path.join(cacheDir, child)
+      for (const name of filenames) {
+        const full_child_path = path.join(cacheDir, name)
         console.log(full_child_path);
 
         if (fs.lstatSync(full_child_path).isDirectory()) {
-          const key = path.basename(child)
-          console.log(key)
-          //const cacheId = await cache.saveCache([full_child_path], key)
-          //cache.restoreCache([full_child_path],)
+          console.log(name)
+          if ( ! cache_hits[name] ) {
+            const cacheId = await cache.saveCache([full_child_path], name)
+          }
         }
       }
     } else {
