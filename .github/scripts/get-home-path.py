@@ -1,4 +1,5 @@
 import pathlib
 
-print(pathlib.Path.home().absolute())
+cache_path = pathlib.Path.home() / "build-caches"
+print(cache_path.absolute())
 
