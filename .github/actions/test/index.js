@@ -20,8 +20,10 @@ async function f() {
     const deployment_helper_script_path = path.join(".github", "scripts", "get-deployment.py")
     const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", "base_environment_windows_agent_builder_x86_64"]);
 
+    const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
+    console.log(JSON.parse(json_encoded_deployment_names))
 
-    console.log(buffer.Buffer.from(code, 'utf8').toString())
+    //console.log()
     console.log("11111111")
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
