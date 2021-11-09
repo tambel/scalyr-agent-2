@@ -27,9 +27,16 @@ async function f() {
 
     console.log(deployer_cache_names)
 
+    deployer_cache_names.forEach(obj => {
+        Object.entries(obj).forEach(([key, value]) => {
+            console.log(`${key} ${value}`);
+        });
+        console.log('-------------------');
+    });
+
     for (const deployer_cache_name in deployer_cache_names) {
       console.log(`cache name: ${deployer_cache_name}`)
-      cache.restoreCache([deployer_cache_name], deployer_cache_name)
+      await cache.restoreCache([deployer_cache_name], deployer_cache_name)
     }
 
     //console.log()
