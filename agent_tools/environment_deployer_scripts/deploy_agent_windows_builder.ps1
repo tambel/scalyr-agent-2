@@ -89,7 +89,8 @@ $Env:Path = "$Env:Path;$paths"
 Add-Content "$cache_path\paths.txt" "$wix_path" -Encoding utf8
 
 
-rgregerge
+
+
 
 
 
