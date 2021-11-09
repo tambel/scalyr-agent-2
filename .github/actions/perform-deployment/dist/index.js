@@ -60831,7 +60831,7 @@ async function run() {
             } catch (error) {
 
               console.warn(`Can not save deployment cache by key ${key}. It seems that seesm that it has been
-               saved somewhere else.\nOriginal error: ${error}`)
+               saved somewhere else.\nOriginal message: ${error}`)
             }
           } else {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)

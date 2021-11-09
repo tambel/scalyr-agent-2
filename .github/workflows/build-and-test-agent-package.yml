@@ -126,7 +126,7 @@ jobs:
       - name: Make Kubernetes and docker package builder scripts executable.
         if: inputs.package_name == 'k8s' || inputs.package_name == 'docker-json'
         run: |
-          chmod +x ~/package/*
+          chmod +x ~/package/${{ matrix.package-filename-glob }}
 
       - name: Set up QEMU
         if: ${{ !startsWith(inputs.package_name, 'msi') }}
@@ -143,6 +143,6 @@ jobs:
 
           python3 tests/package_tests/package_test_runner.py \
             run \
-            ${{ matrix.spec_name }} \
-            --package-path ~/package/* \
+            ${{ matrix.test_name }} \
+            --package-path ~/package/${{ matrix.package-filename-glob }} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"

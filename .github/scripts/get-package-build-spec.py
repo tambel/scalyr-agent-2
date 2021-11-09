@@ -45,7 +45,12 @@ if __name__ == '__main__':
         test_specs = build_and_test_specs.PACKAGE_BUILD_TO_TEST_SPECS[args.build_spec_name]
         test_specs_names = [s.name for s in test_specs]
         test_specs_deployment_names = [s.deployment.name for s in test_specs]
-        matrix = {"test-name": test_specs_names, "deployment-name": test_specs_deployment_names}
+        package_filename_globs = [s.package_build_spec.filename_glob for s in test_specs]
+        matrix = {
+            "test-name": test_specs_names,
+            "deployment-name": test_specs_deployment_names,
+            "package-filename-glob": package_filename_globs
+        }
         print(matrix)
 
     if args.command == "test-deployment-names":
