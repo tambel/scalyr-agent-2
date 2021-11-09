@@ -60653,6 +60653,14 @@ module.exports = require("punycode");;
 
 /***/ }),
 
+/***/ 1058:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("readline");;
+
+/***/ }),
+
 /***/ 2413:
 /***/ ((module) => {
 
@@ -60756,6 +60764,7 @@ const path = __nccwpck_require__(5622)
 const os = __nccwpck_require__(2087)
 const child_process = __nccwpck_require__(3129)
 const buffer = __nccwpck_require__(4293)
+const readline = __nccwpck_require__(1058)
 
 
 async function f() {
@@ -60813,6 +60822,17 @@ async function f() {
             await cache.saveCache([full_child_path], key)
           } else {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
+          }
+          const paths_file_path = path.join(full_child_path, "paths.txt")
+          if (fs.lstatSync(paths_file_path).isFile()) {
+
+            var lineReader = readline.createInterface({
+              input: fs.createReadStream(paths_file_path)
+            });
+
+            lineReader.on('line', function (line) {
+              console.log('Line from file:', line);
+            });
           }
         }
       }

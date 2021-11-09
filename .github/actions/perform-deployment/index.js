@@ -6,6 +6,7 @@ const path = require('path')
 const os = require('os')
 const child_process = require('child_process')
 const buffer = require('buffer')
+const readline = require('readline')
 
 
 async function f() {
@@ -63,6 +64,17 @@ async function f() {
             await cache.saveCache([full_child_path], key)
           } else {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
+          }
+          const paths_file_path = path.join(full_child_path, "paths.txt")
+          if (fs.lstatSync(paths_file_path).isFile()) {
+
+            var lineReader = readline.createInterface({
+              input: fs.createReadStream(paths_file_path)
+            });
+
+            lineReader.on('line', function (line) {
+              console.log('Line from file:', line);
+            });
           }
         }
       }
