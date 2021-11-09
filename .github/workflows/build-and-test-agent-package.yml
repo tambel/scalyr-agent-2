@@ -85,7 +85,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           who-to-greet: 'Mona the Octocat'
-          deployer-name: ${{ steps.get-deployer-name.outputs.package-build-deployer-name }}
+          deployment-name: ${{ steps.get-deployer-name.outputs.package-build-deployer-name }}
 
 
       - name: Set up QEMU

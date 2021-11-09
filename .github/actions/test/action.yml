@@ -5,7 +5,7 @@ inputs:
     description: 'Who to greet'
     required: true
     default: 'World'
-  deployer-name:
+  deployment-name:
     description: "Name of the deployer"
     required: true
 
