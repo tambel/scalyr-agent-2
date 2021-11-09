@@ -27,7 +27,7 @@ _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "environment_deployer_scripts"
 
 base_environment_used_files = [
     __SOURCE_ROOT__ / "agent_tools" / "environment_deployer_scripts" / "cache_lib.sh",
-    _AGENT_BUILD_DIR / "requirement-files"
+    _AGENT_BUILD_DIR / "requirement-files" / "*.txt"
 ]
 
 PYTHON_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(

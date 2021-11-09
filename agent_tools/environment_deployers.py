@@ -253,11 +253,19 @@ class EnvironmentDeployer:
         # include all files inside them recursively.
         for path in self._used_files:
             path = pl.Path(path)
-            if path.is_dir():
-                used_files.extend(get_dir_files(path))
-            else:
-                used_files.append(path)
 
+            found = list(__SOURCE_ROOT__.glob(str(path.relative_to(__SOURCE_ROOT__))))
+
+            used_files.extend(found)
+            a=10
+
+            # if path.is_dir():
+            #     used_files.extend(get_dir_files(path))
+            # else:
+            #     used_files.append(path)
+
+
+        logging.error(used_files)
         return used_files
 
     def get_used_files_checksum(
