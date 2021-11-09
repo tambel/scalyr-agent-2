@@ -60793,6 +60793,7 @@ async function f() {
     }
     console.log(cache_hits)
     console.log("GGG")
+    console.log(cacheDir)
 
     child_process.execFileSync(
         "python3",
@@ -60820,6 +60821,7 @@ async function f() {
       }
     } else {
       console.log("NOTEXIST")
+
     }
     core.setOutput("time", time);
     console.log(`Hello ${nameToGreet}!`);
