@@ -30,7 +30,7 @@ runs:
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
-      id: cache-deployment-${{ steps.deployer-info.outputs.checksum }}
+      id: cache-deployment
       env:
         cache-version: v9
       with:
