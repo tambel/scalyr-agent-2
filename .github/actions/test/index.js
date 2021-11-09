@@ -24,11 +24,13 @@ async function f() {
 
       console.log("\nCurrent directory filenames:");
       for (const child of filenames) {
-        console.log(child);
-        if (fs.lstatSync(child).isDirectory()) {
+        const full_child_path = path.join(cacheDir, child)
+        console.log(full_child_path);
+
+        if (fs.lstatSync(full_child_path).isDirectory()) {
           const key = path.basename(child)
           console.log(key)
-          const cacheId = await cache.saveCache(child, key)
+          const cacheId = await cache.saveCache([full_child_path], key)
         }
       }
     } else {
