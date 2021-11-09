@@ -7,6 +7,11 @@ inputs:
     description: "Name of the deployer"
     required: true
 
+  cache-version-suffix:
+    description: "Cache key suffix. Can be changed when it is needed to invalidate the cache."
+    required: false
+    default: v1
+
 runs:
   using: 'node12'
   main: 'dist/index.js'

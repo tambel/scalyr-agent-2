@@ -169,7 +169,6 @@ class PackageBuildSpec:
         else:
             build_func = self.build_package_from_spec
 
-        print(build_func)
         build_func(
             package_build_spec_name=self.name,
             output_path_dir=str(output_path)

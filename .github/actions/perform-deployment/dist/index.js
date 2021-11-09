@@ -60761,6 +60761,7 @@ const buffer = __nccwpck_require__(4293)
 async function f() {
   try {
     const deploymentName = core.getInput("deployment-name")
+    const cacheVersionSuffix = core.getInput("cache-version-suffix")
     const cacheDir = "deployment_caches"
 
     const deployment_helper_script_path = path.join(".github", "scripts", "get-deployment.py")
@@ -60776,7 +60777,9 @@ async function f() {
 
         const cache_path = path.join(cacheDir, name)
 
-        const result = await cache.restoreCache([cache_path], name)
+        const key = `${name}-${cacheVersionSuffix}`
+
+        const result = await cache.restoreCache([cache_path], key)
 
         if(typeof result !== "undefined") {
           console.log(`Cache for the deployment ${name} is found.`)
@@ -60802,9 +60805,12 @@ async function f() {
         const full_child_path = path.join(cacheDir, name)
 
         if (fs.lstatSync(full_child_path).isDirectory()) {
+
+          const key = `${name}-${cacheVersionSuffix}`
+
           if ( ! cache_hits[name] ) {
             console.log(`Save cache for the deployment ${name}.`)
-            await cache.saveCache([full_child_path], name)
+            await cache.saveCache([full_child_path], key)
           } else {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
           }
