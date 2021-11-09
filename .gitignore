@@ -26,6 +26,7 @@ var/
 scalyr-agent-2-*/
 /tests/config.yml
 tests/package_tests/credentials.json
+!.github/actions/test/dist
 
 # Installer logs
 pip-log.txt
