@@ -26,16 +26,16 @@ runs:
           #python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }}
           #echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
           #echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
-          echo "::set-output name=cache-path::~/dependencies_cache-$current_deployment"
+          echo "::set-output name=cache-path::~/dependencies_cache/$current_deployment"
 
-    - name: Restore cached dependensies of the environment deployer.
-      uses: actions/cache@v2
-      id: cache-deployment
-      env:
-        cache-version: v9
-      with:
-        path: ${{ steps.deployer-info.outputs.cache-path }}
-        key: deployment-${{ steps.deployer-info.outputs.current-deployment }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+#    - name: Restore cached dependensies of the environment deployer.
+#      uses: actions/cache@v2
+#      id: cache-deployment
+#      env:
+#        cache-version: v9
+#      with:
+#        path: ${{ steps.deployer-info.outputs.cache-path }}
+#        key: deployment-${{ steps.deployer-info.outputs.current-deployment }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
