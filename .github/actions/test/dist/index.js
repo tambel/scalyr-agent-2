@@ -60770,7 +60770,7 @@ async function f() {
     const code = child_process.execSync('node -v');
 
 
-    console.log(buffer.Buffer.from(code, 'utf8'))
+    console.log(buffer.Buffer.from(code, 'utf8').toString())
     console.log("11111111")
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
