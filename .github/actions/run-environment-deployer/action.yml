@@ -15,6 +15,8 @@ runs:
       shell: bash
       run: |
 
+          echo "!!!!!!"
+          python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }}
           echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
           echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
           echo "::set-output name=cache-path::~/dependencies_cache"
