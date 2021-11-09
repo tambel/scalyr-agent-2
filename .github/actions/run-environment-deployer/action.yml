@@ -76,7 +76,7 @@ runs:
       uses: ./.github/actions/test
       with:
         who-to-greet: 'Mona the Octocat'
-        cache-dir: ${{ steps.deployer-info.outputs.cache-path }}
+        cache-dir: ~/dependencies_cache
 
 
 #name: 'Prepare environment'
