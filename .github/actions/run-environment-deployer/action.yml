@@ -62,8 +62,8 @@ runs:
 
         echo "44444"
         echo "qqqq"
-        ls -al ~${{ steps.deployer-info.outputs.cache-path }}
         echo ${{ steps.deployer-info.outputs.cache-path }}
+        ls -al ~${{ steps.deployer-info.outputs.cache-path }}
 
 
 #    - name: Run base deployment if specified.
