@@ -264,7 +264,7 @@ class EnvironmentDeployer:
             # else:
             #     used_files.append(path)
 
-
+        used_files = sorted(used_files)
         logging.error(used_files)
         return used_files
 
