@@ -60830,6 +60830,9 @@ async function run() {
           } else {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
           }
+
+          // After the deployment, the deployer can leave a special file 'paths.txt'.
+          // This file contains paths of the tools that are needed to be added to the system's PATH.
           const paths_file_path = path.join(full_child_path, "paths.txt")
           if (fs.existsSync(paths_file_path)) {
 
