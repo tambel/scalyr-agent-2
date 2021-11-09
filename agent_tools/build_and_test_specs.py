@@ -1,11 +1,10 @@
+import abc
 import sys
 import pathlib as pl
 import dataclasses
 import enum
 import collections
 import logging
-import argparse
-import json
 import shutil
 from typing import Dict, Type, List, Callable, Union, Optional
 
@@ -81,17 +80,6 @@ _DEFAULT_ARCHITECTURES = [
 ]
 
 
-def create_build_spec_name(
-        package_type: constants.PackageType,
-        architecture: constants.Architecture = None
-):
-    result = f"{package_type.value}"
-    if architecture:
-        result = f"{result}_{architecture.value}"
-
-    return result
-
-
 @dataclasses.dataclass
 class DockerImageInfo:
     image_name: str
@@ -111,27 +99,11 @@ class PackageBuildSpec:
 
     @property
     def name(self) -> str:
-        return create_build_spec_name(
-            package_type=self.package_type,
-            architecture=self.architecture
-        )
+        result = f"{self.package_type.value}"
+        if self.architecture:
+            result = f"{result}_{self.architecture.value}"
 
-    # @property
-    # def used_deployers_string_array(self):
-    #     used_deployer_names = [d.name for d in self.used_deployers]
-    #     return ",".join(used_deployer_names)
-
-    # @property
-    # def used_deployers_info_as_dict(self):
-    #     result = {
-    #         "deployers": self.used_deployers_string_array,
-    #         "architecture": package_build_spec.architecture.value
-    #     }
-    #
-    #     if package_build_spec.base_image:
-    #         result["base-docker-image"] = package_build_spec.base_image.image_name
-    #
-    #     return result
+        return result
 
     def get_dockerized_function(
             self,
@@ -198,40 +170,32 @@ class PackageBuildSpec:
         )
 
 
-def get_package_build_spec(
-        package_build_spec: PackageBuildSpec
-):
-    used_deployer_names = [d.name for d in package_build_spec.used_deployers]
-    used_deployers_str = ",".join(used_deployer_names)
-    return {
-        "deployers": used_deployers_str,
-        "base-docker-image": package_build_spec.base_image,
-        "architecture": package_build_spec.architecture.value
-    }
-
-
 PACKAGE_BUILD_SPECS: Dict[str, PackageBuildSpec] = {}
 
 DEPLOYMENTS = {}
 
 
 @dataclasses.dataclass
-class Deployment:
+class Deployment(abc.ABC):
     deployer: env_deployers.EnvironmentDeployer
 
     @property
+    @abc.abstractmethod
     def architecture(self) -> constants.Architecture:
         pass
 
     @property
+    @abc.abstractmethod
     def name(self) -> str:
         pass
 
     @property
+    @abc.abstractmethod
     def initial_docker_image(self) -> Optional[str]:
         pass
 
     @property
+    @abc.abstractmethod
     def base_docker_image(self) -> Optional[str]:
         pass
 
@@ -275,7 +239,6 @@ class Deployment:
             self.deployer.run(
                 cache_dir=deployment_cache_dir
             )
-
 
 
 @dataclasses.dataclass
@@ -329,7 +292,6 @@ class FollowingDeployment(Deployment):
         return self.deployer.get_used_files_checksum(
             additional_seed=self.previous_deployment.image_name
         )
-
 
     def deploy(
             self,
@@ -407,14 +369,6 @@ def _add_package_build_specs(
     specs = []
 
     for arch in architectures:
-
-        # if base_docker_image:
-        #     base_docker_image_spec = DockerImageInfo(
-        #         image_name=base_docker_image,
-        #     )
-        # else:
-        #     base_docker_image_spec = None
-
         deployment = _create_new_deployment(
             architecture=arch,
             deployers=used_deployers,
@@ -428,13 +382,8 @@ def _add_package_build_specs(
             package_builder_cls=package_builder_cls,
             filename_glob=filename_glob_format.format(arch=package_arch_name),
             deployment=deployment,
-            # architecture=arch,
-            # base_image=base_docker_image_spec
         )
-        # spec_name = create_build_spec_name(
-        #     package_type=package_type,
-        #     architecture=arch
-        # )
+
         PACKAGE_BUILD_SPECS[spec.name] = spec
         specs.append(spec)
 
@@ -507,57 +456,23 @@ class PackageTestSpec:
 
     @property
     def name(self):
-        return f"{self.package_build_spec.package_type.value}_{self.target_system.value}_{self.package_build_spec.architecture.value}"
+        name = f"{self.package_build_spec.package_type.value}_{self.target_system.value}_{self.package_build_spec.architecture.value}"
+        if self.remote_machine_spec:
+            if isinstance(self.remote_machine_spec, DockerImageInfo):
+                remote_machine_suffix = "docker"
+            elif isinstance(self.remote_machine_spec, Ec2BasedTestSpec):
+                remote_machine_suffix = "ec2"
+            else:
+                raise ValueError("Unknown remote machine spec.")
+
+            name = f"{name}_{remote_machine_suffix}"
+
+        return name
 
 
 TEST_SPECS: Dict[str, PackageTestSpec] = {}
 PACKAGE_BUILD_TO_TEST_SPECS: Dict[str, List[PackageTestSpec]] = collections.defaultdict(list)
 
-
-def create_test_spec(
-        target_system: TargetSystem,
-        package_build_spec: PackageBuildSpec,
-        remote_machine_specs: List[Union[DockerImageInfo, Ec2BasedTestSpec]] = None,
-        additional_deployers: List[env_deployers.EnvironmentDeployer] = None
-):
-
-    global TEST_SPECS, PACKAGE_BUILD_TO_TEST_SPECS
-
-    package_build_spec_name = create_build_spec_name(
-        package_type=package_build_spec.package_type,
-        architecture=package_build_spec.architecture
-    )
-    test_spec_name = f"{package_build_spec.package_type.value}_{target_system.value}_{package_build_spec.architecture.value}"
-    if remote_machine_specs:
-        for remote_machine_spec in remote_machine_specs:
-            if isinstance(remote_machine_spec, DockerImageInfo):
-                remote_machine_suffix = "docker"
-            elif isinstance(remote_machine_spec, Ec2BasedTestSpec):
-                remote_machine_suffix = "ec2"
-            else:
-                raise ValueError(f"Wrong remote machine spec: {remote_machine_spec}")
-
-            full_name = f"{test_spec_name}_{remote_machine_suffix}"
-
-            spec = PackageTestSpec(
-                name=full_name,
-                target_system=target_system,
-                package_build_spec=package_build_spec,
-                remote_machine_spec=remote_machine_spec,
-                additional_deployers=additional_deployers
-            )
-            TEST_SPECS[full_name] = spec
-            PACKAGE_BUILD_TO_TEST_SPECS[package_build_spec_name].append(spec)
-    else:
-        spec = PackageTestSpec(
-            name=test_spec_name,
-            target_system=target_system,
-            package_build_spec=package_build_spec,
-            additional_deployers=additional_deployers
-        )
-
-        TEST_SPECS[test_spec_name] = spec
-        PACKAGE_BUILD_TO_TEST_SPECS[package_build_spec_name].append(spec)
 
 def create_test_specs(
         target_system: TargetSystem,
@@ -578,7 +493,7 @@ def create_test_specs(
             base_docker_image=build_spec.deployment.initial_docker_image
         )
 
-        test_spec_name = f"{build_spec.package_type.value}_{target_system.value}_{build_spec.architecture.value}"
+        #test_spec_name = f"{build_spec.package_type.value}_{target_system.value}_{build_spec.architecture.value}"
 
         remote_machine_specs = remote_machine_arch_specs.get(build_spec.architecture)
         if remote_machine_specs:
@@ -590,7 +505,7 @@ def create_test_specs(
                 else:
                     raise ValueError(f"Wrong remote machine spec: {remote_machine_spec}")
 
-                full_name = f"{test_spec_name}_{remote_machine_suffix}"
+                #full_name = f"{test_spec_name}_{remote_machine_suffix}"
 
                 spec = PackageTestSpec(
                     target_system=target_system,
@@ -598,7 +513,7 @@ def create_test_specs(
                     remote_machine_spec=remote_machine_spec,
                     deployment=deployment
                 )
-                TEST_SPECS[full_name] = spec
+                TEST_SPECS[spec.name] = spec
                 PACKAGE_BUILD_TO_TEST_SPECS[build_spec.name].append(spec)
         else:
             spec = PackageTestSpec(
@@ -607,7 +522,7 @@ def create_test_specs(
                 deployment=deployment
             )
 
-            TEST_SPECS[test_spec_name] = spec
+            TEST_SPECS[spec.name] = spec
             PACKAGE_BUILD_TO_TEST_SPECS[build_spec.name].append(spec)
 
 
