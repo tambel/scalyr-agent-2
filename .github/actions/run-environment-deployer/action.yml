@@ -27,6 +27,9 @@ runs:
           #echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
           #echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
           python3 .github/scripts/get-home-path.py
+    - id: deployer-info2
+      shell: powershell
+      run: |
           echo "::set-output name=cache-path::$(python3 .github/scripts/get-home-path.py)"
 
 #    - name: Restore cached dependensies of the environment deployer.
@@ -43,19 +46,19 @@ runs:
       run: |
 
         echo "LS"
-        #ls ${{ steps.deployer-info.outputs.cache-path }}
-        echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
+        #ls ${{ steps.deployer-info2.outputs.cache-path }}
+        echo "CACHE: ${{ steps.deployer-info2.outputs.cache-path }}"
         python3 .github/scripts/get-deployment.py \
           deploy \
-          ${{ steps.deployer-info.outputs.current-deployment }} \
-          --cache-dir ${{ steps.deployer-info.outputs.cache-path }}
+          ${{ steps.deployer-info2.outputs.current-deployment }} \
+          --cache-dir ${{ steps.deployer-info2.outputs.cache-path }}
 
 
         # in some cases, the 'deploy' command also generates file 'paths.txt'. This file contains paths
         # to binaries of all tools that are needed for the build. Use this file to add those paths to the PATH env.
         # variable to be able to use those tools.
-        if [ -f ${{ steps.deployer-info.outputs.cache-path }}/paths.txt ]; then
-          cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
+        if [ -f ${{ steps.deployer-info2.outputs.cache-path }}/paths.txt ]; then
+          cat ${{ steps.deployer-info2.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
 
         echo "DOCKER"
@@ -63,7 +66,7 @@ runs:
 
         echo "44444"
         echo "qqqq"
-        echo ${{ steps.deployer-info.outputs.cache-path }}
+        echo ${{ steps.deployer-info2.outputs.cache-path }}
 
 
 #    - name: Run base deployment if specified.
@@ -77,7 +80,7 @@ runs:
       uses: ./.github/actions/test
       with:
         who-to-greet: 'Mona the Octocat'
-        cache-dir: ${{ steps.deployer-info.outputs.cache-path }}
+        cache-dir: ${{ steps.deployer-info2.outputs.cache-path }}
 
 
 #name: 'Prepare environment'
