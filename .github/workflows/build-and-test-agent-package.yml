@@ -89,6 +89,8 @@ jobs:
         with:
           who-to-greet: 'Mona the Octocat'
 
+      - run: ls -al deployment_caches
+
       - name: Set up QEMU
         if: ${{ !startsWith(inputs.package_name, 'msi') }}
         uses: docker/setup-qemu-action@v1
