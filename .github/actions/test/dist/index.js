@@ -60767,7 +60767,8 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
-    const code = child_process.execSync('node -v');
+    const deployment_helper_script_path = path.join(".github", "scripts", "get-deployment.py")
+    const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", "base_environment_windows_agent_builder_x86_64"]);
 
 
     console.log(buffer.Buffer.from(code, 'utf8').toString())

@@ -249,6 +249,10 @@ class Deployment:
     def checksum(self) -> str:
         return self.deployer.get_used_files_checksum()
 
+    @property
+    def cache_name(self) -> str:
+        return f"{self.name}_{self.checksum}"
+
     def deploy(
             self,
             cache_dir: pl.Path=None,
@@ -257,7 +261,7 @@ class Deployment:
 
         logging.info(f"CACHE_DIR: {cache_dir}")
         if cache_dir:
-            deployment_cache_dir = pl.Path(cache_dir) / f"{self.name}_{self.checksum}"
+            deployment_cache_dir = self.cache_name
         else:
             deployment_cache_dir = None
 

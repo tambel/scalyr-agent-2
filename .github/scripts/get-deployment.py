@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 import pathlib as pl
 import logging
@@ -62,6 +63,9 @@ if __name__ == '__main__':
     other_deployer_names_parser = subparsers.add_parser("get-other-deployment-names-from-array-list")
     other_deployer_names_parser.add_argument("list")
 
+    get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
+    get_all_deployments_parser.add_argument("deployment_name")
+
     subparsers.add_parser("list")
 
 
@@ -121,7 +125,19 @@ if __name__ == '__main__':
         if names:
             print(names[0])
 
-    if args.command == "get-other-deployment-names-from-array-list":
-        names = args.list.split(",")
-        if names:
-            print(",".join(names[1:]))
+    if args.command == "get-deployment-all-cache-names":
+        deployment = build_and_test_specs.DEPLOYMENTS[args.deployment_name]
+
+        curr = deployment
+
+        names = []
+        while True:
+            names.append(curr.cache_name)
+            if isinstance(curr, build_and_test_specs.InitialDeployment):
+                break
+            curr = curr.previous_deployment
+
+        print(json.dumps(list(reversed(names))))
+
+        exit(0)
+
