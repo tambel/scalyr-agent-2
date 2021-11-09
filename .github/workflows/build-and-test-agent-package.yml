@@ -103,24 +103,22 @@ jobs:
 #        with:
 #          names: ${{ steps.deployers-info.outputs.package-build-deployer_names }}
 
-      - name: Build.
-        id: build
-        shell: bash
-        run: |
-          python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
-
-          echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }})"
-          echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-build-spec.py package-filename-glob ${{ inputs.package_name }})"
-
-
-
-      - name: Save the package.
-        uses: actions/upload-artifact@v2
-        with:
-          name: package-${{ inputs.package_name }}
-          path: |
-            agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
-
+#      - name: Build.
+#        id: build
+#        shell: bash
+#        run: |
+#          python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
+#
+#          echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }})"
+#          echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-build-spec.py package-filename-glob ${{ inputs.package_name }})"
+#
+#      - name: Save the package.
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: package-${{ inputs.package_name }}
+#          path: |
+#            agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
+#
 
 #  test:
 #    needs: [build]
