@@ -265,7 +265,7 @@ class EnvironmentDeployer:
             #     used_files.append(path)
 
         used_files = sorted(used_files)
-        logging.error(used_files)
+        #logging.error(used_files)
         return used_files
 
     def get_used_files_checksum(
@@ -281,7 +281,7 @@ class EnvironmentDeployer:
         # Calculate the sha256 for each file's content, filename and permissions.
         sha256 = hashlib.sha256()
         for file_path in used_files:
-            file_path = pl.Path(file_path)
+            file_path = pl.Path(file_path.relative_to(__SOURCE_ROOT__))
             sha256.update(str(file_path).encode())
             sha256.update(str(file_path.stat().st_mode).encode())
             sha256.update(file_path.read_bytes())

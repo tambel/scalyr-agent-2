@@ -53,6 +53,9 @@ if __name__ == '__main__':
     previous_deployer_parser = subparsers.add_parser("previous-deployment")
     previous_deployer_parser.add_argument("name")
 
+    ppp = subparsers.add_parser("ppp")
+    ppp.add_argument("name")
+
     subparsers.add_parser("list")
 
 
@@ -90,5 +93,16 @@ if __name__ == '__main__':
             cache_dir=args.cache_dir,
             only_this=args.only_this
         )
+
+    if args.command == "ppp":
+        deployment = build_and_test_specs.DEPLOYMENTS[args.name]
+
+        curr = deployment
+        while True:
+            print(curr.image_name)
+            if isinstance(curr, build_and_test_specs.InitialDeployment):
+                break
+
+            curr = curr.previous_deployment
 
         exit(0)
