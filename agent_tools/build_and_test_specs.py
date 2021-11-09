@@ -30,8 +30,8 @@ base_environment_used_files = [
 ]
 
 
-# Define deployers. They are responsible for deployment of the some environment.
-# In
+
+
 PYTHON_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(
     name="python",
     deployment_script_path=_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"

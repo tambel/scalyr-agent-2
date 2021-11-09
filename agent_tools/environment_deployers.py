@@ -66,7 +66,20 @@ from agent_tools import constants
 
 class EnvironmentDeployer:
     """
-    Base abstraction of the deployer.
+    This abstraction responsible for deployment of the some environment in the target machine.
+    Basically, it is just a wrapper around some shell script and a set of files which are used by this shell.
+
+    The state of the desired environment should be defined in the shell script.
+
+    Knowing what files are used, the deployer can calculate their checksum, and this can be uses as a cache key for
+        some CI/CD platform, providing "CI/CD platform agnostic" and unified way of preparing/deploying needed
+        environments.
+
+    Deployer can also run its script inside docker.
+
+    Deployers are used in this project to prepare build and test environments for the agent. Using their ability to
+        operate inside the docker, they help to achieve a unified way of building and testing agent packages, locally
+        and on CI/CD.
     """
 
     def __init__(
@@ -75,26 +88,32 @@ class EnvironmentDeployer:
             deployment_script_path: Union[str, pl.Path],
             used_files: list = None,
     ):
+        """
+        :param name: Name of the deployment.
+        :param deployment_script_path: Path to the script which is executed during the deployment.
+        :param used_files: List files used in the deployment. Can be globs.
+        """
         self._name = name
         self._deployment_script_path = deployment_script_path
         self._used_files = used_files or []
 
-        self._used_files_checksum: Optional[str] = None
-
     @property
     def name(self):
         return self._name
-
 
     def run(
         self,
         cache_dir: Union[str, pl.Path] = None,
     ):
         """
-        Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
-        """
+        Perform the deployment by running the shell script. It also allows perform it inside the docker.
 
-        # Prepare the environment on the current system.
+        :param cache_dir: Path to the directory which will be used as cache. It is passed to the shell script as a first
+            argument, so it it possible to save/reuse some intermediate result in the script. It may be useful if
+            deployment has to be done on some CI/CD machine, which is new on each run. When deployer operates in docker,
+            then it caches the whole result image by using 'docker save'. On the second run, the deployer can load the
+            image from this cached file without rebuilding.
+        """
 
         # Choose the shell according to the operation system.
         if self._deployment_script_path.suffix == ".ps1":
@@ -105,12 +124,11 @@ class EnvironmentDeployer:
         command = [shell, str(self._deployment_script_path)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
-        # 'prepare build environment' script, so it can use the cache too.
+        # script, so it can use the cache too.
         if cache_dir:
-            logging.error(f"CACHEPATTTT: {str(pl.Path(cache_dir))}")
             command.append(str(pl.Path(cache_dir)))
 
-        # Run the 'prepare build environment' script in previously chosen shell.
+        # Run the script in previously chosen shell.
         subprocess.check_call(
             command,
         )
@@ -124,16 +142,11 @@ class EnvironmentDeployer:
 
     ):
         """
-        Prepare the build environment. For more info see 'prepare-build-environment' action in class docstring.
+        This function does the same deployment but inside the docker.
+        :param base_docker_image: Name of the base docker image. The shell script will be executed inside its container.
+        :param result_image_name: The name of the result image.
+        :param architecture: Type of the processor architecture. Docker can use emulation to support different platforms.
         """
-        # Instead of preparing the build environment on the current system, create the docker image and prepare the
-        # build environment there. If cache directory is specified, then the docker image will be serialized to the
-        # file and that file will be stored in the cache.
-
-        # Get the name of the builder image.
-        # image_name = self.get_image_name(
-        #     architecture=architecture
-        # )
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
         # of all files which are used in it, so the name identity also guarantees the content identity.
@@ -171,7 +184,7 @@ class EnvironmentDeployer:
 
         logging.info(f"Build image '{result_image_name}' from base image '{base_docker_image}' with the deployer '{self._name}'.")
 
-        # Create the builder image.
+        # Create the image.
         # Instead of using the 'docker build', just create the image from 'docker commit' from the container.
 
         container_root_path = pl.Path("/scalyr-agent-2")
@@ -184,7 +197,7 @@ class EnvironmentDeployer:
             abs_container_path = container_root_path / rel_used_path
             volumes_mappings.extend(["-v", f"{abs_host_path}:{abs_container_path}"])
 
-        # Map the 'prepare environment' script's path to the docker.
+        # Map the script's path to the docker.
         container_prepare_env_script_path = pl.Path(
             container_root_path,
             pl.Path(self._deployment_script_path).relative_to(
@@ -197,7 +210,7 @@ class EnvironmentDeployer:
         # Remove if such container exists.
         subprocess.check_call(["docker", "rm", "-f", container_name])
 
-        # Create container and run the 'prepare environment' script in it.
+        # Create container and run the script in it.
         subprocess.check_call(
             [
                 "docker",
@@ -231,34 +244,33 @@ class EnvironmentDeployer:
             This is basically needed to calculate their checksum.
         """
 
-        def get_dir_files(dir_path: pl.Path):
-            # ignore those directories.
-            if dir_path.name == "__pycache__":
-                return []
-
-            result = []
-            for child_path in dir_path.iterdir():
-                if child_path.is_dir():
-                    result.extend(get_dir_files(child_path))
-                else:
-                    result.append(child_path)
-
-            return result
-
-        used_files = []
+        # def get_dir_files(dir_path: pl.Path):
+        #     # ignore those directories.
+        #     if dir_path.name == "__pycache__":
+        #         return []
+        #
+        #     result = []
+        #     for child_path in dir_path.iterdir():
+        #         if child_path.is_dir():
+        #             result.extend(get_dir_files(child_path))
+        #         else:
+        #             result.append(child_path)
+        #
+        #     return result
 
         # The shell script is also has to be included.
-        used_files.append(self._deployment_script_path)
+        used_files = [self._deployment_script_path]
 
         # Since the list of used files can also contain directories, look for them and
         # include all files inside them recursively.
         for path in self._used_files:
             path = pl.Path(path)
 
-            found = list(__SOURCE_ROOT__.glob(str(path.relative_to(__SOURCE_ROOT__))))
+            # match glob against source code root.
+            relative_path = path.relative_to(__SOURCE_ROOT__)
+            found = list(__SOURCE_ROOT__.glob(str(relative_path)))
 
             used_files.extend(found)
-            a=10
 
             # if path.is_dir():
             #     used_files.extend(get_dir_files(path))
