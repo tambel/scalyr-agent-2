@@ -8455,13 +8455,15 @@ try {
   const payload = JSON.stringify(github.context.payload, undefined, 2)
   console.log(`The event payload: ${payload}`);
 
+  if ( fs.existsSync(cacheDir)) {
 
-  filenames = fs.readdirSync(cacheDir);
+    filenames = fs.readdirSync(cacheDir);
 
-  console.log("\nCurrent directory filenames:");
-  filenames.forEach(file => {
-    console.log(file);
-  });
+    console.log("\nCurrent directory filenames:");
+    filenames.forEach(file => {
+      console.log(file);
+    });
+  }
 
 } catch (error) {
   core.setFailed(error.message);
