@@ -29,7 +29,9 @@ async function f() {
 
     for (let name of deployer_cache_names) {
         console.log(name)
+
         const cache_path = path.join(cacheDir, name)
+        console.log(cache_path)
         cache.restoreCache([cache_path], name)
     }
 
