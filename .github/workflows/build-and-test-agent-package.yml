@@ -113,7 +113,7 @@ jobs:
       - name: Download package.
         uses: actions/download-artifact@v2
         with:
-          nam: package-${{ inputs.package_name }}
+          name: package-${{ inputs.package_name }}
           path: ~/package
 
       - name: Start minikube for the test of the kubernetes build.
