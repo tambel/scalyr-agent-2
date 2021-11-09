@@ -249,7 +249,9 @@ class Deployment:
             cache_dir: pl.Path=None,
             only_this: bool = False
     ):
+
         if self.in_docker:
+            logging.info(f"Perform the deployment '{self.name}' inside the docker.")
             self.deployer.run_in_docker(
                 base_docker_image=self.base_docker_image,
                 result_image_name=self.image_name,
@@ -257,6 +259,7 @@ class Deployment:
                 cache_dir=cache_dir
             )
         else:
+            logging.info(f"Perform the deployment '{self.name}'.")
             self.deployer.run(
                 cache_dir=cache_dir
             )
@@ -283,8 +286,8 @@ class InitialDeployment(Deployment):
     @property
     def name(self):
         name = f"{self.deployer.name}-{self.architecture.value}"
-        if self.base_docker_image:
-            docker_image_name = self.base_docker_image.replace(":", "_")
+        if self.in_docker:
+            docker_image_name = self.initial_docker_image.replace(":", "_")
             name = f"{name}-{docker_image_name}"
         return name
 
@@ -386,10 +389,10 @@ def _create_new_deployment(
 
     global DEPLOYMENTS
 
-    deployers = deployers[:]
+    all_deployers = deployers[:]
 
     initial_deployment = InitialDeployment(
-        deployer=deployers.pop(0),
+        deployer=all_deployers.pop(0),
         architecture_=architecture,
         initial_docker_image_=base_docker_image
     )
@@ -405,7 +408,7 @@ def _create_new_deployment(
 
     all_deployments = [initial_deployment]
 
-    for deployer in deployers:
+    for deployer in all_deployers:
         deployment = FollowingDeployment(
             deployer=deployer,
             previous_deployment=previous_deployment
@@ -632,7 +635,7 @@ def create_test_specs(
         deployment = _create_new_deployment(
             architecture=build_spec.architecture,
             deployers=additional_deployers,
-            base_docker_image=build_spec.deployment.base_docker_image
+            base_docker_image=build_spec.deployment.initial_docker_image
         )
 
         test_spec_name = f"{build_spec.package_type.value}_{target_system.value}_{build_spec.architecture.value}"
@@ -693,7 +696,7 @@ create_test_specs(
             DockerImageInfo("amazonlinux:2")
         ]
     },
-    additional_deployers=[TEST_ENVIRONMENT]
+    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
 )
 
 create_test_specs(
@@ -704,7 +707,7 @@ create_test_specs(
             DockerImageInfo("ubuntu:20.04")
         ],
     },
-    additional_deployers=[TEST_ENVIRONMENT]
+    additional_deployers=_LINUX_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
 )
 
 create_test_specs(

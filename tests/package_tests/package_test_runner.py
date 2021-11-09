@@ -210,16 +210,14 @@ def run_test_from_spec(
         shutil.rmtree(frozen_test_runner_output_dir_path)
     frozen_test_runner_output_dir_path.mkdir(parents=True)
 
-    all_deployers = test_spec.package_build_spec.used_deployers[:]
-    if test_spec.additional_deployers:
-        all_deployers.extend(test_spec.additional_deployers)
+    test_spec.deployment.deploy()
+
     build_func = run_in_docker.dockerized_function(
         func=build_test_runner_frozen_binary,
         image_name=f"scalyr-agent-test-runner-builder-{test_spec.package_build_spec.name}",
-        base_image=test_spec.package_build_spec.base_image.image_name,
+        base_image=test_spec.deployment.image_name,
         architecture=test_spec.package_build_spec.architecture,
         build_stage="test",
-        used_deployers=all_deployers,
         path_mappings={frozen_test_runner_output_dir_path: "/tmp/build"}
     )
     build_func(
