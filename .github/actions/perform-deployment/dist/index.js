@@ -60824,7 +60824,7 @@ async function f() {
             console.log(`Cache for the deployment ${name} has been hit. Skip saving.`)
           }
           const paths_file_path = path.join(full_child_path, "paths.txt")
-          if (fs.lstatSync(paths_file_path).isFile()) {
+          if (fs.existsSync(paths_file_path)) {
 
             var lineReader = readline.createInterface({
               input: fs.createReadStream(paths_file_path)
