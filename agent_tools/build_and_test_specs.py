@@ -71,6 +71,11 @@ _LINUX_BUILDER_DEPLOYERS = [
     BASE_ENVIRONMENT_DEPLOYER
 ]
 
+_WINDOWS_BUILDER_DEPLOYERS = [
+    WINDOWS_INSTALL_WIX,
+    BASE_ENVIRONMENT_DEPLOYER
+]
+
 _DEFAULT_ARCHITECTURES = [
     constants.Architecture.X86_64, constants.Architecture.ARM64
 ]
@@ -335,52 +340,6 @@ class FollowingDeployment(Deployment):
         )
 
 
-
-
-# def _add_package_build_specs(
-#         package_type: constants.PackageType,
-#         package_builder_cls: Type[package_builders.PackageBuilder],
-#         filename_glob_format: str,
-#         architectures: List[constants.Architecture],
-#         used_deployers: List[env_deployers.EnvironmentDeployer] = None,
-#         base_docker_image: str = None,
-#
-# ):
-#     global PACKAGE_BUILD_SPECS
-#
-#     specs = []
-#
-#     for arch in architectures:
-#         used_deployers = used_deployers or []
-#
-#         if base_docker_image:
-#             base_docker_image_spec = DockerImageInfo(
-#                 image_name=base_docker_image,
-#             )
-#         else:
-#             base_docker_image_spec = None
-#
-#         package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(arch, "")
-#
-#         spec = PackageBuildSpec(
-#             package_type=package_type,
-#             package_builder_cls=package_builder_cls,
-#             filename_glob=filename_glob_format.format(arch=package_arch_name),
-#             used_deployers=used_deployers,
-#             architecture=arch,
-#             base_image=base_docker_image_spec
-#         )
-#         spec_name = create_build_spec_name(
-#             package_type=package_type,
-#             architecture=arch
-#         )
-#         PACKAGE_BUILD_SPECS[spec_name] = spec
-#         specs.append(spec)
-#
-#
-#
-#     return specs
-
 def _create_new_deployment(
     architecture: constants.Architecture,
     deployers: List[env_deployers.EnvironmentDeployer],
@@ -503,9 +462,10 @@ MSI_x86_64, = _add_package_build_specs(
     package_type=constants.PackageType.MSI,
     package_builder_cls=package_builders.MsiWindowsPackageBuilder,
     filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
-    used_deployers=[WINDOWS_INSTALL_WIX, BASE_ENVIRONMENT_DEPLOYER],
+    used_deployers=_WINDOWS_BUILDER_DEPLOYERS,
     architectures=[constants.Architecture.X86_64]
 )
+
 
 class TargetSystem(enum.Enum):
     UBUNTU_1404 = "ubuntu-1404"
@@ -541,33 +501,6 @@ class PackageTestSpec:
     @property
     def name(self):
         return f"{self.package_build_spec.package_type.value}_{self.target_system.value}_{self.package_build_spec.architecture.value}"
-
-
-
-    # @property
-    # def all_deployers(self) -> List[env_deployers.EnvironmentDeployer]:
-    #     result = self.package_build_spec.used_deployers
-    #     if self.additional_deployers:
-    #         result.extend(self.additional_deployers)
-    #
-    #     return result
-
-    # @property
-    # def all_deployers_string_array(self):
-    #     used_deployer_names = [d.name for d in self.all_deployers]
-    #     return ",".join(used_deployer_names)
-
-    # @property
-    # def deployers_info_as_dict(self):
-    #     result = {
-    #         "deployers": self.all_deployers_string_array,
-    #         "architecture": package_build_spec.architecture.value
-    #     }
-    #
-    #     if package_build_spec.base_image:
-    #         result["base-docker-image"] = package_build_spec.base_image.image_name
-    #
-    #     return result
 
 
 TEST_SPECS: Dict[str, PackageTestSpec] = {}
@@ -713,7 +646,7 @@ create_test_specs(
 create_test_specs(
     target_system=TargetSystem.WINDOWS_2019,
     package_build_specs=[MSI_x86_64],
-    additional_deployers=[TEST_ENVIRONMENT]
+    additional_deployers=_WINDOWS_BUILDER_DEPLOYERS + [TEST_ENVIRONMENT]
 )
 
 

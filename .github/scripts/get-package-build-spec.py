@@ -44,7 +44,7 @@ if __name__ == '__main__':
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
         test_specs = build_and_test_specs.PACKAGE_BUILD_TO_TEST_SPECS[args.build_spec_name]
         test_specs_names = [s.name for s in test_specs]
-        matrix = {"include": {"test-name": test_specs_names}}
+        matrix = {"test-name": test_specs_names}
         print(matrix)
 
     if args.command == "test-deployment-names":
