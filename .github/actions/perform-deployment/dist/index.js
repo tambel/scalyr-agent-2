@@ -60832,6 +60832,7 @@ async function f() {
 
             lineReader.on('line', function (line) {
               console.log('Line from file:', line);
+              core.addPath(line)
             });
           }
         }
