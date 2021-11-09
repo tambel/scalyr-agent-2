@@ -61,6 +61,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
 
       - id: deployers-info
+        shell: bash
         run: |
           #echo "::set-output name=package-build-deployer_name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
           deployer_name=$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})

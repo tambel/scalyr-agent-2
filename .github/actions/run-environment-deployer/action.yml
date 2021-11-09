@@ -63,7 +63,7 @@ runs:
       if: steps.deployer-info.outputs.other-deployments
       uses: ./.github/actions/run-environment-deployer
       with:
-        name: ${{ steps.deployer-info.outputs.other-deployments }}
+        names: ${{ steps.deployer-info.outputs.other-deployments }}
 
 
 #name: 'Prepare environment'
