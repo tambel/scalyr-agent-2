@@ -29,6 +29,7 @@ async function f() {
 
     for (let item of deployer_cache_names) {
         console.log(item);
+        await cache.restoreCache([item], item)
     }
 
     // deployer_cache_names.x(function(value){
