@@ -40,6 +40,11 @@ runs:
     - name: Prepare build environment.
       shell: bash
       run: |
+
+        echo "LS"
+        ls ${{ steps.deployer-info.outputs.cache-path }}
+        echo "DOCKER"
+        docker image ls
         echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
         python3 .github/scripts/get-deployment.py \
           deploy \
@@ -54,4 +59,4 @@ runs:
           cat ${{ steps.deployer-info.outputs.cache-path }}/paths.txt >> $GITHUB_PATH
         fi
 
-        ls ${{ steps.deployer-info.outputs.cache-path }}
+
