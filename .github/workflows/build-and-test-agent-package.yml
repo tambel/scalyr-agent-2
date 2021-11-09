@@ -28,25 +28,6 @@ on:
 env:
   DOCKER_BUILDKIT: 1
 jobs:
-#  get-deployments:
-#    runs-on: ${{ inputs.os }}
-#    outputs:
-#      package-build-deployer_name: ${{ steps.deployers-info.outputs.package-build-deployer_name }}
-#      #package-test-specs: ${{ steps.deployers-info.outputs.package-test-specs }}
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v2
-#
-#      - name: Install python.
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: ${{ inputs.python-version }}
-#
-#      - id: deployers-info
-#        run: |
-#          python3 .github/scripts/get-package-build-spec.py ${{ inputs.package_name }}
-#          echo "::set-output name=package-build-deployer_name::$(python3 .github/scripts/get-package-build-spec.py ${{ inputs.package_name }})"
-
   build:
     runs-on: ${{ inputs.os }}
     outputs:
@@ -60,33 +41,10 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - id: deployment-name
+      - id: Determine the name of the deployment.
         shell: bash
         run: |
           echo "::set-output name=deployment-name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
-
-#      - name: Get information about deployers which are used to build '${{ matrix.package_type }}' package.
-#        id: get-deployers-info
-#        run: |
-#          echo "::set-output name=deployer-names::$(python build_package.py get-build-spec ${{ matrix.package_type }} deployers)"
-#          echo "::set-output name=deployer-base-image::$(python build_package.py get-build-spec ${{ matrix.package_type }} base-docker-image)"
-#          echo "::set-output name=architecture::$(python build_package.py get-build-spec ${{ matrix.package_type }} architecture)"
-#
-#      - name: Prepare build environment by running appropriate deployer.
-#        if: ${{ steps.get-deployers-info.outputs.deployer-names }}
-#        id: prepare
-#        uses: ./.github/actions/run-environment-deployer
-#        with:
-#          names: ${{ steps.get-deployers-info.outputs.deployer-names }}
-#          base-docker-image: ${{ steps.get-deployers-info.outputs.deployer-base-image }}
-#          architecture: ${{ steps.get-deployers-info.outputs.architecture }}
-      - name: Hello world action step
-        id: hello
-        uses: ./.github/actions/test
-        with:
-          who-to-greet: 'Mona the Octocat'
-          deployment-name: ${{ steps.deployment-name.outputs.deployment-name }}
-
 
       - name: Set up QEMU
         if: ${{ !startsWith(inputs.package_name, 'msi') }}
@@ -94,30 +52,28 @@ jobs:
         with:
           platforms: all
 
+      - name: Perform the deployment of the build environment.
+        id: hello
+        uses: ./.github/actions/test
+        with:
+          deployment-name: ${{ steps.deployment-name.outputs.deployment-name }}
 
-#      - name: Prepare build environment by running appropriate deployer.
-#        if: ${{ steps.deployers-info.outputs.package-build-deployer_names }}
-#        id: prepare
-#        uses: ./.github/actions/run-environment-deployer
-#        with:
-#          names: ${{ steps.deployers-info.outputs.package-build-deployer_names }}
+      - name: Build.
+        id: build
+        shell: bash
+        run: |
+          python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
 
-#      - name: Build.
-#        id: build
-#        shell: bash
-#        run: |
-#          python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
-#
-#          echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }})"
-#          echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-build-spec.py package-filename-glob ${{ inputs.package_name }})"
-#
-#      - name: Save the package.
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: package-${{ inputs.package_name }}
-#          path: |
-#            agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
-#
+          echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }})"
+          echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-build-spec.py package-filename-glob ${{ inputs.package_name }})"
+
+      - name: Save the package.
+        uses: actions/upload-artifact@v2
+        with:
+          name: package-${{ inputs.package_name }}
+          path: |
+            agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
+
 
 #  test:
 #    needs: [build]

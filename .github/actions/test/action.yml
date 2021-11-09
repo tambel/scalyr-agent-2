@@ -1,17 +1,12 @@
-name: 'Hello World'
-description: 'Greet someone and record the time'
+name: 'Perform deployment.'
+description: |
+  Prepares current machine by perfroming the set of the deployments, which are defined in the 'agent_build/environment_deployers.deployers.py.' folder.
+  For more info, please look at the docs in the same file.'
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
-    required: true
-    default: 'World'
   deployment-name:
     description: "Name of the deployer"
     required: true
 
-outputs:
-  time: # id of output
-    description: 'The time we greeted you'
 runs:
   using: 'node12'
   main: 'dist/index.js'

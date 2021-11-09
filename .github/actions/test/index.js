@@ -11,7 +11,6 @@ const buffer = require('buffer')
 async function f() {
   try {
     // `who-to-greet` input defined in action metadata file
-    const nameToGreet = core.getInput('who-to-greet');
     const deploymentName = core.getInput("deployment-name")
     const cacheDir = "deployment_caches"
     const time = (new Date()).toTimeString();
