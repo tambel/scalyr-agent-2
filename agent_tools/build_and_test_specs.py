@@ -261,7 +261,7 @@ class Deployment:
 
         logging.info(f"CACHE_DIR: {cache_dir}")
         if cache_dir:
-            deployment_cache_dir = self.cache_name
+            deployment_cache_dir = pl.Path(cache_dir) / self.cache_name
         else:
             deployment_cache_dir = None
 
