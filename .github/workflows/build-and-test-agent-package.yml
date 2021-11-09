@@ -131,7 +131,7 @@ jobs:
         if: ${{ matrix.deployers }}
         uses: ./.github/actions/run-environment-deployer
         with:
-          names: ${{ matrix.deployers }}
+          name: ${{ matrix.deployers }}
           base-docker-image: ${{ matrix.base-docker-image }}
           architecture: ${{ matrix.architecture }}
 
@@ -143,7 +143,7 @@ jobs:
       - name: Download package.
         uses: actions/download-artifact@v2
         with:
-          name: package-${{ inputs.package_name }}
+          nam: package-${{ inputs.package_name }}
           path: ~/package
 
       - name: Start minikube for the test of the kubernetes build.
