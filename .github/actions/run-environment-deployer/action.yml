@@ -20,11 +20,11 @@ runs:
           echo "::set-output name=cache-path::~/dependencies_cache-${{ inputs.name }}"
 
 
-#    - name: Run base deployment if specified.
-#      if: steps.deployer-info.outputs.previous-deployment
-#      uses: ./.github/actions/run-environment-deployer
-#      with:
-#        name: ${{ steps.deployer-info.outputs.previous-deployment }}
+    - name: Run base deployment if specified.
+      if: steps.deployer-info.outputs.previous-deployment
+      uses: ./.github/actions/run-environment-deployer
+      with:
+        name: ${{ steps.deployer-info.outputs.previous-deployment }}
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
