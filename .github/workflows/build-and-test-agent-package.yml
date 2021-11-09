@@ -60,10 +60,10 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - id: deployer-name
+      - id: deployment-name
         shell: bash
         run: |
-          echo "::set-output name=package-build-deployer-name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
+          echo "::set-output name=package-build-deployment-name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
 
 #      - name: Get information about deployers which are used to build '${{ matrix.package_type }}' package.
 #        id: get-deployers-info
@@ -85,7 +85,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           who-to-greet: 'Mona the Octocat'
-          deployment-name: ${{ steps.get-deployer-name.outputs.package-build-deployer-name }}
+          deployment-name: ${{ steps.deployment-name.outputs.package-build-deployer-name }}
 
 
       - name: Set up QEMU
