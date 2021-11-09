@@ -20,19 +20,19 @@ runs:
           echo "::set-output name=cache-path::~/dependencies_cache-${{ inputs.name }}"
 
 
-    - name: Run base deployment if specified.
-      if: steps.deployer-info.outputs.previous-deployment
-      uses: ./.github/actions/run-environment-deployer
-      with:
-        name: ${{ steps.deployer-info.outputs.previous-deployment }}
-
-    - name: Restore cached dependensies of the environment deployer.
-      uses: actions/cache@v2
-      env:
-        cache-version: v5
-      with:
-        path: ${{ steps.deployer-info.outputs.cache-path }}
-        key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
+#    - name: Run base deployment if specified.
+#      if: steps.deployer-info.outputs.previous-deployment
+#      uses: ./.github/actions/run-environment-deployer
+#      with:
+#        name: ${{ steps.deployer-info.outputs.previous-deployment }}
+#
+#    - name: Restore cached dependensies of the environment deployer.
+#      uses: actions/cache@v2
+#      env:
+#        cache-version: v5
+#      with:
+#        path: ${{ steps.deployer-info.outputs.cache-path }}
+#        key: deployment-${{ inputs.name }}-${{ runner.os }}-${{ env.cache-version }}-${{ steps.deployer-info.outputs.checksum }}
 
     - name: Prepare build environment.
       shell: bash
