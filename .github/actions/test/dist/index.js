@@ -60768,6 +60768,7 @@ async function f() {
 
     const code = child_process.execSync('node -v');
     console.log(code)
+    console.log("11111111")
     console.log(cacheDir)
     if ( fs.existsSync(cacheDir)) {
 
