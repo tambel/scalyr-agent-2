@@ -60770,6 +60770,8 @@ async function f() {
     if ( fs.existsSync(cacheDir)) {
 
       const filenames = fs.readdirSync(cacheDir);
+      
+      
 
       console.log("\nCurrent directory filenames:");
       for (const child of filenames) {

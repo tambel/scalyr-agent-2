@@ -255,18 +255,23 @@ class Deployment:
             only_this: bool = False
     ):
 
+        if cache_dir:
+            deployment_cache_dir = pl.Path(cache_dir) / f"{self.name}_{self.checksum}"
+        else:
+            deployment_cache_dir = None
+
         if self.in_docker:
             logging.info(f"Perform the deployment '{self.name}' inside the docker.")
             self.deployer.run_in_docker(
                 base_docker_image=self.base_docker_image,
                 result_image_name=self.image_name,
                 architecture=self.architecture,
-                cache_dir=cache_dir
+                cache_dir=deployment_cache_dir
             )
         else:
             logging.info(f"Perform the deployment '{self.name}'.")
             self.deployer.run(
-                cache_dir=cache_dir
+                cache_dir=deployment_cache_dir
             )
 
 
