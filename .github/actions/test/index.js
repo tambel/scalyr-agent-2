@@ -16,11 +16,10 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
-    const fullCachePath = path.join(os.homedir(), cacheDir)
-    console.log(fullCachePath)
-    if ( fs.existsSync(fullCachePath)) {
+    console.log(cacheDir)
+    if ( fs.existsSync(cacheDir)) {
 
-      const filenames = fs.readdirSync(fullCachePath);
+      const filenames = fs.readdirSync(cacheDir);
 
 
       console.log("\nCurrent directory filenames:");
