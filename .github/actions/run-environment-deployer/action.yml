@@ -19,6 +19,7 @@ runs:
           echo "${{ inputs.names }}"
 
           current_deployment=$(python3 .github/scripts/get-deployment.py get-first-deployment-name-from-array-list ${{ inputs.names }})
+          current_deployment=base_environment_windows_agent_builder_x86_64
           echo "::set-output name=current-deployment::$current_deployment"
           echo "::set-output name=other-deployments::$(python3 .github/scripts/get-deployment.py get-other-deployment-names-from-array-list ${{ inputs.names }})"
           echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum $current_deployment)"
@@ -27,7 +28,7 @@ runs:
           #echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
           #echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
           python3 .github/scripts/get-home-path.py
-          current_deployment=base_environment_windows_agent_builder_x86_64
+
 
     - id: deployer-info2
       shell: powershell
