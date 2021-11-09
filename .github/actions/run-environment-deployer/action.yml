@@ -26,8 +26,7 @@ runs:
           #python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }}
           #echo "::set-output name=checksum::$(python3 .github/scripts/get-deployment.py checksum ${{ inputs.name }})"
           #echo "::set-output name=previous-deployment::$(python3 .github/scripts/get-deployment.py previous-deployment ${{ inputs.name }})"
-
-          echo "::set-output name=cache-path::~/dependencies_cache-$current-deployment"
+          echo "::set-output name=cache-path::~/dependencies_cache-$current_deployment"
 
     - name: Restore cached dependensies of the environment deployer.
       uses: actions/cache@v2
