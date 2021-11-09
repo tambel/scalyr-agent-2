@@ -30,16 +30,21 @@ base_environment_used_files = [
 ]
 
 
+# Declare all needed deployers. They will be used in package building and testing.
+# For more info, please see the 'EnvironmentDeployer' class.
 
-
+# This deployer is used in the package building.
+# Since we use frozen binaries, it is important to produce the binary using the earliest glibc possible,
+# to achieve binary compatibility with more operating systems.
 PYTHON_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(
     name="python",
     deployment_script_path=_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"
 )
 
+#
 BASE_ENVIRONMENT_DEPLOYER = env_deployers.EnvironmentDeployer(
-    name="base_environment",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_base_environment.sh",
+    name="build_environment",
+    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_build_environment.sh",
     used_files=base_environment_used_files,
 )
 

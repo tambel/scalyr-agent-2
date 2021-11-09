@@ -146,6 +146,7 @@ class EnvironmentDeployer:
         :param base_docker_image: Name of the base docker image. The shell script will be executed inside its container.
         :param result_image_name: The name of the result image.
         :param architecture: Type of the processor architecture. Docker can use emulation to support different platforms.
+        :param cache_dir: The cache directory. the same as in the main functions.
         """
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
@@ -237,26 +238,11 @@ class EnvironmentDeployer:
             with cached_image_path.open("wb") as f:
                 subprocess.check_call(["docker", "save", result_image_name], stdout=f)
 
-
     def _get_used_files(self) -> List[pl.Path]:
         """
             Get the list of all files which are used in the deployment.
             This is basically needed to calculate their checksum.
         """
-
-        # def get_dir_files(dir_path: pl.Path):
-        #     # ignore those directories.
-        #     if dir_path.name == "__pycache__":
-        #         return []
-        #
-        #     result = []
-        #     for child_path in dir_path.iterdir():
-        #         if child_path.is_dir():
-        #             result.extend(get_dir_files(child_path))
-        #         else:
-        #             result.append(child_path)
-        #
-        #     return result
 
         # The shell script is also has to be included.
         used_files = [self._deployment_script_path]
@@ -266,19 +252,13 @@ class EnvironmentDeployer:
         for path in self._used_files:
             path = pl.Path(path)
 
-            # match glob against source code root.
+            # match glob against source code root and include all matched paths.
             relative_path = path.relative_to(__SOURCE_ROOT__)
             found = list(__SOURCE_ROOT__.glob(str(relative_path)))
 
             used_files.extend(found)
 
-            # if path.is_dir():
-            #     used_files.extend(get_dir_files(path))
-            # else:
-            #     used_files.append(path)
-
         used_files = sorted(used_files)
-        #logging.error(used_files)
         return used_files
 
     def get_used_files_checksum(
@@ -302,58 +282,3 @@ class EnvironmentDeployer:
         if additional_seed:
             sha256.update(additional_seed.encode())
         return sha256.hexdigest()
-
-
-# if __name__ == '__main__':
-#     logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
-#
-#     parser = argparse.ArgumentParser()
-#     subparsers = parser.add_subparsers(dest="command")
-#
-#     deploy_parser = subparsers.add_parser("deploy")
-#     get_info_parser = subparsers.add_parser("get-info")
-#
-#     for p in [deploy_parser, get_info_parser]:
-#         p.add_argument("deployer_name", choices=DEPLOYERS.keys())
-#         p.add_argument("--architecture", required=False)
-#
-#     get_info_parser.add_argument("info", choices=["checksum", "image-name"])
-#
-#     deploy_parser.add_argument("--base-docker-image", dest="base_docker_image")
-#
-#     deploy_parser.add_argument(
-#         "--cache-dir",
-#         dest="cache_dir",
-#         help="Path to the directory which will be considered by the script is a cache. "
-#         "All 'cachable' intermediate results will be stored in it.",
-#     )
-#
-#     args = parser.parse_args()
-#
-#     # Find the deployer.
-#     deployer = DEPLOYERS[args.deployer_name]
-#
-#     if args.command == "get-info":
-#         if args.info == "checksum":
-#             checksum = deployer.get_used_files_checksum()
-#             print(checksum)
-#
-#         if args.info == "image-name":
-#             deployer.get_image_name(architecture=args.architecture)
-#
-#         exit(0)
-#
-#     if args.command == "deploy":
-#         if args.base_docker_image:
-#             deployer.run_in_docker(
-#                 base_docker_image=args.base_docker_image,
-#                 architecture=constants.Architecture(args.architecture),
-#                 cache_dir=args.cache_dir
-#             )
-#         else:
-#             deployer.run(
-#                 cache_dir=args.cache_dir
-#             )
-#
-#
-#         exit(0)
