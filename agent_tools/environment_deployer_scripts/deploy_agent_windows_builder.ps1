@@ -23,6 +23,8 @@ if ($args[0]) {
     $cache_path = "$Env:TEMP\$([System.IO.Path]::GetRandomFileName())"
 }
 
+echo "CACHE DIR: $cache_path"
+
 New-Item -ItemType Directory -Force -Path "$cache_path"
 
 # TODO: We use pre-installed Python version in the github actions, but it provides only python3.7 in its windows runners,
