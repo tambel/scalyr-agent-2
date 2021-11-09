@@ -60771,7 +60771,15 @@ async function f() {
     const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", "base_environment_windows_agent_builder_x86_64"]);
 
     const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
-    console.log(JSON.parse(json_encoded_deployment_names))
+
+
+    const deployer_cache_names = JSON.parse(json_encoded_deployment_names)
+
+    console.log(deployer_cache_names)
+
+    for (const deployer_cache_name in deployer_cache_names) {
+      cache.restoreCache([deployer_cache_name], deployer_cache_name)
+    }
 
     //console.log()
     console.log("11111111")
