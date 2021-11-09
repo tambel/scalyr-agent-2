@@ -143,6 +143,6 @@ jobs:
 
           python3 tests/package_tests/package_test_runner.py \
             run \
-            ${{ matrix.test_name }} \
+            ${{ matrix.test-name }} \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
