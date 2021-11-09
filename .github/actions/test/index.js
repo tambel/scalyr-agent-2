@@ -3,6 +3,7 @@ const github = require('@actions/github');
 const cache = require('@actions/cache');
 const fs = require('fs');
 const path = require('path')
+const os require('os')
 
 
 
@@ -15,10 +16,11 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
-    console.log(cacheDir)
-    if ( fs.existsSync(cacheDir)) {
+    const fullCachePath = path.join(os.homedir(), cacheDir)
+    console.log(fullCachePath)
+    if ( fs.existsSync(fullCachePath)) {
 
-      const filenames = fs.readdirSync(cacheDir);
+      const filenames = fs.readdirSync(fullCachePath);
 
 
       console.log("\nCurrent directory filenames:");
