@@ -98,10 +98,9 @@ if __name__ == '__main__':
 
     if args.command == "deploy":
         deployment = build_and_test_specs.DEPLOYMENTS[args.name]
-
+        logging.info(f"CACHERRREERERR: {args.cache_dir}")
         deployment.deploy(
-            cache_dir=args.cache_dir,
-            only_this=args.only_this
+            cache_dir=args.cache_dir
         )
 
     if args.command == "deployments-as-string-array":
