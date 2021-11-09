@@ -42,7 +42,7 @@ runs:
       run: |
 
         echo "LS"
-        ls ${{ steps.deployer-info.outputs.cache-path }}
+        #ls ${{ steps.deployer-info.outputs.cache-path }}
         echo "DOCKER"
         docker image ls
         echo "CACHE: ${{ steps.deployer-info.outputs.cache-path }}"
