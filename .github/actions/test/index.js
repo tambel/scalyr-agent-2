@@ -3,7 +3,7 @@ const github = require('@actions/github');
 const cache = require('@actions/cache');
 const fs = require('fs');
 const path = require('path')
-const os require('os')
+const os = require('os')
 
 
 

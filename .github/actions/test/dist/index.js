@@ -60753,6 +60753,7 @@ const github = __nccwpck_require__(4637);
 const cache = __nccwpck_require__(7599);
 const fs = __nccwpck_require__(5747);
 const path = __nccwpck_require__(5622)
+const os = __nccwpck_require__(2087)
 
 
 
@@ -60765,10 +60766,11 @@ async function f() {
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
 
-    console.log(cacheDir)
-    if ( fs.existsSync(cacheDir)) {
+    const fullCachePath = path.join(os.homedir(), cacheDir)
+    console.log(fullCachePath)
+    if ( fs.existsSync(fullCachePath)) {
 
-      const filenames = fs.readdirSync(cacheDir);
+      const filenames = fs.readdirSync(fullCachePath);
 
 
       console.log("\nCurrent directory filenames:");
