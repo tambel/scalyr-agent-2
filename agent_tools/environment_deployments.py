@@ -444,9 +444,10 @@ class Deployment:
                 previous_step=previous_step,
             )
             previous_step = step
-
-            type(self).ALL_DEPLOYMENTS[self.name] = self
             self.steps.append(step)
+
+        type(self).ALL_DEPLOYMENTS[self.name] = self
+
 
     @property
     def result_image_name(self) -> Optional[str]:

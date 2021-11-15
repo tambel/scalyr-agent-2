@@ -492,7 +492,7 @@ PackageTest.create_test_specs(
 )
 
 COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
-    name="test_environment",
+    name="test_environment_x86_64",
     architecture=constants.Architecture.X86_64,
     step_classes=[env_deployers.InstallBuildRequirementsStep],
 )
