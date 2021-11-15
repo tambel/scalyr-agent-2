@@ -39,7 +39,6 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
-from tests.package_tests import current_test_specifications
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
 
@@ -56,8 +55,6 @@ if __name__ == '__main__':
             choices=package_builders.PackageBuilder.ALL_BUILDERS.keys(),
             help="Type of the package to build.",
         )
-
-    subparsers = parser.add_subparsers(dest="command", required=True)
 
     parser.add_argument(
         "--locally",
@@ -101,9 +98,7 @@ if __name__ == '__main__':
 
     logging.info(f"Build package '{args.package_name}'...")
 
-    if args.command == "build":
-        package_builder.build(
-            output_path=pl.Path(args.output_dir),
-            locally=args.locally
-        )
-        exit(0)
+    package_builder.build(
+        output_path=pl.Path(args.output_dir),
+        locally=args.locally
+    )

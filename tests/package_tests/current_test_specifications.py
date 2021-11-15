@@ -139,7 +139,7 @@ class PackageTest:
                         ec2_machine_info=remote_machine_spec
                     )
                 else:
-                    test_spec = Ec2BasedPackageTest(
+                    test_spec = PackageTest(
                         **kwargs,
                     )
 
@@ -151,47 +151,47 @@ class PackageTest:
                 else:
                     PackageTest.ALL_TESTS[package_test.unique_name] = package_test
 
-            PackageTest.ALL_TESTS[builder.name] = package_test
+            PackageTest.ALL_TESTS[builder.name] = package_tests
 
 
 
-class LocalPackageTest(PackageTest):
-    """
-    Subclass of the package test spec which is only has to be run locally, on the current system (not in docker or ec2).
-    """
-    # def __init__(
-    #         self,
-    #         test_name: str,
-    #         package_builder: package_builders.PackageBuilder,
-    #         architecture: constants.Architecture = None,
-    #         deployment_steps: List[env_deployers.DeploymentStep] = None,
-    #
-    # ):
-    #     super(LocalPackageTest, self).__init__(
-    #         test_name=test_name,
-    #         package_builder=package_builder,
-    #         architecture=architecture,
-    #         deployment_steps=deployment_steps
-    #     )
-
-    def run_test_locally(
-            self,
-            package_path: pl.Path,
-            scalyr_api_key: str,
-    ):
-
-        if self.package_builder.PACKAGE_TYPE in [
-            constants.PackageType.DEB,
-            constants.PackageType.RPM,
-            constants.PackageType.TAR,
-            constants.PackageType.MSI
-        ]:
-            deb_rpm_tar_msi_test.run(
-                package_type=self.package_builder.PACKAGE_TYPE,
-                package_path=package_path,
-                scalyr_api_key=scalyr_api_key
-            )
-            return
+# class LocalPackageTest(PackageTest):
+#     """
+#     Subclass of the package test spec which is only has to be run locally, on the current system (not in docker or ec2).
+#     """
+#     # def __init__(
+#     #         self,
+#     #         test_name: str,
+#     #         package_builder: package_builders.PackageBuilder,
+#     #         architecture: constants.Architecture = None,
+#     #         deployment_steps: List[env_deployers.DeploymentStep] = None,
+#     #
+#     # ):
+#     #     super(LocalPackageTest, self).__init__(
+#     #         test_name=test_name,
+#     #         package_builder=package_builder,
+#     #         architecture=architecture,
+#     #         deployment_steps=deployment_steps
+#     #     )
+#
+#     def run_test_locally(
+#             self,
+#             package_path: pl.Path,
+#             scalyr_api_key: str,
+#     ):
+#
+#         if self.package_builder.PACKAGE_TYPE in [
+#             constants.PackageType.DEB,
+#             constants.PackageType.RPM,
+#             constants.PackageType.TAR,
+#             constants.PackageType.MSI
+#         ]:
+#             deb_rpm_tar_msi_test.run(
+#                 package_type=self.package_builder.PACKAGE_TYPE,
+#                 package_path=package_path,
+#                 scalyr_api_key=scalyr_api_key
+#             )
+#             return
 
 
 class RemoteMachinePackageTest(PackageTest):
@@ -364,7 +364,7 @@ def run_package_test(
             package_output_dir_path.glob(package_test.package_builder.filename_glob)
         )[0]
 
-    if isinstance(package_test, LocalPackageTest):
+    if not isinstance(package_test, RemoteMachinePackageTest):
         package_test.run_test_locally(
             package_path=package_path,
             scalyr_api_key=scalyr_api_key
@@ -394,7 +394,6 @@ def run_package_test(
 
         # Run the test inside the docker.
         # fmt: off
-
         subprocess.check_call(
             [
                 "docker", "run", "-i", "--rm", "--init",
@@ -490,7 +489,6 @@ PackageTest.create_test_specs(
         ]
     },
     additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
-    #deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 )
 
 COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
@@ -598,14 +596,14 @@ COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
 #     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
-#
-# # Create test specs which has to be performed in the amazonlinux distribution.
-# PackageTest.create_test_specs(
-#     base_name="windows",
-#     package_build_specs=[package_builders.MSI_x86_64],
-#     deployment=env_deployers.WINDOWS_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT,
-# )
-#
+
+# Create test specs which has to be performed in the windows distribution.
+PackageTest.create_test_specs(
+    base_name="windows",
+    package_builders=[package_builders.MSI_x86_64_BUILDER],
+    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep],
+)
+
 #
 # env_deployers.DeploymentSpec.create_new_deployment_spec(
 #     architecture=constants.Architecture.X86_64,

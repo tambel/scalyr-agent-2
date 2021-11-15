@@ -1365,8 +1365,13 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 
 
 class MsiWindowsPackageBuilder(PackageBuilder):
+    PACKAGE_TYPE = constants.PackageType.MSI
     INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
     FROZEN_BINARY_FILE_NAME = "scalyr-agent-2.exe"
+    DEPLOYMENT_STEPS = [
+        environment_deployments.InstallWindowsBuilderToolsStep,
+        environment_deployments.InstallBuildRequirementsStep
+    ]
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able
@@ -1482,7 +1487,10 @@ DEB_X86_64_BUILDER = DebPackageBuilder(
     architecture=constants.Architecture.X86_64,
 )
 
-a=10
+# Widnows MSI Packages. Only support X86 architecture for now.
+MSI_x86_64_BUILDER = MsiWindowsPackageBuilder(
+    architecture=constants.Architecture.X86_64
+)
 
 
 #
@@ -1693,13 +1701,4 @@ a=10
 #     deployment=environment_deployments.LINUX_PACKAGE_BUILDER_DEPLOYMENT,
 #     base_docker_image=_LINUX_SPECS_BASE_IMAGE,
 #     architectures=_DEFAULT_PACKAGE_ARCHITECTURES
-# )
-#
-# # Widnows MSI Packages. Only support X86 architecture for now.
-# MSI_x86_64, = PackageBuildSpec.create_package_build_specs(
-#     package_type=constants.PackageType.MSI,
-#     package_builder_cls=MsiWindowsPackageBuilder,
-#     filename_glob_format="ScalyrAgentInstaller-*.*.*.msi",
-#     deployment=environment_deployments.WINDOWS_PACKAGE_BUILDER_DEPLOYMENT,
-#     architectures=[constants.Architecture.X86_64]
 # )

@@ -493,6 +493,14 @@ class InstallTestRequirementsDeploymentStep(DeploymentStep):
     ]
 
 
+class InstallWindowsBuilderToolsStep(DeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1"
+    USED_FILES = used_files = [
+        *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+        _AGENT_REQUIREMENT_FILES_PATH
+    ]
+
+
 COMMON_TEST_DEPLOYMENT = Deployment(
     name="test_environment",
     architecture=constants.Architecture.X86_64,
