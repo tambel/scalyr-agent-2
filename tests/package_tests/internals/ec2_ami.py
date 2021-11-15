@@ -110,7 +110,7 @@ from libcloud.compute.deployment import (
 )
 
 #from scalyr_agent import compat
-from agent_tools import build_and_test_specs
+from tests.package_tests import current_test_specifications
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
@@ -328,12 +328,12 @@ def _verify_url_exists(url, use_head=False):
 
 
 def main(
-    distro: build_and_test_specs.Ec2BasedTestSpec,
+    distro: current_test_specifications.Ec2BasedPackageTestSpec.Ec2MachineInfo,
     #test_type,
     #from_version,
     to_version,
-    create_remote_test_command: Callable[[str, str], str],
-    test_runner_path: Union[str, pl.Path],
+    #create_remote_test_command: Callable[[str, str], str],
+    frozen_test_runner_path: pl.Path,
     #python_package,
     #installer_script_url,
     #additional_packages=None,
@@ -352,7 +352,7 @@ def main(
     # TODO: Lower those timeouts when upstream yum related issues or similar start to stabilize.
     # All AMI tests should take less than 5 minutes, but in the last days (dec 1, 2020), they
     # started to take 10 minutes with multiple timeouts.
-    if distro.os_family == build_and_test_specs.OSFamily.WINDOWS:
+    if distro.os_family == current_test_specifications.Ec2BasedPackageTestSpec.Ec2MachineInfo.Ec2PlatformType.WINDOWS:
         deploy_step_timeout = 440  # 320
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
@@ -363,8 +363,6 @@ def main(
         max_tries = 3
         cat_step_timeout = 5
 
-    test_runner_remote_path = test_runner_path.name
-
     package_path =pl.Path(to_version)
     remote_package_path = package_path.name
 
@@ -373,19 +371,19 @@ def main(
         target=str(remote_package_path)
     )
 
+
+
     test_runner_upload_step = FileDeployment(
-        source=str(test_runner_path),
-        target=str(test_runner_remote_path)
+        source=str(frozen_test_runner_path),
+        target=str(frozen_test_runner_path.name)
     )
 
-    if distro.os_family == build_and_test_specs.OSFamily.WINDOWS:
-        script_content = f"python3 {test_runner_remote_path}"
+    if distro.os_family == current_test_specifications.Ec2BasedPackageTestSpec.Ec2MachineInfo.Ec2PlatformType.WINDOWS:
+        script_content = f"python3 {frozen_test_runner_path.name}"
         script_extension = "ps1"
     else:
-        start_test_runner_command = create_remote_test_command(
-            f"./{test_runner_remote_path}", str(remote_package_path),
-        )
-        script_content = f"sudo {start_test_runner_command}"
+
+        script_content = f"sudo ./{frozen_test_runner_path.name}"
         print(script_content)
         script_extension = "sh"
 

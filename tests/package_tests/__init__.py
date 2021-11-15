@@ -1,0 +1,1 @@
+from tests.package_tests import current_test_specifications

@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     if args.command == "deployment-name":
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
-        print(build_spec.deployment.name)
+        print(build_spec.deployment_spec.name)
         exit(0)
 
     if args.command == "package-filename-glob":
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
         test_specs = build_and_test_specs.PACKAGE_BUILD_TO_TEST_SPECS[args.build_spec_name]
         test_specs_names = [s.name for s in test_specs]
-        test_specs_deployment_names = [s.deployment.name for s in test_specs]
+        test_specs_deployment_names = [s.deployment_spec.name for s in test_specs]
         package_filename_globs = [s.package_build_spec.filename_glob for s in test_specs]
         matrix = {
             "test-name": test_specs_names,
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.build_spec_name]
         test_specs = build_and_test_specs.PACKAGE_BUILD_TO_TEST_SPECS[args.build_spec_name]
 
-        test_specs_names = [s.deployment.name for s in test_specs]
+        test_specs_names = [s.deployment_spec.name for s in test_specs]
         print(test_specs_names)
 
         exit(0)

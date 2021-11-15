@@ -6,6 +6,8 @@ import logging
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
+import agent_tools.environment_deployments
+
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import build_and_test_specs
@@ -90,7 +92,7 @@ if __name__ == '__main__':
 
     if args.command == "previous-deployment":
         deployment = build_and_test_specs.DEPLOYMENTS[args.name]
-        if isinstance(deployment, build_and_test_specs.FollowingDeployment):
+        if isinstance(deployment, agent_tools.environment_deployments.FollowingDeploymentSpec):
             print(deployment.previous_deployment.name)
 
         exit(0)
@@ -109,7 +111,7 @@ if __name__ == '__main__':
         names = []
         while True:
             names.append(curr.name)
-            if isinstance(curr, build_and_test_specs.InitialDeployment):
+            if isinstance(curr, agent_tools.environment_deployments.InitialDeploymentSpec):
                 break
             curr = curr.previous_deployment
 
@@ -130,7 +132,7 @@ if __name__ == '__main__':
         names = []
         while True:
             names.append(curr.cache_name)
-            if isinstance(curr, build_and_test_specs.InitialDeployment):
+            if isinstance(curr, agent_tools.environment_deployments.InitialDeploymentSpec):
                 break
             curr = curr.previous_deployment
 

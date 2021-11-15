@@ -22,15 +22,12 @@ ADD ./build_package.py /scalyr-agent-2/build_package.py
 
 
 
-
 FROM initial-stage as stage-test
 # Also add the package test module, so the packager also can make the frozen binary for the package tests.
 # This frozen binary later can be used to run package tests on systems without python.
 #RUN rm -rf /scalyr-agent-2
 #RUN mkdir /scalyr-agent-2
 ADD ./tests/package_tests/ /scalyr-agent-2/tests/package_tests/
-
-
 
 
 FROM stage-$BUILD_STAGE

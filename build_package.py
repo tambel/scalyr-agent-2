@@ -39,7 +39,6 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
-from agent_tools import build_and_test_specs
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
 
@@ -58,7 +57,7 @@ if __name__ == '__main__':
     parser.add_argument(
             "package_spec_name",
             type=str,
-            choices=build_and_test_specs.PACKAGE_BUILD_SPECS.keys(),
+            choices=package_builders.PackageBuildSpec.ALL_BUILD_SPECS.keys(),
             help="Type of the package to build.",
         )
 
@@ -99,7 +98,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Find the builder class.
-    package_build_spec = build_and_test_specs.PACKAGE_BUILD_SPECS[args.package_spec_name]
+    package_build_spec = package_builders.PackageBuildSpec.ALL_BUILD_SPECS[args.package_spec_name]
 
     # if args.command == "get-build-spec":
     #     deployers = package_build_spec.used_deployers
@@ -125,6 +124,7 @@ if __name__ == '__main__':
 
     logging.info(f"Build package '{args.package_spec_name}'...")
 
-    package_build_spec.build(
-        output_path=args.output_dir
+    package_build_spec.build_package(
+        output_path=pl.Path(args.output_dir),
+        locally=args.locally
     )

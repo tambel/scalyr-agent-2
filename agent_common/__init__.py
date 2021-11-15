@@ -2,6 +2,17 @@ import enum
 
 from .utils import *
 
+
+class PlatformType(enum.Enum):
+    """
+    The Enum class with possible types of the OS. Firstly, used for the 'P'
+    """
+
+    WINDOWS = "windows"
+    LINUX = "linux"
+    POSIX = "posix"
+
+
 class InstallType(enum.Enum):
     """
     The enumeration of the Scalyr agent installation types. It is used for INSTALL_TYPE variable in the scalyr_agent

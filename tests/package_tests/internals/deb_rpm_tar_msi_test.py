@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import abc
-import pathlib
 import pathlib as pl
 import shlex
 import subprocess
@@ -26,11 +25,8 @@ import logging
 import sys
 from typing import Union
 
-from agent_tools import package_builders
 from agent_tools import constants
-from agent_tools import build_and_test_specs
-import agent_common.utils
-from tests.package_tests.common import LogVerifier, AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck
+from tests.package_tests.internals.common import LogVerifier, AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck
 
 
 USER_HOME = pl.Path("~").expanduser()
@@ -44,10 +40,8 @@ class PackagedAgentRunner(abc.ABC):
     def __init__(
             self,
             package_path: Union[str, pl.Path],
-            package_build_spec: build_and_test_specs.PackageBuildSpec
     ):
         self._package_path = pl.Path(package_path)
-        self._package_build_spec = package_build_spec
 
     def install_package(self):
         pass
@@ -388,24 +382,21 @@ class MsiAgentRunner(CentralInstallPathPackageRunner):
 
 
 def run(
+        package_type: constants.PackageType,
         package_path: pl.Path,
-        package_build_spec: build_and_test_specs.PackageBuildSpec,
         scalyr_api_key: str,
 ):
-    if not package_path.exists():
-        logging.error("No package.")
-        exit(1)
+    assert package_path.exists(), "Can not find package path."
 
-    if package_build_spec.package_type == constants.PackageType.DEB:
+    if package_type == constants.PackageType.DEB:
         runner_cls = DebAgentRunner
-    elif package_build_spec.package_type == constants.PackageType.RPM:
+    elif package_type == constants.PackageType.RPM:
         runner_cls = RpmPAckageRunner
-    elif package_build_spec.package_type == constants.PackageType.TAR:
+    elif package_type == constants.PackageType.TAR:
         runner_cls = TarballAgentRunner
 
     agent_runner = runner_cls(
         package_path=package_path,
-        package_build_spec=package_build_spec
     )
 
     agent_runner.install_package()

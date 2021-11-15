@@ -20,7 +20,7 @@ import logging
 import os
 from typing import Union
 
-from tests.package_tests.common import AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck, LogVerifier
+from tests.package_tests.internals.common import AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck, LogVerifier
 
 
 def build_agent_image(builder_path: pl.Path):
