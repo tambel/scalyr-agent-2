@@ -13,7 +13,7 @@ import subprocess
 import sys
 import stat
 import tempfile
-from typing import ClassVar, Dict, List, Union, Type
+from typing import ClassVar, Dict, List, Union, Type, Optional
 
 
 from agent_tools import constants
@@ -71,6 +71,26 @@ class PackageTest:
         :return:
         """
         return f"{self.package_builder.name}_{self.test_name}".replace("-", "_")
+
+    def _build_package(
+            self,
+            build_dir_path: pl.Path
+    ):
+
+        package_output_dir_path = build_dir_path / "package"
+
+        if package_output_dir_path.exists():
+            shutil.rmtree(package_output_dir_path)
+        package_output_dir_path.mkdir(parents=True)
+
+        package_builder = self.package_builder
+
+        package_builder.build(
+            output_path=package_output_dir_path
+        )
+        self._package_path = list(
+            package_output_dir_path.glob(self.package_builder.filename_glob)
+        )[0]
 
     def run_test_locally(
             self,
@@ -145,53 +165,13 @@ class PackageTest:
 
                 package_tests.append(test_spec)
 
-            for package_test in list(package_tests):
-                if package_test.unique_name in PackageTest.ALL_TESTS:
-                    package_tests.remove(package_test)
-                else:
-                    PackageTest.ALL_TESTS[package_test.unique_name] = package_test
-
-            PackageTest.ALL_TESTS[builder.name] = package_tests
-
-
-
-# class LocalPackageTest(PackageTest):
-#     """
-#     Subclass of the package test spec which is only has to be run locally, on the current system (not in docker or ec2).
-#     """
-#     # def __init__(
-#     #         self,
-#     #         test_name: str,
-#     #         package_builder: package_builders.PackageBuilder,
-#     #         architecture: constants.Architecture = None,
-#     #         deployment_steps: List[env_deployers.DeploymentStep] = None,
-#     #
-#     # ):
-#     #     super(LocalPackageTest, self).__init__(
-#     #         test_name=test_name,
-#     #         package_builder=package_builder,
-#     #         architecture=architecture,
-#     #         deployment_steps=deployment_steps
-#     #     )
-#
-#     def run_test_locally(
-#             self,
-#             package_path: pl.Path,
-#             scalyr_api_key: str,
-#     ):
-#
-#         if self.package_builder.PACKAGE_TYPE in [
-#             constants.PackageType.DEB,
-#             constants.PackageType.RPM,
-#             constants.PackageType.TAR,
-#             constants.PackageType.MSI
-#         ]:
-#             deb_rpm_tar_msi_test.run(
-#                 package_type=self.package_builder.PACKAGE_TYPE,
-#                 package_path=package_path,
-#                 scalyr_api_key=scalyr_api_key
-#             )
-#             return
+            # for package_test in list(package_tests):
+            #     if package_test.unique_name in PackageTest.ALL_TESTS:
+            #         package_tests.remove(package_test)
+            #     else:
+            #         PackageTest.ALL_TESTS[package_test.unique_name] = package_test
+            #
+            # PackageTest.PACKAGE_TESTS[builder.name] = package_tests
 
 
 class RemoteMachinePackageTest(PackageTest):
@@ -200,10 +180,6 @@ class RemoteMachinePackageTest(PackageTest):
     Subclass of the package test spec which has to performed on the different machine, for example docker or ec2 instance.
     """
 
-    # Reference the base local test spec. Since the current spec is "remote", it has to have a reference to its local
-    # variant to run it on the remote machine.
-    base_spec: PackageTest
-
     @property
     def unique_name(self) -> str:
         """
@@ -211,6 +187,29 @@ class RemoteMachinePackageTest(PackageTest):
         """
         name = super(RemoteMachinePackageTest, self).unique_name
         return f"{name}_{self.REMOTE_MACHINE_SUFFIX}"
+
+    def _build_test_runner_frozen_binary_path(
+            self,
+            build_dir_path: pl.Path
+    ):
+        frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"
+        if frozen_test_runner_build_dir_path.exists():
+            shutil.rmtree(frozen_test_runner_build_dir_path)
+
+        frozen_test_runner_build_dir_path.mkdir(parents=True)
+
+        self.deployment.deploy()
+
+        test_runner_filename = "frozen_test_runner"
+
+        build_test_runner_frozen_binary.build_test_runner_frozen_binary(
+            output_path=frozen_test_runner_build_dir_path,
+            filename=test_runner_filename,
+            architecture=self.architecture,
+            base_image_name=self.deployment.result_image_name,
+        )
+
+        self._test_runner_frozen_binary_path = frozen_test_runner_build_dir_path / test_runner_filename
 
 
 class DockerBasedPackageTest(RemoteMachinePackageTest):
@@ -244,12 +243,13 @@ class DockerBasedPackageTest(RemoteMachinePackageTest):
 
         self.docker_image_info = docker_image_info
 
-    def run(
+    def run_in_docker(
             self,
             package_path: pl.Path,
             scalyr_api_key: str,
-            frozen_test_runner_path: pl.Path
+            test_runner_frozen_binary_path: pl.Path,
     ):
+
         # Run the test inside the docker.
         # fmt: off
 
@@ -260,7 +260,7 @@ class DockerBasedPackageTest(RemoteMachinePackageTest):
                 "docker", "run", "-i", "--rm", "--init",
                 "-v", f"{__SOURCE_ROOT__}:/scalyr-agent-2",
                 "-v", f"{package_path}:/tmp/{package_path.name}",
-                "-v", f"{frozen_test_runner_path}:/tmp/test_executable",
+                "-v", f"{test_runner_frozen_binary_path}:/tmp/test_executable",
                 "--workdir",
                 "/tmp",
                 "--platform",
@@ -316,124 +316,25 @@ class Ec2BasedPackageTest(RemoteMachinePackageTest):
 
         self.ec2_machine_info = ec2_machine_info
 
+    def run_in_ec2(
+            self,
+            package_path: pl.Path,
+            test_runner_frozen_binary_path: pl.Path,
+            scalyr_api_key: str,
+            aws_access_key: str = None,
+            aws_secret_key: str = None,
+            aws_keypair_name: str = None,
+            aws_private_key_path: str = None,
+            aws_security_groups: str = None,
+            aws_region=None,
+    ):
 
-def run_package_test(
-    package_test_name: str,
-    scalyr_api_key: str,
-    build_dir_path: pl.Path = None,
-    package_path: pl.Path = None,
-    aws_access_key: str = None,
-    aws_secret_key: str = None,
-    aws_keypair_name: str = None,
-    aws_private_key_path: str = None,
-    aws_security_groups: str = None,
-    aws_region=None,
-
-):
-    """
-    Run package test based on some specification. According to the test's specification type, it may be performed locally,
-    in docker or ec2 machine.
-    :param package_test: Package test specification.
-    :param scalyr_api_key: API key to be able to send logs to Scalyr during tests.
-    :param build_dir_path: Optional directory where all needed builds are performed. Temporary folder is created if
-        not specified.
-    :param package_path: Package to test. If not specified, then the package has to be built in place.
-    :param aws_access_key: Access key to AWS, needed to perform test in ec2 machine.
-    :param aws_secret_key: Secret key to AWS, needed to perform test in ec2 machine.
-    :param aws_keypair_name: Name of the SSH keypair, needed to perform test in ec2 machine.
-    :param aws_private_key_path: Path to SSH private key, needed to perform test in ec2 machine.
-    :param aws_security_groups: AWS EC2 security group names, needed to perform test in ec2 machine.
-    :param aws_region: AWS region, needed to perform test in ec2 machine.
-    """
-
-    package_test = PackageTest.ALL_TESTS[package_test_name]
-
-    if not package_path:
-        package_output_dir_path = build_dir_path / "package"
-
-        if package_output_dir_path.exists():
-            shutil.rmtree(package_output_dir_path)
-        package_output_dir_path.mkdir(parents=True)
-
-        package_builder = package_test.package_builder
-
-        package_builder.build(
-            output_path=package_output_dir_path
-        )
-        package_path = list(
-            package_output_dir_path.glob(package_test.package_builder.filename_glob)
-        )[0]
-
-    if not isinstance(package_test, RemoteMachinePackageTest):
-        package_test.run_test_locally(
-            package_path=package_path,
-            scalyr_api_key=scalyr_api_key
-        )
-        return
-
-    frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"
-    if frozen_test_runner_build_dir_path.exists():
-        shutil.rmtree(frozen_test_runner_build_dir_path)
-
-    frozen_test_runner_build_dir_path.mkdir(parents=True)
-
-    package_test.deployment.deploy()
-
-    test_runner_filename = "frozen_test_runner"
-
-    build_test_runner_frozen_binary.build_test_runner_frozen_binary(
-        output_path=frozen_test_runner_build_dir_path,
-        filename=test_runner_filename,
-        architecture=package_test.architecture,
-        base_image_name=package_test.deployment.result_image_name,
-    )
-
-    frozen_test_runner_path = frozen_test_runner_build_dir_path / test_runner_filename
-
-    if isinstance(package_test, DockerBasedPackageTest):
-
-        # Run the test inside the docker.
-        # fmt: off
-        subprocess.check_call(
-            [
-                "docker", "run", "-i", "--rm", "--init",
-                "-v", f"{__SOURCE_ROOT__}:/scalyr-agent-2",
-                "-v", f"{package_path}:/tmp/{package_path.name}",
-                "-v", f"{frozen_test_runner_path}:/tmp/test_executable",
-                "--workdir",
-                "/tmp",
-                "--platform",
-                package_test.architecture.as_docker_platform.value,
-                # specify the image.
-                package_test.docker_image_info.image_name,
-                # Command to run the test executable inside the container.
-                "/tmp/test_executable",
-                package_test.unique_name,
-                "--package-path",
-                f"/tmp/{package_path.name}",
-                "--scalyr-api-key",
-                scalyr_api_key
-
-            ]
-        )
-        # fmt: on
-
-        return
-
-    if isinstance(package_test, Ec2BasedPackageTest):
         from tests.package_tests.internals import ec2_ami
 
-        assert aws_access_key, "Need AWS access key."
-        assert aws_secret_key, "Need AWS secret key."
-        assert aws_keypair_name, "Need AWS keypair name."
-        assert aws_private_key_path, "Need AWS keypair path."
-        assert aws_security_groups, "Need AWS security groups."
-        assert aws_region, "Need AWS region"
-
         ec2_ami.main(
-            distro=package_test.ec2_machine_info,
+            distro=self.ec2_machine_info,
             to_version=str(package_path),
-            frozen_test_runner_path=frozen_test_runner_path,
+            frozen_test_runner_path=test_runner_frozen_binary_path,
             access_key=aws_access_key,
             secret_key=aws_secret_key,
             keypair_name=aws_keypair_name,
@@ -442,27 +343,6 @@ def run_package_test(
             region=aws_region,
             destroy_node=True
         )
-
-##############################################################################################
-
-# Define package test specification.
-
-# By calling this helper function we create multiple test specs in one step.
-
-# The each test spec gets its unique name, which consists from package type, test_name, architecture name and
-# remote machine name, so by knowing the specifics of the desired test, it spec can be found by name.
-# This feature used in the github actions CI/CD, where the package testing job only gets a unique name of the test spec
-# as its input and runs the test by passing this unique name to the package test runner script.
-
-# All created test specs are saved globally in the special collection which is defined as a class attribute
-# of the spec class. Since we need only one collection, this approach should be fine for us.
-
-# For example, the following function call has to produce 4 test specs for DEB package:
-#   1. test DEP package with architecture x86_64 inside docker image 'ubuntu:14.04'
-#   2. test DEP package with architecture arm64 inside docker image 'ubuntu:14.04' (the arm version will be used)
-#   3. test DEP package with architecture x86_64 inside docker image 'ubuntu:14.04'
-#   4. test DEP package with architecture arm64 inside docker image 'ubuntu:14.04' (the arm version will be used)
-#
 
 _EC2_PLATFORM_TYPE = Ec2BasedPackageTest.Ec2MachineInfo.Ec2PlatformType
 

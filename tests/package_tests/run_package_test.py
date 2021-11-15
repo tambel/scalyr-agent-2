@@ -5,12 +5,14 @@ import logging
 import sys
 import os
 import tempfile
+import shutil
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
 sys.path.append(str(__SOURCE_ROOT__))
 
 from tests.package_tests import current_test_specifications
+from tests.package_tests.frozen_test_runner import build_test_runner_frozen_binary
 
 
 config_path = pl.Path(__file__).parent / "credentials.json"
@@ -56,19 +58,82 @@ def test_package(
     else:
         build_dir_path = pl.Path(build_dir_path)
 
+    package_test = current_test_specifications.PackageTest.ALL_TESTS[package_test_name]
 
-    current_test_specifications.run_package_test(
-        package_test_name=package_test_name,
-        package_path=package_path,
-        build_dir_path=build_dir_path,
-        aws_access_key=get_option("aws_access_key"),
-        aws_secret_key = get_option("aws_secret_key"),
-        aws_keypair_name = get_option("aws_keypair_name"),
-        aws_private_key_path = get_option("aws_private_key_path"),
-        aws_security_groups = get_option("aws_security_groups"),
-        aws_region=get_option("aws_region", "us-east-1"),
-        scalyr_api_key=scalyr_api_key,
-    )
+    if not package_path:
+        package_output_dir_path = build_dir_path / "package"
+
+        if package_output_dir_path.exists():
+            shutil.rmtree(package_output_dir_path)
+        package_output_dir_path.mkdir(parents=True)
+
+        package_builder = package_test.package_builder
+
+        package_builder.build(
+            output_path=package_output_dir_path
+        )
+        package_path = list(
+            package_output_dir_path.glob(package_test.package_builder.filename_glob)
+        )[0]
+
+    if isinstance(package_test, current_test_specifications.RemoteMachinePackageTest):
+        frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"
+        if frozen_test_runner_build_dir_path.exists():
+            shutil.rmtree(frozen_test_runner_build_dir_path)
+
+        frozen_test_runner_build_dir_path.mkdir(parents=True)
+
+        package_test.deployment.deploy()
+
+        test_runner_filename = "frozen_test_runner"
+
+        build_test_runner_frozen_binary.build_test_runner_frozen_binary(
+            output_path=frozen_test_runner_build_dir_path,
+            filename=test_runner_filename,
+            architecture=package_test.architecture,
+            base_image_name=package_test.deployment.result_image_name,
+        )
+
+        test_runner_frozen_binary_path = frozen_test_runner_build_dir_path / test_runner_filename
+
+
+        if isinstance(package_test, current_test_specifications.DockerBasedPackageTest):
+            package_test.run_in_docker(
+                package_path=package_path,
+                test_runner_frozen_binary_path=test_runner_frozen_binary_path,
+                scalyr_api_key=scalyr_api_key,
+            )
+        elif isinstance(package_test, current_test_specifications.Ec2BasedPackageTest):
+            package_test.run_in_ec2(
+                package_path=package_path,
+                test_runner_frozen_binary_path=test_runner_frozen_binary_path,
+                scalyr_api_key=scalyr_api_key,
+                aws_access_key=get_option("aws_access_key"),
+                aws_secret_key = get_option("aws_secret_key"),
+                aws_keypair_name = get_option("aws_keypair_name"),
+                aws_private_key_path = get_option("aws_private_key_path"),
+                aws_security_groups = get_option("aws_security_groups"),
+                aws_region=get_option("aws_region", "us-east-1"),
+            )
+    else:
+        package_test.run_test_locally(
+            package_path=package_path,
+            scalyr_api_key=scalyr_api_key
+        )
+
+    #
+    # current_test_specifications.run_package_test(
+    #     package_test_name=package_test_name,
+    #     package_path=package_path,
+    #     build_dir_path=build_dir_path,
+    #     aws_access_key=get_option("aws_access_key"),
+    #     aws_secret_key = get_option("aws_secret_key"),
+    #     aws_keypair_name = get_option("aws_keypair_name"),
+    #     aws_private_key_path = get_option("aws_private_key_path"),
+    #     aws_security_groups = get_option("aws_security_groups"),
+    #     aws_region=get_option("aws_region", "us-east-1"),
+    #     scalyr_api_key=scalyr_api_key,
+    # )
 
 
 if __name__ == '__main__':
