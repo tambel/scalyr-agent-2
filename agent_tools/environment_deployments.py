@@ -459,9 +459,16 @@ class Deployment:
             locally: bool = False
     ):
 
+
         for step in self.steps:
+
+            if cache_dir:
+                step_cache_path = cache_dir / step.cache_name
+            else:
+                step_cache_path = None
+
             step.run(
-                cache_dir=cache_dir,
+                cache_dir=step_cache_path,
                 locally=locally,
             )
 

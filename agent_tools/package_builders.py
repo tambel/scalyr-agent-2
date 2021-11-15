@@ -755,8 +755,6 @@ class PackageBuilder(abc.ABC):
         output_path.mkdir(parents=True, exist_ok=True)
         shutil.copy2(frozen_binary_path, output_path)
 
-        subprocess.check_call("candle")
-
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
         Build the basic structure for all packages.
