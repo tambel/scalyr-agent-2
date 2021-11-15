@@ -100,8 +100,14 @@ if __name__ == '__main__':
 
     if args.command == "deploy":
         deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.name]
+
+        cache_dir = None
+
+        if args.cache_dir:
+            cache_dir = pl.Path(args.cache_dir)
+
         deployment.deploy(
-            cache_dir=args.cache_dir,
+            cache_dir=cache_dir,
         )
 
     # if args.command == "deployments-as-string-array":
