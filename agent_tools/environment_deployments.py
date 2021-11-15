@@ -133,7 +133,7 @@ class DeploymentStep:
 
     @property
     def in_docker(self) -> bool:
-        return self.base_docker_image is not None
+        return self.initial_docker_image is not None
 
     @property
     def checksum(self) -> str:
@@ -170,14 +170,21 @@ class DeploymentStep:
 
         # If its a docker deployment, then add the docker image to the name
         if self.in_docker:
-            image_suffix = self.initial_docker_image.replace(":", "_")
+            try:
+                image_suffix = self.initial_docker_image.replace(":", "_")
+            except Exception as e:
+                self.base_docker_image
             name = f"{name}_{image_suffix}"
 
         return name
 
     @property
-    def result_image_name(self) -> str:
+    def cache_name(self) -> str:
         return f"{self.unique_name}_{self.checksum}"
+
+    @property
+    def result_image_name(self) -> str:
+        return self.cache_name
 
 
     def run(

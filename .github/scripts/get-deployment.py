@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
         step_checksums = []
         for step in deployment.steps:
-            step_checksums.append(step.result_image_name)
+            step_checksums.append(step.cache_name)
 
         print(json.dumps(list(reversed(step_checksums))))
 
