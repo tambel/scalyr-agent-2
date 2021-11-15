@@ -646,7 +646,7 @@ class PackageBuilder(abc.ABC):
             agent_main_executable_path.symlink_to(pl.Path("..", "py", "scalyr_agent", "agent_main.py"))
 
             agent_config_executable_path = bin_path / "scalyr-agent-2-config"
-            agent_config_executable_path.symlink_to(pl.Path("..", "py", "scalyr_agent", "config_main.py"))
+            agent_config_executable_path.symlink_to(pl.Path("..", "py", "scalyr_agent", "agent_config.py"))
 
             # Don't include the tests directories.  Also, don't include the .idea directory created by IDE.
             common.recursively_delete_dirs_by_name(source_code_path, r"\.idea", "tests", "__pycache__")

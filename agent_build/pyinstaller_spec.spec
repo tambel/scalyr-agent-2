@@ -86,7 +86,7 @@ agent_main_analysis = Analysis(
 )
 
 agent_config_analysis = Analysis(
-    [os.path.join("..", "scalyr_agent", "config_main.py")],
+    [os.path.join("..", "scalyr_agent", "agent_config.py")],
     pathex=[
         os.path.join("..", "scalyr_agent"),
         os.path.join("..", "scalyr_agent", "builtin_monitors"),

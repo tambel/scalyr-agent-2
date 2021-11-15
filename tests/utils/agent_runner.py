@@ -42,7 +42,7 @@ from tests.utils.common import get_env
 import six
 
 _AGENT_MAIN_PATH = Path(get_package_root(), "agent_main.py")
-_CONFIG_MAIN_PATH = Path(get_package_root(), "config_main.py")
+_CONFIG_MAIN_PATH = Path(get_package_root(), "agent_config.py")
 
 
 def _make_or_clear_directory(path):  # type: (Path) -> None

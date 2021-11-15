@@ -72,7 +72,7 @@ from scalyr_agent import __scalyr__
 import scalyr_agent.scalyr_logging as scalyr_logging
 import scalyr_agent.util as scalyr_util
 import scalyr_agent.remote_shell as remote_shell
-from scalyr_agent import config_main
+from scalyr_agent import agent_config
 
 # We have to be careful to set this logger class very early in processing, even before other
 # imports to ensure that any loggers created are AgentLoggers.
@@ -2110,7 +2110,7 @@ if __name__ == "__main__":
     # Add the config option. So we can configure the agent from the same executable.
     # It has to save us from building multiple frozen binaries, when packaging.
     if command_args.command == "config":
-        config_main.parse_config_options(other_argv)
+        agent_config.parse_config_options(other_argv)
         exit(0)
 
     if command_args.command == "service":

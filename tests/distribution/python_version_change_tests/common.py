@@ -140,7 +140,7 @@ def common_test_ubuntu_versions():
         install_fails=True,
     )
     common_version_test(
-        runner, install_deb, remove_deb, "config_main.py", "", "2.5.1", "3.4.1"
+        runner, install_deb, remove_deb, "agent_config.py", "", "2.5.1", "3.4.1"
     )
     common_version_test(
         runner, install_deb, remove_deb, "config_main_py2.py", "2.5.1", "", "3.4.1"
@@ -148,12 +148,12 @@ def common_test_ubuntu_versions():
     common_version_test(
         runner, install_deb, remove_deb, "config_main_py3.py", "2.5.1", "2.5.1", ""
     )
-    common_version_test(runner, install_deb, remove_deb, "config_main.py", "", "", "")
+    common_version_test(runner, install_deb, remove_deb, "agent_config.py", "", "", "")
     common_version_test(
         runner, install_deb, remove_deb, "config_main_py2.py", "2.5.1", "", ""
     )
     common_version_test(
-        runner, install_deb, remove_deb, "config_main.py", "", "2.5.1", ""
+        runner, install_deb, remove_deb, "agent_config.py", "", "2.5.1", ""
     )
 
 
@@ -241,8 +241,8 @@ def common_test_only_python_mapped_to_python2(
     # this is signaled by the install script not trying to switch the interpreter
     assert "Switching the Python interpreter used by the Scalyr Agent" not in stdout
 
-    # 'scalyr-agent-2-config' command must be a symlink to config_main.py
-    assert _get_current_config_script_name() == "config_main.py"
+    # 'scalyr-agent-2-config' command must be a symlink to agent_config.py
+    assert _get_current_config_script_name() == "agent_config.py"
 
     runner = AgentRunner(PACKAGE_INSTALL)
     runner.start()
@@ -254,8 +254,8 @@ def common_test_only_python_mapped_to_python2(
     # install next version of the package
     install_next_version_fn()
 
-    # the source file should be "config_main.py"
-    assert _get_current_config_script_name() == "config_main.py"
+    # the source file should be "agent_config.py"
+    assert _get_current_config_script_name() == "agent_config.py"
 
 
 def common_test_only_python_mapped_to_python3(
@@ -277,8 +277,8 @@ def common_test_only_python_mapped_to_python3(
     # this is signaled by the install script not trying to switch the interpreter
     assert "Switching the Python interpreter used by the Scalyr Agent" not in stdout
 
-    # 'scalyr-agent-2-config' command must be a symlink to config_main.py
-    assert _get_current_config_script_name() == "config_main.py"
+    # 'scalyr-agent-2-config' command must be a symlink to agent_config.py
+    assert _get_current_config_script_name() == "agent_config.py"
 
     runner = AgentRunner(PACKAGE_INSTALL)
     runner.start()
@@ -290,8 +290,8 @@ def common_test_only_python_mapped_to_python3(
     # install next version of the package
     install_next_version_fn()
 
-    # the source file should be "config_main.py"
-    assert _get_current_config_script_name() == "config_main.py"
+    # the source file should be "agent_config.py"
+    assert _get_current_config_script_name() == "agent_config.py"
 
 
 def common_test_python2(install_package_fn, install_next_version_fn):
@@ -392,7 +392,7 @@ def common_test_switch_default_to_python2(install_package_fn, install_next_versi
     # this is signaled by the install script not trying to switch the interpreter
     assert "Switching the Python interpreter used by the Scalyr Agent" not in stdout
 
-    assert _get_current_config_script_name() == "config_main.py"
+    assert _get_current_config_script_name() == "agent_config.py"
 
     runner = AgentRunner(PACKAGE_INSTALL)
     runner.start()
@@ -418,7 +418,7 @@ def common_test_switch_default_to_python2(install_package_fn, install_next_versi
 
     # switching back to default python
     runner.switch_version("default")
-    assert _get_current_config_script_name() == "config_main.py"
+    assert _get_current_config_script_name() == "agent_config.py"
     runner.start()
     time.sleep(1)
     assert _get_python_major_version(runner) == 2
@@ -440,7 +440,7 @@ def common_test_switch_default_to_python3(install_package_fn, install_next_versi
     # this is signaled by the install script not trying to switch the interpreter
     assert "Switching the Python interpreter used by the Scalyr Agent" not in stdout
 
-    assert _get_current_config_script_name() == "config_main.py"
+    assert _get_current_config_script_name() == "agent_config.py"
 
     runner = AgentRunner(PACKAGE_INSTALL)
     runner.start()
@@ -466,7 +466,7 @@ def common_test_switch_default_to_python3(install_package_fn, install_next_versi
 
     # switching back to default python
     runner.switch_version("default")
-    assert _get_current_config_script_name() == "config_main.py"
+    assert _get_current_config_script_name() == "agent_config.py"
     runner.start()
     time.sleep(1)
     assert _get_python_major_version(runner) == 2

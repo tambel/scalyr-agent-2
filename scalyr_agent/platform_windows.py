@@ -573,8 +573,8 @@ class WindowsPlatformController(PlatformController):
         @type agent_run_method: func(PlatformController)
         @type quiet: bool
         """
-        # NOTE:  The config_main.py file relies on it being ok to pass in None for agent_run_method.
-        # If this assumption changes, fix that in config_main.py.
+        # NOTE:  The agent_config.py file relies on it being ok to pass in None for agent_run_method.
+        # If this assumption changes, fix that in agent_config.py.
         try:
             _set_config_path_registry_entry(self.__config_file_path)
         except Exception as e:
