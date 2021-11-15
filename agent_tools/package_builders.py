@@ -13,6 +13,7 @@
 # limitations under the License.
 import dataclasses
 import json
+import logging
 import pathlib as pl
 import shlex
 import tarfile
@@ -774,6 +775,8 @@ class PackageBuilder(abc.ABC):
 
         :param output_path: The output path where the result files are stored.
         """
+
+        logging.info("BUILD FROZEN")
         output_path = pl.Path(output_path)
 
         if output_path.exists():
