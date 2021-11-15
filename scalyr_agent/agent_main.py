@@ -1566,7 +1566,7 @@ class ScalyrAgent(object):
         @type config: Configuration
         """
 
-        if self.__controller.install_type == agent_common.InstallType.DEV_INSTALL:
+        if self.__controller.install_type == __scalyr__.InstallType.DEV_INSTALL:
             # The agent is running from source, make sure that its directories exist.
             if not os.path.exists(config.agent_log_path):
                 os.makedirs(config.agent_log_path)

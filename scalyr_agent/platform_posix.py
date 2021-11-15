@@ -36,7 +36,6 @@ from io import open
 
 import six
 
-import agent_common
 from scalyr_agent import __scalyr__
 from scalyr_agent import scalyr_logging
 from scalyr_agent.platform_controller import (
@@ -166,13 +165,13 @@ class PosixPlatformController(PlatformController):
         """
         # TODO: Change this to something that is not Linux-specific.  Maybe we should always just default
         # to the home directory location.
-        if self._install_type == agent_common.InstallType.PACKAGE_INSTALL:
+        if self._install_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             return DefaultPaths(
                 "/var/log/scalyr-agent-2",
                 "/etc/scalyr-agent-2/agent.json",
                 "/var/lib/scalyr-agent-2",
             )
-        elif self._install_type == agent_common.InstallType.TARBALL_INSTALL:
+        elif self._install_type == __scalyr__.InstallType.TARBALL_INSTALL:
             install_location = __scalyr__.get_install_root()
             return DefaultPaths(
                 os.path.join(install_location, "log"),
@@ -180,7 +179,7 @@ class PosixPlatformController(PlatformController):
                 os.path.join(install_location, "data"),
             )
         else:
-            assert self._install_type == agent_common.InstallType.DEV_INSTALL
+            assert self._install_type == __scalyr__.InstallType.DEV_INSTALL
             # For developers only.  We default to a directory ~/scalyr-agent-dev for storing
             # all log/data information, and then require a log, config, and data subdirectory in each of those.
             base_dir = os.path.join(os.path.expanduser("~"), "scalyr-agent-dev")

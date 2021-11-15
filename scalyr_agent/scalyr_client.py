@@ -41,7 +41,7 @@ from six.moves import map
 from six.moves import range
 import six.moves.http_client
 
-import agent_common
+
 from scalyr_agent.util import verify_and_get_compress_func
 from scalyr_agent.configuration import Configuration
 
@@ -90,7 +90,7 @@ def verify_server_certificate(config):
     :param config:
     :return:
     """
-    is_dev_install = __scalyr__.INSTALL_TYPE == agent_common.InstallType.DEV_INSTALL
+    is_dev_install = __scalyr__.INSTALL_TYPE == __scalyr__.InstallType.DEV_INSTALL
     is_dev_or_windows_install = (
         is_dev_install or __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS
     )

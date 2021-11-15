@@ -391,7 +391,7 @@ def upgrade_tarball_install(config, new_tarball, preserve_old_install):
             # Ensure that this is a tarball install
             if (
                 platform_controller.install_type
-                != agent_common.InstallType.TARBALL_INSTALL
+                != __scalyr__.InstallType.TARBALL_INSTALL
             ):
                 raise UpgradeFailure(
                     "The current agent was not installed using a tarball, so you may not use the "
@@ -628,7 +628,7 @@ def upgrade_windows_install(
         my_default_paths = platform_controller.default_paths
 
         # Ensure agent was installed via MSI
-        if platform_controller.install_type != agent_common.InstallType.PACKAGE_INSTALL:
+        if platform_controller.install_type != __scalyr__.InstallType.PACKAGE_INSTALL:
             raise UpgradeFailure(
                 "The current agent was not installed via MSI, so you may not use the upgrade windows "
                 "command."
@@ -1203,7 +1203,7 @@ def set_python_version(version):
     """Switch agent command main files to another version of python"""
     controller = PlatformController.new_platform()
     # this is only for package installation.
-    if controller.install_type != agent_common.InstallType.PACKAGE_INSTALL:
+    if controller.install_type != __scalyr__.InstallType.PACKAGE_INSTALL:
         raise RuntimeError(
             "This operation can not be performed because the Scalyr agent is not installed with package manager."
         )

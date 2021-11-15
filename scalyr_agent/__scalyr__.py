@@ -26,8 +26,6 @@ import pathlib as pl
 import enum
 from typing import Tuple
 
-import agent_common
-
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PY2_pre_279 = PY2 and sys.version_info < (2, 7, 9)
@@ -118,7 +116,7 @@ PLATFORM_TYPE = __determine_platform()
 # The enum  for INSTALL_TYPE, a variable declared down below.
 
 
-def __read_install_type_from_type_file(path: pl.Path) -> agent_common.InstallType:
+def __read_install_type_from_type_file(path: pl.Path) -> InstallType:
     if not path.is_file():
         raise FileNotFoundError(
             f"Can not determine the package installation type. The file '{path}' is not found."
@@ -126,70 +124,15 @@ def __read_install_type_from_type_file(path: pl.Path) -> agent_common.InstallTyp
     # Read the type of the package from the file.
     install_type = path.read_text().strip()
     # Check if the package type is one of the valid install types.
-    if install_type not in [e.value for e in agent_common.InstallType]:
+    if install_type not in [e.value for e in InstallType]:
         raise ValueError(
             f"Can not determine the installation type. Unknown value: {install_type}"
         )
 
-    return agent_common.InstallType(install_type)
+    return InstallType(install_type)
 
 
-# def __determine_install_root_and_type2() -> Tuple[str, agent_common.InstallType]:
-#     """
-#     Determine the path for the install root and type of the installation.
-#     """
-#     if __is_frozen__:
-#         # All installation types that use frozen binary of the Scalyr agent follow the same file structure,
-#         # so it's just needed to specify the relative path to the install root from the current executable binary path.
-#
-#         # The executable frozen binary should be in the <install-root>/bin folder.
-#         # Since it is a frozen binary, then the 'sys.executable' has to work as a path for the frozen binary itself,
-#         # so we can find the 'bin' folder from it.
-#         bin_dir = pl.Path(sys.executable).parent
-#
-#         # Get the install root - the parent directory of the 'bin' folder.
-#         install_root = bin_dir.parent
-#
-#         # All agent packages have the special file 'install_type' which contains the type of the package.
-#         # This file is always located in the install root, so it is a good way to verify if it is a install root or not.
-#         install_type_file_path = install_root / "install_type"
-#
-#         return str(install_root), __read_install_type_from_type_file(
-#             install_type_file_path
-#         )
-#
-#     else:
-#         # The agent code is not frozen. The main task here is determine whether the agent has been started from the
-#         # source code (aka DEV_INSTALL) or from the package installation. In packages, the source code is located in the
-#         # '<install_root>/py' folder, so it has to be enough to verify if the parent folder of the 'scalyr_agent'
-#         # package is a folder named 'py'.
-#
-#         import scalyr_agent
-#         scalyr_agent_module_path = pl.Path(scalyr_agent.__file__)
-#         source_code_root = scalyr_agent_module_path.parent.parent
-#         script_path = pl.Path(sys.argv[0])
-#
-#         # # First of all get the real path of the executed script if it is a symlink.
-#         # while script_path.is_symlink():
-#         #     script_path = pl.Path(script_path.parent, os.readlink(script_path)).resolve()
-#
-#         # # parent folder of the script has to be a 'scalyr_agent' package folder.
-#         # package_folder = script_path.parent
-#
-#         # # Get the source code root. The name of the folder has to be 'py'
-#         # source_code_root = package_folder.parent
-#
-#         if source_code_root.name == "py":
-#             install_root = source_code_root.parent
-#             install_type_file_path = install_root / "install_type"
-#
-#             return str(install_root), __read_install_type_from_type_file(install_type_file_path)
-#         else:
-#             # The name of the parent folder of the 'scalyr_agent' package is not 'py', so it is likely that it
-#             # started from source code.
-#             return str(source_code_root), agent_common.InstallType.DEV_INSTALL
-
-def __determine_install_root_and_type() -> Tuple[str, agent_common.InstallType]:
+def __determine_install_root_and_type() -> Tuple[str, InstallType]:
     """
     Determine the path for the install root and type of the installation.
     """
@@ -201,7 +144,7 @@ def __determine_install_root_and_type() -> Tuple[str, agent_common.InstallType]:
     if not package_info_path.is_file():
 
         if not __is_frozen__:
-            return str(source_root), agent_common.InstallType.DEV_INSTALL
+            return str(source_root), InstallType.DEV_INSTALL
         else:
             raise FileNotFoundError(
                 f"The required file '{package_info_path}' is not found. "
@@ -214,11 +157,11 @@ def __determine_install_root_and_type() -> Tuple[str, agent_common.InstallType]:
         if not install_type_str:
             raise ValueError(f"The required 'install_type' field is not found in the '{package_info_path}' file.")
 
-        install_type = agent_common.InstallType(install_type_str)
+        install_type = InstallType(install_type_str)
 
         if install_type in [
-            agent_common.InstallType.PACKAGE_INSTALL,
-            agent_common.InstallType.TARBALL_INSTALL
+            InstallType.PACKAGE_INSTALL,
+            InstallType.TARBALL_INSTALL
         ]:
             # The package has to contain frozen binary.
 
