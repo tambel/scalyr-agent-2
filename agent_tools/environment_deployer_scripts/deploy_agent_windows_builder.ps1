@@ -69,6 +69,8 @@ Set-ItemProperty -Path 'Registry::HKEY_CURRENT_USER\Environment' -Name path -Val
 
 $Env:Path = "$Env:Path;$paths"
 
+echo "WIIIINNNN"
+
 # $script_path = $PSScriptRoot
 # $source_root = (get-item $script_path ).parent.parent.FullName
 #

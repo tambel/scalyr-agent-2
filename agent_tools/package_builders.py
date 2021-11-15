@@ -1492,6 +1492,7 @@ MSI_x86_64_BUILDER = MsiWindowsPackageBuilder(
     architecture=constants.Architecture.X86_64
 )
 
+a=10
 
 #
 #
