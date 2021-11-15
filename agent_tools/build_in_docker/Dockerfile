@@ -4,7 +4,6 @@ ARG BUILD_STAGE
 FROM $BASE_IMAGE_NAME as initial-stage
 RUN rm -rf /scalyr-agent-2
 RUN mkdir /scalyr-agent-2
-ADD ./agent_common /scalyr-agent-2/agent_common
 ADD ./agent_tools /scalyr-agent-2/agent_tools
 ADD ./agent_build /scalyr-agent-2/agent_build
 

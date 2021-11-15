@@ -62,7 +62,6 @@ __SOURCE_ROOT__ = __PARENT_DIR__.parent
 _AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
 from agent_tools import constants
-from agent_common import utils as common_utils
 
 
 class DeploymentStep:

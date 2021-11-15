@@ -31,10 +31,8 @@ import platform
 from typing import Union, Optional, List, Dict, Type
 
 
-import agent_common
 from agent_tools import constants
 from agent_tools import environment_deployments
-from agent_common import utils as common_utils
 from agent_tools import build_in_docker
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
@@ -398,7 +396,7 @@ class PackageBuilder(abc.ABC):
     FROZEN_BINARY_FILE_NAME = "scalyr-agent-2"
 
     # The type of the installation. For more info, see the 'InstallType' in the scalyr_agent/__scalyr__.py
-    INSTALL_TYPE: agent_common.InstallType
+    INSTALL_TYPE: str
 
     # Map package-specific architecture names to the architecture names that are used in build.
     PACKAGE_FILENAME_ARCHITECTURE_NAMES: Dict[constants.Architecture, str] = {}
@@ -666,7 +664,7 @@ class PackageBuilder(abc.ABC):
         # See '__determine_install_root_and_type' function in scalyr_agent/__scalyr__.py file.
         package_info_file = self._intermediate_results_path / "package_info.json"
 
-        package_info = {"install_type": type(self).INSTALL_TYPE.value}
+        package_info = {"install_type": type(self).INSTALL_TYPE}
         package_info_file.write_text(json.dumps(package_info))
 
         # Add this package_info file in the 'scalyr_agent' package directory, near the __scalyr__.py file.
@@ -1073,7 +1071,7 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
     Base image builder for packages which are produced by the 'fpm' packager.
     For example dep, rpm.
     """
-    INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
+    INSTALL_TYPE = "package"
 
     # Which type of the package the fpm package has to produce.
     FPM_PACKAGE_TYPE: str
@@ -1296,7 +1294,6 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
 
 class DebPackageBuilder(FpmBasedPackageBuilder):
     PACKAGE_TYPE = constants.PackageType.DEB
-    #PACKAGE_TYPE = constants.PackageType.DEB
     PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: "amd64",
         constants.Architecture.ARM64: "arm64"
@@ -1318,7 +1315,7 @@ class TarballPackageBuilder(LinuxPackageBuilder):
     """
 
     #PACKAGE_TYPE = "tar"
-    INSTALL_TYPE = agent_common.InstallType.TARBALL_INSTALL
+    INSTALL_TYPE = "packageless"
     PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: constants.Architecture.X86_64.value,
         constants.Architecture.ARM64: constants.Architecture.ARM64.value
@@ -1371,7 +1368,7 @@ class TarballPackageBuilder(LinuxPackageBuilder):
 
 class MsiWindowsPackageBuilder(PackageBuilder):
     PACKAGE_TYPE = constants.PackageType.MSI
-    INSTALL_TYPE = agent_common.InstallType.PACKAGE_INSTALL
+    INSTALL_TYPE = "package"
     FROZEN_BINARY_FILE_NAME = "scalyr-agent-2.exe"
     DEPLOYMENT_STEPS = [
         environment_deployments.InstallWindowsBuilderToolsStep,
