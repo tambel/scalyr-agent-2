@@ -141,8 +141,8 @@ jobs:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
 
-          python3 tests/package_tests/test_package.py \
-            run \
+          python3 tests/package_tests/run_package_test.py \
             ${{ matrix.test-name }} \
+            run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
