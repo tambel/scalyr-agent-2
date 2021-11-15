@@ -1,5 +1,6 @@
 import abc
 import base64
+import collections
 import dataclasses
 import enum
 import functools
@@ -12,7 +13,7 @@ import subprocess
 import sys
 import stat
 import tempfile
-from typing import ClassVar, Dict, List, Union
+from typing import ClassVar, Dict, List, Union, Type
 
 
 from agent_tools import constants
@@ -25,18 +26,43 @@ _PARENT_DIR = pl.Path(__file__).parent
 __SOURCE_ROOT__ = _PARENT_DIR.parent.parent.absolute()
 
 
-@dataclasses.dataclass
-class PackageTestSpec:
+class PackageTest:
     """
     Specification of the particular package test. If combines information about the package type, architecture,
     deployment and the system where test has to run.
     """
 
-    ALL_TEST_SPECS: ClassVar[Dict[str, 'PackageTestSpec']] = {}
-    BUILD_SPEC_TESTS: ClassVar[Dict[constants.PackageType, List[package_builders.PackageBuildSpec]]] = {}
-    test_name: str
-    package_build_spec: package_builders.PackageBuildSpec
-    deployment_spec: env_deployers.DeploymentSpec
+    ALL_TESTS: Dict[str, 'PackageTest'] = {}
+    PACKAGE_TESTS: Dict[str, List['PackageTest']] = collections.defaultdict(list)
+
+    def __init__(
+            self,
+            test_name: str,
+            package_builder: package_builders.PackageBuilder,
+            deployment_step_classes: List[Type[env_deployers.DeploymentStep]],
+            architecture: constants.Architecture = None,
+    ):
+        self.test_name = test_name
+        self.package_builder = package_builder
+        self.architecture = architecture or package_builder.architecture
+
+        if not deployment_step_classes:
+            deployment_step_classes = package_builder.DEPLOYMENT_STEPS[:]
+
+        self.deployment = env_deployers.Deployment(
+            name=f"package_test_{self.unique_name}_deployment",
+            step_classes=deployment_step_classes,
+            architecture=architecture or package_builder.architecture,
+            base_docker_image=package_builder.BASE_DOCKER_IMAGE
+        )
+
+
+        type(self).ALL_TESTS[self.unique_name] = self
+        type(self).PACKAGE_TESTS[self.package_builder.name].append(self)
+
+    # test_name: str
+    # package_build_spec: package_builders.PackageBuildSpec
+    # deployment_spec: env_deployers.DeploymentSpec
 
     @property
     def unique_name(self) -> str:
@@ -44,14 +70,35 @@ class PackageTestSpec:
         The unique name of the package test spec. It contains information about all specifics that the spec has.
         :return:
         """
-        return f"{self.package_build_spec.package_type.value}_{self.test_name}_{self.package_build_spec.architecture.value}"
+        return f"{self.package_builder.name}_{self.test_name}".replace("-", "_")
+
+    def run_test_locally(
+            self,
+            package_path: pl.Path,
+            scalyr_api_key: str,
+            locally: bool = False
+    ):
+
+        if self.package_builder.PACKAGE_TYPE in [
+            constants.PackageType.DEB,
+            constants.PackageType.RPM,
+            constants.PackageType.TAR,
+            constants.PackageType.MSI
+        ]:
+            deb_rpm_tar_msi_test.run(
+                package_type=self.package_builder.PACKAGE_TYPE,
+                package_path=package_path,
+                scalyr_api_key=scalyr_api_key
+            )
+            return
 
     @staticmethod
     def create_test_specs(
             base_name: str,
-            package_build_specs: List[package_builders.PackageBuildSpec],
-            deployment: env_deployers.Deployment,
-            remote_machine_arch_specs: Dict[constants.Architecture, List[Union['RemoteMachinePackageTestSpec.Ec2MachineInfo']]] = None,
+            package_builders: List[package_builders.PackageBuilder],
+            additional_deployment_steps: List[Type[env_deployers.DeploymentStep]],
+            remote_machine_arch_specs: Dict[constants.Architecture, List[Union[
+                'RemoteMachinePackageTest.Ec2MachineInfo']]] = None,
 
     ):
         """
@@ -64,117 +111,109 @@ class PackageTestSpec:
             particular processor architecture.
         """
 
+        additional_deployment_steps = additional_deployment_steps or []
+
         remote_machine_arch_specs = remote_machine_arch_specs or {}
 
-        for build_spec in package_build_specs:
+        for builder in package_builders:
 
-            build_test_specs = []
+            package_tests = []
 
-            # Create base deployment for the
-            base_deployment_spec = env_deployers.DeploymentSpec.create_new_deployment_spec(
-                architecture=build_spec.architecture,
-                deployment=deployment,
-            )
-
-            base_spec = LocalPackageTestSpec(
-                    test_name=base_name,
-                    package_build_spec=build_spec,
-                    deployment_spec=base_deployment_spec
-                )
-
-            deployment_spec = env_deployers.DeploymentSpec.create_new_deployment_spec(
-                architecture=build_spec.architecture,
-                deployment=deployment,
-                base_docker_image=build_spec.deployment_spec.base_docker_image
-            )
-
-            if not remote_machine_arch_specs:
-                build_test_specs.append(base_spec)
-
-            remote_machine_specs = remote_machine_arch_specs.get(build_spec.architecture, [])
+            remote_machine_specs = remote_machine_arch_specs.get(builder.architecture, [])
 
             for remote_machine_spec in remote_machine_specs:
 
                 kwargs = {
                     "test_name": base_name,
-                    "package_build_spec": build_spec,
-                    "deployment_spec": deployment_spec,
-                    "base_spec": base_spec
-
+                    "package_builder": builder,
+                    "deployment_step_classes": [*builder.DEPLOYMENT_STEPS, *additional_deployment_steps]
                 }
-                if isinstance(remote_machine_spec, DockerBasedPackageTestSpec.DockerImageInfo):
-                    test_spec = DockerBasedPackageTestSpec(
+                if isinstance(remote_machine_spec, DockerBasedPackageTest.DockerImageInfo):
+                    test_spec = DockerBasedPackageTest(
                         **kwargs,
                         docker_image_info=remote_machine_spec,
                     )
-                elif isinstance(remote_machine_spec, Ec2BasedPackageTestSpec.Ec2MachineInfo):
-                    test_spec = Ec2BasedPackageTestSpec(
+                elif isinstance(remote_machine_spec, Ec2BasedPackageTest.Ec2MachineInfo):
+                    test_spec = Ec2BasedPackageTest(
                         **kwargs,
                         ec2_machine_info=remote_machine_spec
                     )
                 else:
-                    test_spec = Ec2BasedPackageTestSpec(
+                    test_spec = Ec2BasedPackageTest(
                         **kwargs,
                     )
 
-                build_test_specs.append(test_spec)
+                package_tests.append(test_spec)
 
-            for test_spec in list(build_test_specs):
-                if test_spec.unique_name in PackageTestSpec.ALL_TEST_SPECS:
-                    build_test_specs.remove(test_spec)
+            for package_test in list(package_tests):
+                if package_test.unique_name in PackageTest.ALL_TESTS:
+                    package_tests.remove(package_test)
                 else:
-                    PackageTestSpec.ALL_TEST_SPECS[test_spec.unique_name] = test_spec
+                    PackageTest.ALL_TESTS[package_test.unique_name] = package_test
 
-            PackageTestSpec.BUILD_SPEC_TESTS[build_spec.name] = build_test_specs
+            PackageTest.ALL_TESTS[builder.name] = package_test
 
 
-@dataclasses.dataclass
-class LocalPackageTestSpec(PackageTestSpec):
+
+class LocalPackageTest(PackageTest):
     """
     Subclass of the package test spec which is only has to be run locally, on the current system (not in docker or ec2).
     """
+    # def __init__(
+    #         self,
+    #         test_name: str,
+    #         package_builder: package_builders.PackageBuilder,
+    #         architecture: constants.Architecture = None,
+    #         deployment_steps: List[env_deployers.DeploymentStep] = None,
+    #
+    # ):
+    #     super(LocalPackageTest, self).__init__(
+    #         test_name=test_name,
+    #         package_builder=package_builder,
+    #         architecture=architecture,
+    #         deployment_steps=deployment_steps
+    #     )
+
     def run_test_locally(
             self,
             package_path: pl.Path,
             scalyr_api_key: str,
     ):
 
-        if self.package_build_spec.package_type in [
+        if self.package_builder.PACKAGE_TYPE in [
             constants.PackageType.DEB,
             constants.PackageType.RPM,
             constants.PackageType.TAR,
             constants.PackageType.MSI
         ]:
             deb_rpm_tar_msi_test.run(
-                package_type=self.package_build_spec.package_type,
+                package_type=self.package_builder.PACKAGE_TYPE,
                 package_path=package_path,
                 scalyr_api_key=scalyr_api_key
             )
             return
 
 
-@dataclasses.dataclass
-class RemoteMachinePackageTestSpec(PackageTestSpec):
-    REMOTE_MACHINE_SUFFIX = ClassVar[str]
+class RemoteMachinePackageTest(PackageTest):
+    REMOTE_MACHINE_SUFFIX = str
     """
     Subclass of the package test spec which has to performed on the different machine, for example docker or ec2 instance.
     """
 
     # Reference the base local test spec. Since the current spec is "remote", it has to have a reference to its local
     # variant to run it on the remote machine.
-    base_spec: LocalPackageTestSpec
+    base_spec: PackageTest
 
     @property
     def unique_name(self) -> str:
         """
         Add the remote machine's type as suffix to the name to avoid name collisions with the local test specs.
         """
-        name = super(RemoteMachinePackageTestSpec, self).unique_name
+        name = super(RemoteMachinePackageTest, self).unique_name
         return f"{name}_{self.REMOTE_MACHINE_SUFFIX}"
 
 
-@dataclasses.dataclass
-class DockerBasedPackageTestSpec(RemoteMachinePackageTestSpec):
+class DockerBasedPackageTest(RemoteMachinePackageTest):
     """
     Specification of the package test that has to be performed in the docker.
     """
@@ -187,12 +226,61 @@ class DockerBasedPackageTestSpec(RemoteMachinePackageTestSpec):
         """
         image_name: str
 
-    # Information about the docker image.
-    docker_image_info: DockerImageInfo
+    def __init__(
+            self,
+            test_name: str,
+            package_builder: package_builders.PackageBuilder,
+            docker_image_info: DockerImageInfo,
+            architecture: constants.Architecture = None,
+            deployment_step_classes: List[Type[env_deployers.DeploymentStep]] = None,
+
+    ):
+        super(DockerBasedPackageTest, self).__init__(
+            test_name=test_name,
+            package_builder=package_builder,
+            architecture=architecture,
+            deployment_step_classes=deployment_step_classes,
+        )
+
+        self.docker_image_info = docker_image_info
+
+    def run(
+            self,
+            package_path: pl.Path,
+            scalyr_api_key: str,
+            frozen_test_runner_path: pl.Path
+    ):
+        # Run the test inside the docker.
+        # fmt: off
+
+        cmd_args = []
+
+        subprocess.check_call(
+            [
+                "docker", "run", "-i", "--rm", "--init",
+                "-v", f"{__SOURCE_ROOT__}:/scalyr-agent-2",
+                "-v", f"{package_path}:/tmp/{package_path.name}",
+                "-v", f"{frozen_test_runner_path}:/tmp/test_executable",
+                "--workdir",
+                "/tmp",
+                "--platform",
+                self.package_builder.architecture.as_docker_platform.value,
+                # specify the image.
+                self.docker_image_info.image_name,
+                # Command to run the test executable inside the container.
+                "/tmp/test_executable",
+                self.unique_name,
+                "--package-path",
+                f"/tmp/{package_path.name}",
+                "--scalyr-api-key",
+                scalyr_api_key
+
+            ]
+        )
+        # fmt: on
 
 
-@dataclasses.dataclass
-class Ec2BasedPackageTestSpec(RemoteMachinePackageTestSpec):
+class Ec2BasedPackageTest(RemoteMachinePackageTest):
     REMOTE_MACHINE_SUFFIX = "ec2"
 
     @dataclasses.dataclass
@@ -210,12 +298,27 @@ class Ec2BasedPackageTestSpec(RemoteMachinePackageTestSpec):
         ssh_username: str
         os_family: Ec2PlatformType
 
-    # Information about ec2 machine where test has to be performed.
-    ec2_machine_info: Ec2MachineInfo
+    def __init__(
+            self,
+            test_name: str,
+            package_builder: package_builders.PackageBuilder,
+            ec2_machine_info: Ec2MachineInfo,
+            architecture: constants.Architecture = None,
+            deployment_step_classes: List[Type[env_deployers.DeploymentStep]] = None,
+
+    ):
+        super(Ec2BasedPackageTest, self).__init__(
+            test_name=test_name,
+            package_builder=package_builder,
+            architecture=architecture,
+            deployment_step_classes=deployment_step_classes,
+        )
+
+        self.ec2_machine_info = ec2_machine_info
 
 
-def run_package_test_spec(
-    package_test_spec: Union[LocalPackageTestSpec, DockerBasedPackageTestSpec, Ec2BasedPackageTestSpec],
+def run_package_test(
+    package_test_name: str,
     scalyr_api_key: str,
     build_dir_path: pl.Path = None,
     package_path: pl.Path = None,
@@ -230,7 +333,7 @@ def run_package_test_spec(
     """
     Run package test based on some specification. According to the test's specification type, it may be performed locally,
     in docker or ec2 machine.
-    :param package_test_spec: Package test specification.
+    :param package_test: Package test specification.
     :param scalyr_api_key: API key to be able to send logs to Scalyr during tests.
     :param build_dir_path: Optional directory where all needed builds are performed. Temporary folder is created if
         not specified.
@@ -242,11 +345,8 @@ def run_package_test_spec(
     :param aws_security_groups: AWS EC2 security group names, needed to perform test in ec2 machine.
     :param aws_region: AWS region, needed to perform test in ec2 machine.
     """
-    if not build_dir_path:
-        clear_build_dir = True
-        build_dir_path = pl.Path(tempfile.mkdtemp())
-    else:
-        clear_build_dir = False
+
+    package_test = PackageTest.ALL_TESTS[package_test_name]
 
     if not package_path:
         package_output_dir_path = build_dir_path / "package"
@@ -255,17 +355,17 @@ def run_package_test_spec(
             shutil.rmtree(package_output_dir_path)
         package_output_dir_path.mkdir(parents=True)
 
-        package_build_spec = package_test_spec.package_build_spec
+        package_builder = package_test.package_builder
 
-        package_build_spec.build_package(
+        package_builder.build(
             output_path=package_output_dir_path
         )
         package_path = list(
-            package_output_dir_path.glob(package_build_spec.filename_glob)
+            package_output_dir_path.glob(package_test.package_builder.filename_glob)
         )[0]
 
-    if isinstance(package_test_spec, LocalPackageTestSpec):
-        package_test_spec.run_test_locally(
+    if isinstance(package_test, LocalPackageTest):
+        package_test.run_test_locally(
             package_path=package_path,
             scalyr_api_key=scalyr_api_key
         )
@@ -277,25 +377,23 @@ def run_package_test_spec(
 
     frozen_test_runner_build_dir_path.mkdir(parents=True)
 
-    package_test_spec.deployment_spec.deploy()
+    package_test.deployment.deploy()
 
     test_runner_filename = "frozen_test_runner"
 
     build_test_runner_frozen_binary.build_test_runner_frozen_binary(
         output_path=frozen_test_runner_build_dir_path,
         filename=test_runner_filename,
-        architecture=package_test_spec.deployment_spec.architecture,
-        base_image_name=package_test_spec.deployment_spec.result_image_name,
+        architecture=package_test.architecture,
+        base_image_name=package_test.deployment.result_image_name,
     )
 
     frozen_test_runner_path = frozen_test_runner_build_dir_path / test_runner_filename
 
-    if isinstance(package_test_spec, DockerBasedPackageTestSpec):
+    if isinstance(package_test, DockerBasedPackageTest):
 
         # Run the test inside the docker.
         # fmt: off
-
-        cmd_args = []
 
         subprocess.check_call(
             [
@@ -306,12 +404,12 @@ def run_package_test_spec(
                 "--workdir",
                 "/tmp",
                 "--platform",
-                package_test_spec.package_build_spec.architecture.as_docker_platform.value,
+                package_test.architecture.as_docker_platform.value,
                 # specify the image.
-                package_test_spec.docker_image_info.image_name,
+                package_test.docker_image_info.image_name,
                 # Command to run the test executable inside the container.
                 "/tmp/test_executable",
-                package_test_spec.unique_name,
+                package_test.unique_name,
                 "--package-path",
                 f"/tmp/{package_path.name}",
                 "--scalyr-api-key",
@@ -323,7 +421,7 @@ def run_package_test_spec(
 
         return
 
-    if isinstance(package_test_spec, Ec2BasedPackageTestSpec):
+    if isinstance(package_test, Ec2BasedPackageTest):
         from tests.package_tests.internals import ec2_ami
 
         assert aws_access_key, "Need AWS access key."
@@ -334,7 +432,7 @@ def run_package_test_spec(
         assert aws_region, "Need AWS region"
 
         ec2_ami.main(
-            distro=package_test_spec.ec2_machine_info,
+            distro=package_test.ec2_machine_info,
             to_version=str(package_path),
             frozen_test_runner_path=frozen_test_runner_path,
             access_key=aws_access_key,
@@ -367,15 +465,19 @@ def run_package_test_spec(
 #   4. test DEP package with architecture arm64 inside docker image 'ubuntu:14.04' (the arm version will be used)
 #
 
-_EC2_PLATFORM_TYPE = Ec2BasedPackageTestSpec.Ec2MachineInfo.Ec2PlatformType
+_EC2_PLATFORM_TYPE = Ec2BasedPackageTest.Ec2MachineInfo.Ec2PlatformType
 
-PackageTestSpec.create_test_specs(
+LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT_STEPS = [
+
+]
+
+PackageTest.create_test_specs(
     base_name="ubuntu-1404",
-    package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
+    package_builders=[package_builders.DEB_X86_64_BUILDER],
     remote_machine_arch_specs={
         constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:14.04"),
-            Ec2BasedPackageTestSpec.Ec2MachineInfo(
+            DockerBasedPackageTest.DockerImageInfo("ubuntu:14.04"),
+            Ec2BasedPackageTest.Ec2MachineInfo(
                 image_name="Ubuntu Server 14.04 LTS (HVM)",
                 image_id="ami-07957d39ebba800d5",
                 size_id="t2.small",
@@ -384,121 +486,128 @@ PackageTestSpec.create_test_specs(
             )
         ],
         constants.Architecture.ARM64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:14.04")
+            DockerBasedPackageTest.DockerImageInfo("ubuntu:14.04")
         ]
     },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
+    #deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 )
 
-# Create specs for the DEB packages, which have to be performed in the ubuntu 16.04 distribution.
-PackageTestSpec.create_test_specs(
-    base_name="ubuntu-1604",
-    package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:16.04")
-        ],
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-# Create specs for the DEB packages, which have to be performed in the ubuntu 18.04 distribution.
-PackageTestSpec.create_test_specs(
-    base_name="ubuntu-1804",
-    package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:18.04")
-        ],
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-# Create specs for the DEB packages, which have to be performed in the ubuntu 20.04 distribution.
-PackageTestSpec.create_test_specs(
-    base_name="ubuntu-2004",
-    package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
-        ],
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-
-# Create specs for the RPM packages, which have to be performed in the centos 7 distribution.
-PackageTestSpec.create_test_specs(
-    base_name="centos-7",
-    package_build_specs=[package_builders.RPM_x86_64, package_builders.RPM_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("centos:7")
-        ],
-        constants.Architecture.ARM64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("centos:7")
-        ]
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-# Create specs for the RPM packages, which have to be performed in the centos 8 distribution.
-PackageTestSpec.create_test_specs(
-    base_name="centos-8",
-    package_build_specs=[package_builders.RPM_x86_64, package_builders.RPM_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("centos:8")
-        ],
-        constants.Architecture.ARM64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("centos:8")
-        ]
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-# Create specs for the RPM packages, which have to be performed in the amazonlinux distribution.
-PackageTestSpec.create_test_specs(
-    base_name="amazonlinux-2",
-    package_build_specs=[package_builders.RPM_x86_64, package_builders.RPM_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("amazonlinux:2")
-        ],
-        constants.Architecture.ARM64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("amazonlinux:2")
-        ]
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-# Create specs for the tar packages, which have to be performed in the ubuntu 20.04 distribution.
-# The tar package consists of the same frozen binary and it is already tested in the other package tests,
-# so it's just enough to perform basic sanity test for the tar package itself.
-PackageTestSpec.create_test_specs(
-    base_name="ubuntu-2004",
-    package_build_specs=[package_builders.TAR_x86_64, package_builders.TAR_ARM64],
-    remote_machine_arch_specs={
-        constants.Architecture.X86_64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
-        ],
-        constants.Architecture.ARM64: [
-            DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
-        ]
-    },
-    deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
-)
-
-
-# Create test specs which has to be performed in the amazonlinux distribution.
-PackageTestSpec.create_test_specs(
-    base_name="windows",
-    package_build_specs=[package_builders.MSI_x86_64],
-    deployment=env_deployers.WINDOWS_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT,
-)
-
-
-env_deployers.DeploymentSpec.create_new_deployment_spec(
+COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
+    name="test_environment",
     architecture=constants.Architecture.X86_64,
-    deployment=env_deployers.COMMON_TEST_ENVIRONMENT
+    step_classes=[env_deployers.InstallBuildRequirementsStep],
 )
+
+# # Create specs for the DEB packages, which have to be performed in the ubuntu 16.04 distribution.
+# PackageTest.create_test_specs(
+#     base_name="ubuntu-1604",
+#     package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:16.04")
+#         ],
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+# # Create specs for the DEB packages, which have to be performed in the ubuntu 18.04 distribution.
+# PackageTest.create_test_specs(
+#     base_name="ubuntu-1804",
+#     package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:18.04")
+#         ],
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+# # Create specs for the DEB packages, which have to be performed in the ubuntu 20.04 distribution.
+# PackageTest.create_test_specs(
+#     base_name="ubuntu-2004",
+#     package_build_specs=[package_builders.DEB_x86_64, package_builders.DEB_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
+#         ],
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+#
+# # Create specs for the RPM packages, which have to be performed in the centos 7 distribution.
+# PackageTest.create_test_specs(
+#     base_name="centos-7",
+#     package_build_specs=[package_builders.RPM_x86_64, package_builders.RPM_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("centos:7")
+#         ],
+#         constants.Architecture.ARM64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("centos:7")
+#         ]
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+# # Create specs for the RPM packages, which have to be performed in the centos 8 distribution.
+# PackageTest.create_test_specs(
+#     base_name="centos-8",
+#     package_build_specs=[package_builders.RPM_x86_64, package_builders.RPM_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("centos:8")
+#         ],
+#         constants.Architecture.ARM64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("centos:8")
+#         ]
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+# # Create specs for the RPM packages, which have to be performed in the amazonlinux distribution.
+# PackageTest.create_test_specs(
+#     base_name="amazonlinux-2",
+#     package_build_specs=[package_builders.RPM_x86_64, package_builders.RPM_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("amazonlinux:2")
+#         ],
+#         constants.Architecture.ARM64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("amazonlinux:2")
+#         ]
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+# # Create specs for the tar packages, which have to be performed in the ubuntu 20.04 distribution.
+# # The tar package consists of the same frozen binary and it is already tested in the other package tests,
+# # so it's just enough to perform basic sanity test for the tar package itself.
+# PackageTest.create_test_specs(
+#     base_name="ubuntu-2004",
+#     package_build_specs=[package_builders.TAR_x86_64, package_builders.TAR_ARM64],
+#     remote_machine_arch_specs={
+#         constants.Architecture.X86_64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
+#         ],
+#         constants.Architecture.ARM64: [
+#             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
+#         ]
+#     },
+#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+# )
+#
+#
+# # Create test specs which has to be performed in the amazonlinux distribution.
+# PackageTest.create_test_specs(
+#     base_name="windows",
+#     package_build_specs=[package_builders.MSI_x86_64],
+#     deployment=env_deployers.WINDOWS_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT,
+# )
+#
+#
+# env_deployers.DeploymentSpec.create_new_deployment_spec(
+#     architecture=constants.Architecture.X86_64,
+#     deployment=env_deployers.COMMON_TEST_ENVIRONMENT
+# )

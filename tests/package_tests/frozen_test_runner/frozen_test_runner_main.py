@@ -16,9 +16,9 @@ if __name__ == '__main__':
     parser.add_argument("--scalyr-api-key", required=True)
 
     args = parser.parse_args()
-    package_test_spec = current_test_specifications.PackageTestSpec.ALL_TEST_SPECS[args.test_spec_name]
+    package_test_spec = current_test_specifications.PackageTest.ALL_TESTS[args.test_spec_name]
 
-    package_test_spec.base_spec.run_test_locally(
+    package_test_spec.run_test_locally(
         package_path=pl.Path(args.package_path),
         scalyr_api_key=args.scalyr_api_key
     )

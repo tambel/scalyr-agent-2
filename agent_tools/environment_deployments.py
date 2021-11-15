@@ -52,7 +52,9 @@ import shutil
 import subprocess
 import hashlib
 import logging
-from typing import Union, Optional, List, Dict, ClassVar
+import re
+
+from typing import Union, Optional, List, Dict, ClassVar, Type
 
 __PARENT_DIR__ = pl.Path(__file__).parent.absolute()
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
@@ -79,28 +81,109 @@ class DeploymentStep:
         and on CI/CD.
     """
 
+    SCRIPT_PATH: pl.Path
+    USED_FILES: List[pl.Path] = []
+
+    ALL_DEPLOYMENT_STEPS: Dict[str, 'DeploymentStep'] = {}
+
     def __init__(
             self,
-            name: str,
-            deployment_script_path: Union[str, pl.Path],
-            used_files: list = None,
+            #name: str,
+            #deployment_script_path: Union[str, pl.Path],
+            #used_files: list = None,
+            architecture: constants.Architecture,
+            base_docker_image: str = None,
+            previous_step: 'DeploymentStep' = None
     ):
         """
         :param name: Name of the deployment step.
         :param deployment_script_path: Path to the script which is executed during the step.
         :param used_files: List files used in the deployment step. Can be globs.
         """
-        self._name = name
-        self._script_path = deployment_script_path
-        self._used_files = used_files or []
+        # self._name = name
+        # self._script_path = deployment_script_path
+        # self._used_files = used_files or []
+
+        self.architecture = architecture
+        self.base_docker_image = base_docker_image
+        self.previous_step = previous_step
+
+        if not base_docker_image:
+            if previous_step:
+                self.base_docker_image = previous_step.result_image_name
+        else:
+            self.base_docker_image = base_docker_image
+
+        type(self).ALL_DEPLOYMENT_STEPS[self.name] = self
 
     @property
-    def name(self):
-        return self._name
+    def initial_docker_image(self) -> str:
+        if not self.previous_step:
+            return self.base_docker_image
+
+        return self.previous_step.initial_docker_image
+
+    # @property
+    # def base_docker_image(self) -> str:
+    #     if self._base_docker_image:
+    #         return self._base_docker_image
+    #
+    #     if self.previous_step:
+    #         return self.previous_step.base_docker_image
+
+    @property
+    def in_docker(self) -> bool:
+        return self.base_docker_image is not None
+
+    @property
+    def checksum(self) -> str:
+        additional_checksum_seed = None
+        if self.previous_step:
+            additional_checksum_seed = self.previous_step.checksum
+
+        return self.get_used_files_checksum(
+            additional_seed=additional_checksum_seed
+        )
+
+
+    @property
+    def name(self) -> str:
+        """
+        Name of the deployment step. It is just a name of the class name but in snake case.
+        """
+        class_name = type(self).__name__
+        return re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
+
+    @property
+    def unique_name(self) -> str:
+        """
+        Create name for the step. It has to contain all specific information about the step,
+        so it can be used as unique cache key.
+        """
+
+        name = self.name
+
+        if self.previous_step:
+            name = f"{name}_{self.previous_step.name}"
+
+        name = f"{name}_{self.architecture.value}"
+
+        # If its a docker deployment, then add the docker image to the name
+        if self.in_docker:
+            image_suffix = self.initial_docker_image.replace(":", "_")
+            name = f"{name}_{image_suffix}"
+
+        return name
+
+    @property
+    def result_image_name(self) -> str:
+        return f"{self.unique_name}_{self.checksum}"
+
 
     def run(
         self,
         cache_dir: Union[str, pl.Path] = None,
+        locally: bool = False
     ):
         """
         Perform the deployment step by running the shell script. It also allows perform it inside the docker.
@@ -112,29 +195,32 @@ class DeploymentStep:
             load the image from this cached file without rebuilding.
         """
 
-        # Choose the shell according to the operation system.
-        if self._script_path.suffix == ".ps1":
-            shell = "powershell"
-        else:
-            shell = shutil.which("bash")
+        if locally or not self.in_docker:
+            # Choose the shell according to the operation system.
+            if type(self).SCRIPT_PATH.suffix == ".ps1":
+                shell = "powershell"
+            else:
+                shell = shutil.which("bash")
 
-        command = [shell, str(self._script_path)]
+            command = [shell, str(type(self).SCRIPT_PATH)]
 
-        # If cache directory is presented, then we pass it as an additional argument to the
-        # script, so it can use the cache too.
-        if cache_dir:
-            command.append(str(pl.Path(cache_dir)))
+            # If cache directory is presented, then we pass it as an additional argument to the
+            # script, so it can use the cache too.
+            if cache_dir:
+                command.append(str(pl.Path(cache_dir)))
 
-        # Run the script in previously chosen shell.
-        common_utils.quiet_subprocess_call(
-            command,
+            # Run the script in previously chosen shell.
+            subprocess.check_call(
+                command,
+            )
+            return
+
+        self.run_in_docker(
+            cache_dir=cache_dir
         )
 
     def run_in_docker(
         self,
-        base_docker_image: str,
-        result_image_name: str,
-        architecture: constants.Architecture,
         cache_dir: Union[str, pl.Path] = None,
 
     ):
@@ -145,6 +231,8 @@ class DeploymentStep:
         :param architecture: Type of the processor architecture. Docker can use emulation to support different platforms.
         :param cache_dir: The cache directory. the same as in the main functions.
         """
+
+        result_image_name = self.result_image_name
 
         # Before the build, check if there is already an image with the same name. The name contains the checksum
         # of all files which are used in it, so the name identity also guarantees the content identity.
@@ -169,10 +257,10 @@ class DeploymentStep:
             cached_image_path = cache_dir / result_image_name
             if cached_image_path.is_file():
                 logging.info(
-                    f"Cached image {result_image_name} file for the deployment '{self._name}' has been found, "
+                    f"Cached image {result_image_name} file for the deployment step '{self.name}' has been found, "
                     f"loading and reusing it instead of building."
                 )
-                common_utils.quiet_subprocess_call(
+                subprocess.check_call(
                     ["docker", "load", "-i", str(cached_image_path)]
                 )
                 return
@@ -182,8 +270,8 @@ class DeploymentStep:
                 save_to_cache = True
 
         logging.info(
-            f"Build image '{result_image_name}' from base image '{base_docker_image}' "
-            f"for the deployment step '{self._name}'."
+            f"Build image '{result_image_name}' from base image '{self.base_docker_image}' "
+            f"for the deployment step '{self.name}'."
         )
 
         # Create the image.
@@ -202,7 +290,7 @@ class DeploymentStep:
         # Map the script's path to the docker.
         container_prepare_env_script_path = pl.Path(
             container_root_path,
-            pl.Path(self._script_path).relative_to(
+            pl.Path(type(self).SCRIPT_PATH).relative_to(
                 __SOURCE_ROOT__
             ),
         )
@@ -210,32 +298,32 @@ class DeploymentStep:
         container_name = result_image_name
 
         # Remove if such container exists.
-        common_utils.quiet_subprocess_call(["docker", "rm", "-f", container_name])
+        subprocess.check_call(["docker", "rm", "-f", container_name])
 
         # Create container and run the script in it.
-        common_utils.quiet_subprocess_call(
+        subprocess.check_call(
             [
                 "docker",
                 "run",
                 "--platform",
-                architecture.as_docker_platform.value,
+                self.architecture.as_docker_platform.value,
                 "-i",
                 "--name",
                 container_name,
                 *volumes_mappings,
-                base_docker_image,
+                self.base_docker_image,
                 str(container_prepare_env_script_path),
             ],
         )
 
         # Save the current state of the container into image.
-        common_utils.quiet_subprocess_call(["docker", "commit", container_name, result_image_name])
+        subprocess.check_call(["docker", "commit", container_name, result_image_name])
 
         # Save image if caching is enabled.
         if cache_dir and save_to_cache:
             cache_dir.mkdir(parents=True, exist_ok=True)
             cached_image_path = cache_dir / result_image_name
-            logging.info(f"Saving image '{result_image_name}' file for the deployment step {self._name} into cache.")
+            logging.info(f"Saving image '{result_image_name}' file for the deployment step {self.name} into cache.")
             with cached_image_path.open("wb") as f:
                 subprocess.check_call(["docker", "save", result_image_name], stdout=f)
 
@@ -246,11 +334,11 @@ class DeploymentStep:
         """
 
         # The shell script is also has to be included.
-        used_files = [self._script_path]
+        used_files = [type(self).SCRIPT_PATH]
 
         # Since the list of used files can also contain directories, look for them and
         # include all files inside them recursively.
-        for path in self._used_files:
+        for path in type(self).USED_FILES:
             path = pl.Path(path)
 
             # match glob against source code root and include all matched paths.
@@ -285,204 +373,99 @@ class DeploymentStep:
         return sha256.hexdigest()
 
 
-@dataclasses.dataclass
+# @dataclasses.dataclass
+# class Deployment:
+#     """
+#     The abstraction that defines some desired state of the environment that has to be achieved by performing some set of
+#         deployment steps (:py:class:`DeploymentStep`).
+#     """
+#     ALL_DEPLOYMENTS: ClassVar[Dict[str, 'Deployment']] = {}
+#
+#     name: str
+#     steps: List[DeploymentStep]
+#
+#     @staticmethod
+#     def create_deployment(
+#             name: str,
+#             steps: List[DeploymentStep]
+#     ):
+#         """
+#         Create the deployment with given name and deployment steps.
+#         :param name: Name of the deployment. All deployment are stored in the globally available class attribute
+#             collection, so their names has to unique.
+#         :return: New deployment object.
+#         """
+#
+#         if name in Deployment.ALL_DEPLOYMENTS:
+#             raise ValueError(f"The deployment with name {name} already exists.")
+#
+#         deployment = Deployment(
+#             name=name,
+#             steps=steps
+#         )
+#
+#         # Save created deployment in the global deployments collections.
+#         Deployment.ALL_DEPLOYMENTS[deployment.name] = deployment
+#
+#         return deployment
+
 class Deployment:
-    """
-    The abstraction that defines some desired state of the environment that has to be achieved by performing some set of
-        deployment steps (:py:class:`DeploymentStep`).
-    """
-    ALL_DEPLOYMENTS: ClassVar[Dict[str, 'Deployment']] = {}
-
-    name: str
-    steps: List[DeploymentStep]
-
-    @staticmethod
-    def create_deployment(
-            name: str,
-            steps: List[DeploymentStep]
-    ):
-        """
-        Create the deployment with given name and deployment steps.
-        :param name: Name of the deployment. All deployment are stored in the globally available class attribute
-            collection, so their names has to unique.
-        :return: New deployment object.
-        """
-
-        if name in Deployment.ALL_DEPLOYMENTS:
-            raise ValueError(f"The deployment with name {name} already exists.")
-
-        deployment = Deployment(
-            name=name,
-            steps=steps
-        )
-
-        # Save created deployment in the global deployments collections.
-        Deployment.ALL_DEPLOYMENTS[deployment.name] = deployment
-
-        return deployment
-
-
-class DeploymentSpec:
-    """
-    The specification of the deployment. It has all needed specifics, for example architecture type or
-        docker image, to perform the actual deployment.
-    """
-    @dataclasses.dataclass
-    class DeploymentStepSpec:
-        """
-        Also the specification but for the inner deployment steps. Each
-        """
-        step: DeploymentStep
-        architecture: constants.Architecture
-        step_checksum: str
-        base_docker_image: Optional[str] = None
-        previous_step_spec: Optional['DeploymentSpec.DeploymentStepSpec'] = None
-
-        @property
-        def in_docker(self) -> bool:
-            """
-            Flag that signals that the deployment step is meant to be performed in docker.
-            """
-            return self.base_docker_image is not None
-
-        @property
-        def unique_name(self) -> str:
-            """
-            Create name for the step. It has to contain all specific information about the step,
-            so it can be used as unique cache key.
-            """
-
-            name = self.step.name
-
-            #
-            if self.previous_step_spec:
-                name = f"{name}_{self.previous_step_spec.step.name}"
-
-            name = f"{name}_{self.architecture.value}"
-
-            # If its a docker deployment, then add the docker image to the name
-            if self.in_docker:
-                image_suffix = self.base_docker_image.replace(":", "_")
-                name = f"{name}_{image_suffix}"
-
-            name = f"{name}_{self.step_checksum}"
-
-            return name
-
-    ALL_DEPLOYMENT_SPECS: Dict[str, 'DeploymentSpec'] = {}
+    ALL_DEPLOYMENTS: Dict[str, 'Deployment'] = {}
 
     def __init__(
             self,
-            deployment: Deployment,
-            architecture: constants.Architecture = None,
-            base_docker_image: str = None,
-    ):
-        self.deployment = deployment
-        self.architecture = architecture
-        self.base_docker_image = base_docker_image
-        self.all_deployment_step_specs = []
-
-        previous_step_checksum = None
-        previous_step_spec = None
-        for step in self.deployment.steps:
-            step_spec = DeploymentSpec.DeploymentStepSpec(
-                step=step,
-                architecture=self.architecture,
-                step_checksum=step.get_used_files_checksum(
-                    additional_seed=previous_step_checksum
-                ),
-                base_docker_image=base_docker_image,
-                previous_step_spec=previous_step_spec,
-            )
-
-            previous_step_checksum = step_spec.step_checksum
-            previous_step_spec = step_spec
-
-            self.all_deployment_step_specs.append(step_spec)
-
-    @property
-    def result_image_name(self) -> Optional[str]:
-        if self.in_docker:
-            return self.all_deployment_step_specs[-1].unique_name
-
-    @property
-    def name(self) -> str:
-        name = f"{self.deployment.name}_{self.architecture.value}"
-        if self.base_docker_image:
-            image_name = self.base_docker_image.replace(":", "_")
-            name = f"{name}_{image_name}"
-
-        return name
-
-    @property
-    def result_docker_image(self) -> Optional[str]:
-        if self.in_docker:
-            return self.deployment.steps[-1].name
-
-    @property
-    def in_docker(self) -> bool:
-        return self.base_docker_image is not None
-
-    def deploy(
-            self,
-            cache_dir: Union[str, pl.Path] = None
-    ):
-        previous_base_docker_image = self.base_docker_image
-
-        for step_spec in self.all_deployment_step_specs:
-            logging.info(f"Perform the deployment step '{step_spec.step.name}'.")
-            if cache_dir:
-
-                # create separate cache folder for this deployment, to avoid collisions with other deployments.
-                step_cache_dir_path = pl.Path(cache_dir) / step_spec.unique_name
-
-                logging.info(f"Using cache dir '{step_cache_dir_path}'.")
-            else:
-                step_cache_dir_path = None
-
-            if self.in_docker:
-                step_spec.step.run_in_docker(
-                    base_docker_image=previous_base_docker_image,
-                    result_image_name=step_spec.unique_name,
-                    architecture=self.architecture,
-                    cache_dir=step_cache_dir_path
-                )
-                previous_base_docker_image = step_spec.unique_name
-            else:
-                step_spec.step.run(
-                    cache_dir=step_cache_dir_path
-                )
-
-    @staticmethod
-    def create_new_deployment_spec(
+            name: str,
+            step_classes: List[Type[DeploymentStep]],
             architecture: constants.Architecture,
-            deployment: Deployment,
             base_docker_image: str = None
-    ) -> 'DeploymentSpec':
+    ):
+        self.name = name
+        self.architecture = architecture
+        self.steps = []
 
-        spec = DeploymentSpec(
-            deployment=deployment,
+        new_step_classes = step_classes[:]
+        first_step_cls = new_step_classes.pop(0)
+
+        previous_step = first_step_cls(
             architecture=architecture,
             base_docker_image=base_docker_image
         )
+        self.steps.append(previous_step)
 
-        if spec.name not in DeploymentSpec.ALL_DEPLOYMENT_SPECS:
-            DeploymentSpec.ALL_DEPLOYMENT_SPECS[spec.name] = spec
-        else:
-            spec = DeploymentSpec.ALL_DEPLOYMENT_SPECS[spec.name]
+        for step_cls in new_step_classes:
+            step = step_cls(
+                architecture=architecture,
+                previous_step=previous_step,
+            )
+            previous_step = step
 
-        return spec
+            type(self).ALL_DEPLOYMENTS[self.name] = self
+            self.steps.append(step)
+
+    @property
+    def result_image_name(self) -> Optional[str]:
+        return self.steps[-1].result_image_name.lower()
+
+    def deploy(
+            self,
+            cache_dir: pl.Path = None,
+            locally: bool = False
+    ):
+
+        for step in self.steps:
+            step.run(
+                cache_dir=cache_dir,
+                locally=locally,
+            )
+
 
 
 _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "environment_deployer_scripts"
 
-# This deployer is used in the package building.
-# Since we use frozen binaries, it is important to produce the binary using the earliest glibc possible,
-# to achieve binary compatibility with more operating systems.
-INSTALL_PYTHON_STEP = DeploymentStep(
-    name="install_python",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"
-)
+
+class InstallPythonStep(DeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"
+
 
 # Paths to the helper files that may be helpful for the main deployment script.
 _HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS = [
@@ -493,64 +476,270 @@ _HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS = [
 # Glob that has to match all requirement files that are needed for the agent build.
 _AGENT_REQUIREMENT_FILES_PATH = _AGENT_BUILD_DIR / "requirement-files" / "*.txt"
 
-# Deployer to install all agent's Python dependencies. This is not included to the previous 'python' deployer.
-# because building Python from source is a very long process, and its better to avoid unnecessary rebuilding when
-# there is just something changed in agent requirements.
-INSTALL_BUILD_REQUIREMENTS_STEP = DeploymentStep(
-    name="install_build_environment",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_build_environment.sh",
-    used_files=[
+
+class InstallBuildRequirementsStep(DeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy_build_environment.sh"
+    USED_FILES = [
         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
         _AGENT_REQUIREMENT_FILES_PATH
-    ],
-)
+    ]
 
-# The deployer which prepares a build environment for the windows package.
-# For now, it just installs the WIX toolset, which is needed to create msi packages.
-INSTALL_WINDOWS_BUILDER_TOOLS_STEP = DeploymentStep(
-    name="install_windows_builder_tools_step",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
-    used_files=[
+
+class InstallTestRequirementsDeploymentStep(DeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy-dev-environment.sh"
+    USED_FILES = [
         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
-        _AGENT_REQUIREMENT_FILES_PATH
-    ],
-)
+        _AGENT_REQUIREMENT_FILES_PATH, __SOURCE_ROOT__ / "dev-requirements.txt"
+    ]
 
 
-# The deployer for the test environment. It is built upon previous 'build-environment' deployer, but it also
-# install all test dependencies. It is also created as a separate deployer because PyInstaller, (frozen binary tools),
-# tends to include unneeded packages into the frozen binary, which increases its size.
-INSTALL_TEST_REQUIREMENT_STEP = DeploymentStep(
-    name="install_test_environment",
-    deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
-    used_files=[
-        *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
-        _AGENT_REQUIREMENT_FILES_PATH, __SOURCE_ROOT__ / "dev-requirements.txt"],
-)
-
-
-LINUX_PACKAGE_BUILDER_DEPLOYMENT = Deployment.create_deployment(
-    name="linux_package_builder",
-    steps=[INSTALL_PYTHON_STEP, INSTALL_BUILD_REQUIREMENTS_STEP],
-)
-
-
-WINDOWS_PACKAGE_BUILDER_DEPLOYMENT = Deployment.create_deployment(
-    name="windows_package_builder",
-    steps=[INSTALL_WINDOWS_BUILDER_TOOLS_STEP, INSTALL_BUILD_REQUIREMENTS_STEP]
-)
-
-LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT = Deployment.create_deployment(
-    name="linux_package_tests_environment",
-    steps=[*LINUX_PACKAGE_BUILDER_DEPLOYMENT.steps, INSTALL_TEST_REQUIREMENT_STEP]
-)
-
-WINDOWS_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT = Deployment.create_deployment(
-    name="windows_package_tests_environment",
-    steps=[INSTALL_TEST_REQUIREMENT_STEP]
-)
-
-COMMON_TEST_ENVIRONMENT = Deployment.create_deployment(
+COMMON_TEST_DEPLOYMENT = Deployment(
     name="test_environment",
-    steps=[INSTALL_TEST_REQUIREMENT_STEP]
+    architecture=constants.Architecture.X86_64,
+    step_classes=[InstallBuildRequirementsStep]
 )
+
+
+# LINUX_PACKAGE_BUILDER_DEPLOYMENT = Deployment.create_deployment(
+#     name="linux_package_builder",
+#     steps=[INSTALL_PYTHON_STEP, INSTALL_BUILD_REQUIREMENTS_STEP],
+# )
+
+
+class LinuxPackageBuilderDeployment(Deployment):
+    pass
+
+
+
+# class DeploymentSpec:
+#     """
+#     The specification of the deployment. It has all needed specifics, for example architecture type or
+#         docker image, to perform the actual deployment.
+#     """
+#     @dataclasses.dataclass
+#     class DeploymentStepSpec:
+#         """
+#         Also the specification but for the inner deployment steps. Each
+#         """
+#         step: DeploymentStep
+#         architecture: constants.Architecture
+#         step_checksum: str
+#         base_docker_image: Optional[str] = None
+#         previous_step_spec: Optional['DeploymentSpec.DeploymentStepSpec'] = None
+#
+#         @property
+#         def in_docker(self) -> bool:
+#             """
+#             Flag that signals that the deployment step is meant to be performed in docker.
+#             """
+#             return self.base_docker_image is not None
+#
+#         @property
+#         def unique_name(self) -> str:
+#             """
+#             Create name for the step. It has to contain all specific information about the step,
+#             so it can be used as unique cache key.
+#             """
+#
+#             name = self.step.name
+#
+#             #
+#             if self.previous_step_spec:
+#                 name = f"{name}_{self.previous_step_spec.step.name}"
+#
+#             name = f"{name}_{self.architecture.value}"
+#
+#             # If its a docker deployment, then add the docker image to the name
+#             if self.in_docker:
+#                 image_suffix = self.base_docker_image.replace(":", "_")
+#                 name = f"{name}_{image_suffix}"
+#
+#             name = f"{name}_{self.step_checksum}"
+#
+#             return name
+#
+#     ALL_DEPLOYMENT_SPECS: Dict[str, 'DeploymentSpec'] = {}
+#
+#     def __init__(
+#             self,
+#             deployment: Deployment,
+#             architecture: constants.Architecture = None,
+#             base_docker_image: str = None,
+#     ):
+#         self.deployment = deployment
+#         self.architecture = architecture
+#         self.base_docker_image = base_docker_image
+#         self.all_deployment_step_specs = []
+#
+#         previous_step_checksum = None
+#         previous_step_spec = None
+#         for step in self.deployment.steps:
+#             step_spec = DeploymentSpec.DeploymentStepSpec(
+#                 step=step,
+#                 architecture=self.architecture,
+#                 step_checksum=step.get_used_files_checksum(
+#                     additional_seed=previous_step_checksum
+#                 ),
+#                 base_docker_image=base_docker_image,
+#                 previous_step_spec=previous_step_spec,
+#             )
+#
+#             previous_step_checksum = step_spec.step_checksum
+#             previous_step_spec = step_spec
+#
+#             self.all_deployment_step_specs.append(step_spec)
+#
+#     @property
+#     def result_image_name(self) -> Optional[str]:
+#         if self.in_docker:
+#             return self.all_deployment_step_specs[-1].unique_name
+#
+#     @property
+#     def name(self) -> str:
+#         name = f"{self.deployment.name}_{self.architecture.value}"
+#         if self.base_docker_image:
+#             image_name = self.base_docker_image.replace(":", "_")
+#             name = f"{name}_{image_name}"
+#
+#         return name
+#
+#     @property
+#     def result_docker_image(self) -> Optional[str]:
+#         if self.in_docker:
+#             return self.deployment.steps[-1].name
+#
+#     @property
+#     def in_docker(self) -> bool:
+#         return self.base_docker_image is not None
+#
+#     def deploy(
+#             self,
+#             cache_dir: Union[str, pl.Path] = None
+#     ):
+#         previous_base_docker_image = self.base_docker_image
+#
+#         for step_spec in self.all_deployment_step_specs:
+#             logging.info(f"Perform the deployment step '{step_spec.step.name}'.")
+#             if cache_dir:
+#
+#                 # create separate cache folder for this deployment, to avoid collisions with other deployments.
+#                 step_cache_dir_path = pl.Path(cache_dir) / step_spec.unique_name
+#
+#                 logging.info(f"Using cache dir '{step_cache_dir_path}'.")
+#             else:
+#                 step_cache_dir_path = None
+#
+#             if self.in_docker:
+#                 step_spec.step.run_in_docker(
+#                     base_docker_image=previous_base_docker_image,
+#                     result_image_name=step_spec.unique_name,
+#                     architecture=self.architecture,
+#                     cache_dir=step_cache_dir_path
+#                 )
+#                 previous_base_docker_image = step_spec.unique_name
+#             else:
+#                 step_spec.step.run(
+#                     cache_dir=step_cache_dir_path
+#                 )
+#
+#     @staticmethod
+#     def create_new_deployment_spec(
+#             architecture: constants.Architecture,
+#             deployment: Deployment,
+#             base_docker_image: str = None
+#     ) -> 'DeploymentSpec':
+#
+#         spec = DeploymentSpec(
+#             deployment=deployment,
+#             architecture=architecture,
+#             base_docker_image=base_docker_image
+#         )
+#
+#         if spec.name not in DeploymentSpec.ALL_DEPLOYMENT_SPECS:
+#             DeploymentSpec.ALL_DEPLOYMENT_SPECS[spec.name] = spec
+#         else:
+#             spec = DeploymentSpec.ALL_DEPLOYMENT_SPECS[spec.name]
+#
+#         return spec
+#
+#
+# _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "environment_deployer_scripts"
+#
+# # This deployer is used in the package building.
+# # Since we use frozen binaries, it is important to produce the binary using the earliest glibc possible,
+# # to achieve binary compatibility with more operating systems.
+# INSTALL_PYTHON_STEP = DeploymentStep(
+#     name="install_python",
+#     deployment_script_path=_SCRIPTS_DIR_PATH / "install_python_and_ruby.sh"
+# )
+#
+# # Paths to the helper files that may be helpful for the main deployment script.
+# _HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS = [
+#     # bash library that provides a simple caching logic.
+#     __SOURCE_ROOT__ / _SCRIPTS_DIR_PATH / "cache_lib.sh"
+# ]
+#
+# # Glob that has to match all requirement files that are needed for the agent build.
+# _AGENT_REQUIREMENT_FILES_PATH = _AGENT_BUILD_DIR / "requirement-files" / "*.txt"
+#
+# # Deployer to install all agent's Python dependencies. This is not included to the previous 'python' deployer.
+# # because building Python from source is a very long process, and its better to avoid unnecessary rebuilding when
+# # there is just something changed in agent requirements.
+# INSTALL_BUILD_REQUIREMENTS_STEP = DeploymentStep(
+#     name="install_build_environment",
+#     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_build_environment.sh",
+#     used_files=[
+#         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+#         _AGENT_REQUIREMENT_FILES_PATH
+#     ],
+# )
+#
+# # The deployer which prepares a build environment for the windows package.
+# # For now, it just installs the WIX toolset, which is needed to create msi packages.
+# INSTALL_WINDOWS_BUILDER_TOOLS_STEP = DeploymentStep(
+#     name="install_windows_builder_tools_step",
+#     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1",
+#     used_files=[
+#         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+#         _AGENT_REQUIREMENT_FILES_PATH
+#     ],
+# )
+#
+#
+# # The deployer for the test environment. It is built upon previous 'build-environment' deployer, but it also
+# # install all test dependencies. It is also created as a separate deployer because PyInstaller, (frozen binary tools),
+# # tends to include unneeded packages into the frozen binary, which increases its size.
+# INSTALL_TEST_REQUIREMENT_STEP = DeploymentStep(
+#     name="install_test_environment",
+#     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
+#     used_files=[
+#         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+#         _AGENT_REQUIREMENT_FILES_PATH, __SOURCE_ROOT__ / "dev-requirements.txt"],
+# )
+#
+#
+# LINUX_PACKAGE_BUILDER_DEPLOYMENT = Deployment.create_deployment(
+#     name="linux_package_builder",
+#     steps=[INSTALL_PYTHON_STEP, INSTALL_BUILD_REQUIREMENTS_STEP],
+# )
+#
+#
+# WINDOWS_PACKAGE_BUILDER_DEPLOYMENT = Deployment.create_deployment(
+#     name="windows_package_builder",
+#     steps=[INSTALL_WINDOWS_BUILDER_TOOLS_STEP, INSTALL_BUILD_REQUIREMENTS_STEP]
+# )
+#
+# LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT = Deployment.create_deployment(
+#     name="linux_package_tests_environment",
+#     steps=[*LINUX_PACKAGE_BUILDER_DEPLOYMENT.steps, INSTALL_TEST_REQUIREMENT_STEP]
+# )
+#
+# WINDOWS_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT = Deployment.create_deployment(
+#     name="windows_package_tests_environment",
+#     steps=[INSTALL_TEST_REQUIREMENT_STEP]
+# )
+#
+# COMMON_TEST_ENVIRONMENT = Deployment.create_deployment(
+#     name="test_environment",
+#     steps=[INSTALL_TEST_REQUIREMENT_STEP]
+# )

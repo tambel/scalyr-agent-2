@@ -48,14 +48,14 @@ def build_stage(
     # Remove the container with the same name if exists.
     container_name = image_name
 
-    common_utils.quiet_subprocess_call(["docker", "rm", "-f", container_name])
+    subprocess.check_call(["docker", "rm", "-f", container_name])
 
     # Create the container.
-    common_utils.quiet_subprocess_call(
+    subprocess.check_call(
         ["docker", "create", "--name", container_name, image_name]
     )
 
-    common_utils.quiet_subprocess_call(
+    subprocess.check_call(
         [
             "docker",
             "cp",

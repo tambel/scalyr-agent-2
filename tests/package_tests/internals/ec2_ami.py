@@ -328,7 +328,7 @@ def _verify_url_exists(url, use_head=False):
 
 
 def main(
-    distro: current_test_specifications.Ec2BasedPackageTestSpec.Ec2MachineInfo,
+    distro: current_test_specifications.Ec2BasedPackageTest.Ec2MachineInfo,
     #test_type,
     #from_version,
     to_version,
@@ -352,7 +352,7 @@ def main(
     # TODO: Lower those timeouts when upstream yum related issues or similar start to stabilize.
     # All AMI tests should take less than 5 minutes, but in the last days (dec 1, 2020), they
     # started to take 10 minutes with multiple timeouts.
-    if distro.os_family == current_test_specifications.Ec2BasedPackageTestSpec.Ec2MachineInfo.Ec2PlatformType.WINDOWS:
+    if distro.os_family == current_test_specifications.Ec2BasedPackageTest.Ec2MachineInfo.Ec2PlatformType.WINDOWS:
         deploy_step_timeout = 440  # 320
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
@@ -378,7 +378,7 @@ def main(
         target=str(frozen_test_runner_path.name)
     )
 
-    if distro.os_family == current_test_specifications.Ec2BasedPackageTestSpec.Ec2MachineInfo.Ec2PlatformType.WINDOWS:
+    if distro.os_family == current_test_specifications.Ec2BasedPackageTest.Ec2MachineInfo.Ec2PlatformType.WINDOWS:
         script_content = f"python3 {frozen_test_runner_path.name}"
         script_extension = "ps1"
     else:

@@ -45,7 +45,7 @@ jobs:
         id: deployment-name
         shell: bash
         run: |
-          echo "::set-output name=deployment-name::$(python3 .github/scripts/get-package-build-spec.py deployment-name ${{ inputs.package_name }})"
+          echo "::set-output name=deployment-name::$(python3 .github/scripts/get-package-builder.py deployment-name ${{ inputs.package_name }})"
 
       - name: Set up QEMU
         if: ${{ !startsWith(inputs.package_name, 'msi') }}
@@ -65,8 +65,8 @@ jobs:
         run: |
           python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
 
-          echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-build-spec.py package-test-specs-matrix ${{ inputs.package_name }})"
-          echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-build-spec.py package-filename-glob ${{ inputs.package_name }})"
+          echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-builder.py package-test-specs-matrix ${{ inputs.package_name }})"
+          echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-builder.py package-filename-glob ${{ inputs.package_name }})"
 
       - name: Save the package.
         uses: actions/upload-artifact@v2

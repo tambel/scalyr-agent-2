@@ -39,6 +39,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
+from tests.package_tests import current_test_specifications
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
 
@@ -49,17 +50,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    #subparsers = parser.add_subparsers(dest="command")
-
-    #build_spec_parser = subparsers.add_parser("get-build-spec")
-    #build_parser = subparsers.add_parser("build")
-
     parser.add_argument(
-            "package_spec_name",
+            "package_name",
             type=str,
-            choices=package_builders.PackageBuildSpec.ALL_BUILD_SPECS.keys(),
+            choices=package_builders.PackageBuilder.ALL_BUILDERS.keys(),
             help="Type of the package to build.",
         )
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     parser.add_argument(
         "--locally",
@@ -95,36 +93,17 @@ if __name__ == '__main__':
         "Most users do not need to use this option.",
     )
 
+
     args = parser.parse_args()
 
     # Find the builder class.
-    package_build_spec = package_builders.PackageBuildSpec.ALL_BUILD_SPECS[args.package_spec_name]
+    package_builder = package_builders.PackageBuilder.ALL_BUILDERS[args.package_name]
 
-    # if args.command == "get-build-spec":
-    #     deployers = package_build_spec.used_deployers
+    logging.info(f"Build package '{args.package_name}'...")
 
-        # if args.spec == "deployers":
-        #     deployers = package_build_spec.used_deployers
-        #     if deployers:
-        #         deployer_names = [d.name for d in deployers]
-        #         print(",".join(deployer_names))
-        #
-        # if args.spec == "package-filename-glob":
-        #     print(package_build_spec.filename_glob)
-        #
-        # if args.spec == "base-docker-image":
-        #     if package_build_spec.base_image.image_name:
-        #         print(package_build_spec.base_image)
-        #
-        # if args.spec == "architecture":
-        #     if package_build_spec.architecture:
-        #         print(package_build_spec.architecture.value)
-
-        # exit(0)
-
-    logging.info(f"Build package '{args.package_spec_name}'...")
-
-    package_build_spec.build_package(
-        output_path=pl.Path(args.output_dir),
-        locally=args.locally
-    )
+    if args.command == "build":
+        package_builder.build(
+            output_path=pl.Path(args.output_dir),
+            locally=args.locally
+        )
+        exit(0)
