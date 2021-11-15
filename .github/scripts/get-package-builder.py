@@ -55,8 +55,8 @@ if __name__ == '__main__':
         for package_test in package_tests:
             test_json = {
                 "test-name": package_test.unique_name,
+                "package-filename-glob": package_builder.filename_glob,
                 "deployment-name": package_test.deployment.name,
-                "package-filename-glob": package_builder.filename_glob
             }
             matrix["include"].append(test_json)
 

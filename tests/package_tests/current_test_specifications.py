@@ -119,7 +119,7 @@ class PackageTest:
 
             package_tests = []
 
-            remote_machine_specs = remote_machine_arch_specs.get(builder.architecture, [])
+            remote_machine_specs = remote_machine_arch_specs.get(builder.architecture, [None])
 
             for remote_machine_spec in remote_machine_specs:
 
