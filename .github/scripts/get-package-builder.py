@@ -47,11 +47,19 @@ if __name__ == '__main__':
         test_specs_names = [s.unique_name for s in package_tests]
         test_specs_deployment_names = [s.deployment.name for s in package_tests]
         package_filename_globs = [package_builder.filename_glob for s in package_tests]
+
         matrix = {
-            "test-name": test_specs_names,
-            "deployment-name": test_specs_deployment_names,
-            "package-filename-glob": package_filename_globs
+            "include": []
         }
+
+        for package_test in package_tests:
+            test_json = {
+                "test-name": package_test.unique_name,
+                "deployment-name": package_test.deployment.name,
+                "package-filename-glob": package_builder.filename_glob
+            }
+            matrix["include"].append(test_json)
+
         print(matrix)
 
     if args.command == "test-deployment-names":
