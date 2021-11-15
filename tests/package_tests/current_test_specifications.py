@@ -56,9 +56,9 @@ class PackageTest:
             base_docker_image=package_builder.BASE_DOCKER_IMAGE
         )
 
-
-        type(self).ALL_TESTS[self.unique_name] = self
-        type(self).PACKAGE_TESTS[self.package_builder.name].append(self)
+        if self.unique_name not in type(self).ALL_TESTS:
+            type(self).ALL_TESTS[self.unique_name] = self
+            type(self).PACKAGE_TESTS[self.package_builder.name].append(self)
 
     # test_name: str
     # package_build_spec: package_builders.PackageBuildSpec

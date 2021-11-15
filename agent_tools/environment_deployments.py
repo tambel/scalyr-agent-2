@@ -169,10 +169,7 @@ class DeploymentStep:
 
         # If its a docker deployment, then add the docker image to the name
         if self.in_docker:
-            try:
-                image_suffix = self.initial_docker_image.replace(":", "_")
-            except Exception as e:
-                self.base_docker_image
+            image_suffix = self.initial_docker_image.replace(":", "_")
             name = f"{name}_{image_suffix}"
 
         return name

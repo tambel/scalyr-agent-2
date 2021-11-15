@@ -44,7 +44,12 @@ def get_option(name: str, default: str = None, type_=str, ):
     raise ValueError(f"Can't find config option '{name}'")
 
 
-def test_package(package_test_name: str, build_dir_path: str):
+def test_package(
+        package_test_name: str,
+        build_dir_path: pl.Path,
+        package_path: pl.Path,
+        scalyr_api_key: str
+):
 
     if not build_dir_path:
         build_dir_path = pl.Path(tempfile.mkdtemp())
@@ -54,6 +59,7 @@ def test_package(package_test_name: str, build_dir_path: str):
 
     current_test_specifications.run_package_test(
         package_test_name=package_test_name,
+        package_path=package_path,
         build_dir_path=build_dir_path,
         aws_access_key=get_option("aws_access_key"),
         aws_secret_key = get_option("aws_secret_key"),
@@ -61,7 +67,7 @@ def test_package(package_test_name: str, build_dir_path: str):
         aws_private_key_path = get_option("aws_private_key_path"),
         aws_security_groups = get_option("aws_security_groups"),
         aws_region=get_option("aws_region", "us-east-1"),
-        scalyr_api_key=get_option("scalyr_api_key"),
+        scalyr_api_key=scalyr_api_key,
     )
 
 
@@ -76,6 +82,8 @@ if __name__ == '__main__':
 
     run_test_parser = subparsers.add_parser("run")
     run_test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
+    run_test_parser.add_argument("--package-path", dest="package_path", required=False)
+    run_test_parser.add_argument("--scalyr-api-key", dest="scalyr_api_key", required=False)
 
     get_deployment_name_parser = subparsers.add_parser("get-deployment-name")
 
@@ -84,7 +92,9 @@ if __name__ == '__main__':
     if args.command == "run":
         test_package(
             package_test_name=args.test_name,
-            build_dir_path=args.build_dir_path
+            build_dir_path=args.build_dir_path,
+            package_path=args.package_path,
+            scalyr_api_key=get_option("scalyr_api_key", args.scalyr_api_key)
         )
         exit(0)
 
