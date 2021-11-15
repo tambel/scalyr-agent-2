@@ -10,8 +10,10 @@ import agent_tools.environment_deployments
 
 sys.path.append(str(__SOURCE_ROOT__))
 
-from agent_tools import build_and_test_specs
+from agent_tools import package_builders
 from agent_tools import constants
+from agent_tools import environment_deployments
+from tests.package_tests import current_test_specifications
 
 
 def run_deployer(
@@ -21,7 +23,7 @@ def run_deployer(
         cache_dir: str = None
 ):
 
-    deployer = build_and_test_specs.DEPLOYERS[deployer_name]
+    deployer = environment_deployments.Deployment.ALL_DEPLOYMENTS[deployer_name]
 
     if args.base_docker_image:
         if not architecture_string:
@@ -42,6 +44,7 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser()
+
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -80,63 +83,58 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.command == "list":
-        for name in build_and_test_specs.DEPLOYMENTS.keys():
+        for name in environment_deployments.Deployment.ALL_DEPLOYMENTS.keys():
             print(name)
         exit(0)
 
     if args.command == "checksum":
-        deployment = build_and_test_specs.DEPLOYMENTS[args.name]
+        deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.name]
         checksum = deployment.checksum
         print(checksum)
         exit(0)
 
     if args.command == "previous-deployment":
-        deployment = build_and_test_specs.DEPLOYMENTS[args.name]
+        deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.name]
         if isinstance(deployment, agent_tools.environment_deployments.FollowingDeploymentSpec):
             print(deployment.previous_deployment.name)
 
         exit(0)
 
     if args.command == "deploy":
-        deployment = build_and_test_specs.DEPLOYMENTS[args.name]
+        deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.name]
         deployment.deploy(
             cache_dir=args.cache_dir,
         )
 
-    if args.command == "deployments-as-string-array":
-        deployment = build_and_test_specs.DEPLOYMENTS[args.name]
+    # if args.command == "deployments-as-string-array":
+    #     deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.name]
+    #
+    #     curr = deployment
+    #
+    #     names = []
+    #     while True:
+    #         names.append(curr.name)
+    #         if isinstance(curr, agent_tools.environment_deployments.InitialDeploymentSpec):
+    #             break
+    #         curr = curr.previous_deployment
+    #
+    #     print(",".join(reversed(names)))
+    #
+    #     exit(0)
 
-        curr = deployment
-
-        names = []
-        while True:
-            names.append(curr.name)
-            if isinstance(curr, agent_tools.environment_deployments.InitialDeploymentSpec):
-                break
-            curr = curr.previous_deployment
-
-        print(",".join(reversed(names)))
-
-        exit(0)
-
-    if args.command == "get-first-deployment-name-from-array-list":
-        names = args.list.split(",")
-        if names:
-            print(names[0])
+    # if args.command == "get-first-deployment-name-from-array-list":
+    #     names = args.list.split(",")
+    #     if names:
+    #         print(names[0])
 
     if args.command == "get-deployment-all-cache-names":
-        deployment = build_and_test_specs.DEPLOYMENTS[args.deployment_name]
+        deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.deployment_name]
 
-        curr = deployment
+        step_checksums = []
+        for step in deployment.steps:
+            step_checksums.append(step.result_image_name)
 
-        names = []
-        while True:
-            names.append(curr.cache_name)
-            if isinstance(curr, agent_tools.environment_deployments.InitialDeploymentSpec):
-                break
-            curr = curr.previous_deployment
-
-        print(json.dumps(list(reversed(names))))
+        print(json.dumps(list(reversed(step_checksums))))
 
         exit(0)
 
