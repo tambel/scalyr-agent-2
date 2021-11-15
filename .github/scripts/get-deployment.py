@@ -6,8 +6,6 @@ import logging
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
-import agent_tools.environment_deployments
-
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
