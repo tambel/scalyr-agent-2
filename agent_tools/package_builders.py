@@ -454,8 +454,12 @@ class PackageBuilder(abc.ABC):
 
     @property
     def filename_glob(self) -> str:
+
+        package_specific_arch_name = type(self).PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(
+            self.architecture, ''
+        )
         return type(self).RESULT_PACKAGE_FILENAME_GLOB.format(
-            arch=type(self).PACKAGE_FILENAME_ARCHITECTURE_NAMES[self.architecture]
+            arch=package_specific_arch_name
         )
 
 
@@ -1373,6 +1377,7 @@ class MsiWindowsPackageBuilder(PackageBuilder):
         environment_deployments.InstallWindowsBuilderToolsStep,
         environment_deployments.InstallBuildRequirementsStep
     ]
+    RESULT_PACKAGE_FILENAME_GLOB = "ScalyrAgentInstaller-*.*.*.msi"
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
     # Scalyr Agent.  DO NOT MODIFY THIS VALUE, or already installed software on clients machines will not be able
