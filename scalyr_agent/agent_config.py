@@ -44,8 +44,6 @@ from io import open
 from optparse import OptionParser
 
 # TODO: The following two imports have been modified to facilitate Windows platforms
-import agent_common
-
 if not sys.platform.startswith("win"):
     from pwd import getpwnam
 
@@ -738,7 +736,7 @@ def upgrade_windows_install(
                 else:
                     print("Executing upgrade.  It will finish in the background.")
 
-                # Because this file, config_main.py, is part of the currently installed Scalyr Agent package, we have
+                # Because this file, agent_config.py, is part of the currently installed Scalyr Agent package, we have
                 # to finish our use of it before the upgrade can proceed.  So, we just fork off the msiexec process
                 # in detached mode and terminate this program.  This means we cannot report any errors that happen
                 # here, but I don't see a way around this for now.
@@ -1218,7 +1216,7 @@ def set_python_version(version):
     # use on the 'python' command and rely on the python version which it mapped on.
     if version in DEFAULT:
         agent_main_filename = "agent_main.py"
-        config_main_filename = "config_main.py"
+        config_main_filename = "agent_config.py"
     # python 'python2
     elif version == PYTHON2:
         agent_main_filename = "agent_main_py2.py"
@@ -1581,10 +1579,6 @@ def parse_config_options(argv):
         )
 
     options = parser.parse_args(args=argv)
-    # if len(args) > 1:
-    #     print("Could not parse commandline arguments.", file=sys.stderr)
-    #     parser.print_help(sys.stderr)
-    #     sys.exit(1)
 
     controller = PlatformController.new_platform()
     default_paths = controller.default_paths

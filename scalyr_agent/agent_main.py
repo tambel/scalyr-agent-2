@@ -46,10 +46,7 @@ import time
 import re
 from io import open
 import pathlib as pl
-from optparse import OptionParser
 import argparse
-
-import agent_common
 
 if False:
     from typing import Optional
@@ -74,7 +71,7 @@ from scalyr_agent import __scalyr__
 import scalyr_agent.scalyr_logging as scalyr_logging
 import scalyr_agent.util as scalyr_util
 import scalyr_agent.remote_shell as remote_shell
-from scalyr_agent import config_main
+from scalyr_agent import agent_config
 
 # We have to be careful to set this logger class very early in processing, even before other
 # imports to ensure that any loggers created are AgentLoggers.
@@ -2095,11 +2092,13 @@ if __name__ == "__main__":
     commands = ["start", "stop", "status", "restart", "condrestart", "version", "config"]
 
     if __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS:
+        # If this is Windows, then also add service option.
+        # Using this option we can use windows executable as a base for the Windows Agent service.
+        # It has to save us from building multiple frozen binaries, when packaging.
         commands.append("service")
 
     command_parser = argparse.ArgumentParser(
         usage=f"Usage: scalyr-agent-2 [options] ({commands})",
-        #version="scalyr-agent v" + __scalyr__.SCALYR_VERSION,
     )
     command_parser.add_argument(
         "command",
@@ -2107,15 +2106,16 @@ if __name__ == "__main__":
     )
 
     command_args, other_argv = command_parser.parse_known_args()
+    # Add the config option. So we can configure the agent from the same executable.
+    # It has to save us from building multiple frozen binaries, when packaging.
     if command_args.command == "config":
-        config_main.parse_config_options(other_argv)
+        agent_config.parse_config_options(other_argv)
         exit(0)
 
     if command_args.command == "service":
         from scalyr_agent import platform_windows
         platform_windows.parse_options()
         exit(0)
-
 
     parser = argparse.ArgumentParser()
 
@@ -2183,32 +2183,6 @@ if __name__ == "__main__":
 
     options = parser.parse_args(args=other_argv)
     my_controller.consume_options(options)
-
-    # if len(args) < 1:
-    #     print(
-    #         'You must specify a command, such as "start", "stop", or "status".',
-    #         file=sys.stderr,
-    #     )
-    #     parser.print_help(sys.stderr)
-    #     sys.exit(1)
-    # elif len(args) > 1:
-    #     print(
-    #         'Too many commands specified.  Only specify one of "start", "stop", "status".',
-    #         file=sys.stderr,
-    #     )
-    #     parser.print_help(sys.stderr)
-    #     sys.exit(1)
-    # elif args[0] not in (
-    #     "start",
-    #     "stop",
-    #     "status",
-    #     "restart",
-    #     "condrestart",
-    #     "version",
-    # ):
-    #     print('Unknown command given: "%s"' % args[0], file=sys.stderr)
-    #     parser.print_help(sys.stderr)
-    #     sys.exit(1)
 
     if options.config_filename is not None and not os.path.isabs(
         options.config_filename

@@ -54,10 +54,10 @@ def test_ubuntu_test_versions(request):
         runner, install_deb, remove_deb, "config_main_py2.py", "2.5.1", "", ""
     )
 
-    common_version_test(runner, install_deb, remove_deb, "config_main.py", "", "", "")
+    common_version_test(runner, install_deb, remove_deb, "agent_config.py", "", "", "")
 
     common_version_test(
-        runner, install_deb, remove_deb, "config_main.py", "", "2.5.1", ""
+        runner, install_deb, remove_deb, "agent_config.py", "", "2.5.1", ""
     )
 
 

@@ -738,7 +738,7 @@ class PosixPlatformController(PlatformController):
                 return 1
 
         if not quiet:
-            # Warning, do not change this output.  The config_main.py file looks for this message when
+            # Warning, do not change this output.  The agent_config.py file looks for this message when
             # upgrading a tarball install to make sure the agent was running.
             print("Agent has stopped.")
 

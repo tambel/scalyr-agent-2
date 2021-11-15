@@ -58,12 +58,12 @@ def test_centos_test_versions(request):
     common_version_test(
         runner, install_rpm, remove_rpm, "config_main_py3.py", "2.5.1", "2.5.1", ""
     )
-    common_version_test(runner, install_rpm, remove_rpm, "config_main.py", "", "", "")
+    common_version_test(runner, install_rpm, remove_rpm, "agent_config.py", "", "", "")
     common_version_test(
         runner, install_rpm, remove_rpm, "config_main_py2.py", "2.5.1", "", ""
     )
     common_version_test(
-        runner, install_rpm, remove_rpm, "config_main.py", "", "2.5.1", ""
+        runner, install_rpm, remove_rpm, "agent_config.py", "", "2.5.1", ""
     )
 
 
