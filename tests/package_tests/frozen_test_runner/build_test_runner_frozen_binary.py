@@ -13,15 +13,18 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import constants
 from agent_tools import build_in_docker
+from agent_tools import environment_deployments
+from tests.package_tests import current_test_specifications
 
 def build_test_runner_frozen_binary(
         output_path: pl.Path,
         filename: str,
-        architecture: constants.Architecture,
-        base_image_name: str = None,
+        deployment_name: str,
         locally: bool = False
 ):
-    if locally or not base_image_name:
+    deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[deployment_name]
+
+    if locally or not deployment.in_docker:
         agent_tools_path = __SOURCE_ROOT__ / "agent_tools"
         main_script_path = _PARENT_DIR / "frozen_test_runner_main.py"
 
@@ -58,18 +61,19 @@ def build_test_runner_frozen_binary(
     env = os.environ.copy()
     env["DOCKER_BUILDKIT"] = "1"
 
-
     build_frozen_binary_script_path = "/scalyr-agent-2/tests/package_tests/frozen_test_runner/build_test_runner_frozen_binary.py"
 
     command_args = [
         "python3",
         str(build_frozen_binary_script_path),
-        "--architecture",
-        architecture.value,
+        # "--architecture",
+        # deployment.architecture.value,
         "--filename",
         filename,
-        "--base-image-name",
-        base_image_name,
+        # "--base-image-name",
+        # deployment.result_image_name,
+        "--deployment-name",
+        deployment_name,
         "--output-dir",
         "/tmp/build",
         "--locally"
@@ -77,14 +81,14 @@ def build_test_runner_frozen_binary(
 
     command = shlex.join(command_args)
 
-    image_name = f"agent-package-frozen-binary-builder-{base_image_name}"
+    image_name = f"agent-package-frozen-binary-builder-{deployment.result_image_name}"
 
     build_in_docker.build_stage(
         command=command,
         stage_name="test",
-        architecture=architecture,
+        architecture=deployment.architecture,
         image_name=image_name,
-        base_image_name=base_image_name,
+        base_image_name=deployment.result_image_name,
         output_path=output_path
     )
 
@@ -92,17 +96,15 @@ def build_test_runner_frozen_binary(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--architecture", required=True)
     parser.add_argument("--filename", required=True)
-    parser.add_argument("--base-image-name", required=False)
     parser.add_argument("--locally", required=False, action="store_true")
+    parser.add_argument("--deployment-name", required=True)
 
     args = parser.parse_args()
 
     build_test_runner_frozen_binary(
         output_path=pl.Path(args.output_dir),
         filename=args.filename,
-        architecture=constants.Architecture(args.architecture),
-        base_image_name=args.base_image_name,
+        deployment_name=args.deployment_name,
         locally=args.locally
     )

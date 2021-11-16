@@ -188,29 +188,6 @@ class RemoteMachinePackageTest(PackageTest):
         name = super(RemoteMachinePackageTest, self).unique_name
         return f"{name}_{self.REMOTE_MACHINE_SUFFIX}"
 
-    def _build_test_runner_frozen_binary_path(
-            self,
-            build_dir_path: pl.Path
-    ):
-        frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"
-        if frozen_test_runner_build_dir_path.exists():
-            shutil.rmtree(frozen_test_runner_build_dir_path)
-
-        frozen_test_runner_build_dir_path.mkdir(parents=True)
-
-        self.deployment.deploy()
-
-        test_runner_filename = "frozen_test_runner"
-
-        build_test_runner_frozen_binary.build_test_runner_frozen_binary(
-            output_path=frozen_test_runner_build_dir_path,
-            filename=test_runner_filename,
-            architecture=self.architecture,
-            base_image_name=self.deployment.result_image_name,
-        )
-
-        self._test_runner_frozen_binary_path = frozen_test_runner_build_dir_path / test_runner_filename
-
 
 class DockerBasedPackageTest(RemoteMachinePackageTest):
     """

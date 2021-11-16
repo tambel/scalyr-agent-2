@@ -447,6 +447,10 @@ class Deployment:
 
 
     @property
+    def in_docker(self) -> bool:
+        return self.steps[0].in_docker
+
+    @property
     def result_image_name(self) -> Optional[str]:
         return self.steps[-1].result_image_name.lower()
 

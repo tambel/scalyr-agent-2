@@ -90,8 +90,7 @@ def test_package(
         build_test_runner_frozen_binary.build_test_runner_frozen_binary(
             output_path=frozen_test_runner_build_dir_path,
             filename=test_runner_filename,
-            architecture=package_test.architecture,
-            base_image_name=package_test.deployment.result_image_name,
+            deployment_name=package_test.deployment.name
         )
 
         test_runner_frozen_binary_path = frozen_test_runner_build_dir_path / test_runner_filename
