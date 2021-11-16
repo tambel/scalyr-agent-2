@@ -6,6 +6,7 @@ import sys
 import os
 import tempfile
 import shutil
+from typing import Union
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
@@ -49,7 +50,7 @@ def get_option(name: str, default: str = None, type_=str, ):
 def test_package(
         package_test_name: str,
         build_dir_path: pl.Path,
-        package_path: pl.Path,
+        package_path: Union[str, pl.Path],
         scalyr_api_key: str
 ):
 
@@ -75,6 +76,8 @@ def test_package(
         package_path = list(
             package_output_dir_path.glob(package_test.package_builder.filename_glob)
         )[0]
+    else:
+        package_path = pl.Path(package_path)
 
     if isinstance(package_test, current_test_specifications.RemoteMachinePackageTest):
         frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"

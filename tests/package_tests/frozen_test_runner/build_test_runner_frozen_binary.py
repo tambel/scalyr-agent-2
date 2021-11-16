@@ -66,12 +66,8 @@ def build_test_runner_frozen_binary(
     command_args = [
         "python3",
         str(build_frozen_binary_script_path),
-        # "--architecture",
-        # deployment.architecture.value,
         "--filename",
         filename,
-        # "--base-image-name",
-        # deployment.result_image_name,
         "--deployment-name",
         deployment_name,
         "--output-dir",
