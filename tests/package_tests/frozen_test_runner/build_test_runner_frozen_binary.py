@@ -1,3 +1,23 @@
+# Copyright 2014-2021 Scalyr Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+This script build frozen binary for the package test runner. The frozen package test runner is needed to run package
+tests on real "clean" machines, for example on AWS Ec2, or docker without any preliminary work
+"""
+
+
 import argparse
 import pathlib as pl
 import sys
@@ -5,16 +25,18 @@ import subprocess
 import os
 import stat
 import shlex
+import logging
 
 _PARENT_DIR = pl.Path(__file__).parent.absolute()
 __SOURCE_ROOT__ = _PARENT_DIR.parent.parent.parent
 
+# This file can be executed as script. Add source root to the PYTHONPATH in order to be able to import
+# local packages.
 sys.path.append(str(__SOURCE_ROOT__))
 
-from agent_tools import constants
 from agent_tools import build_in_docker
 from agent_tools import environment_deployments
-from tests.package_tests import current_test_specifications
+
 
 def build_test_runner_frozen_binary(
         output_path: pl.Path,
@@ -22,6 +44,13 @@ def build_test_runner_frozen_binary(
         deployment_name: str,
         locally: bool = False
 ):
+    """
+    Build the frozen binary of the test runner script by using PyInstaller library. Can also build it inside docker.
+    :param output_path: Output directory path.
+    :param filename: Name of the result file,
+    :param deployment_name: Name of the environment deployment which is required to build the frozen binary.
+    :param locally: If True build on current system, otherwise in docker.
+    """
     deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[deployment_name]
 
     if locally or not deployment.in_docker:
@@ -58,14 +87,14 @@ def build_test_runner_frozen_binary(
 
         return
 
-    env = os.environ.copy()
-    env["DOCKER_BUILDKIT"] = "1"
+    # Build frozen binary inside the docker. To do that run the same script in docker again.
+    docker_side_source_path = pl.Path("/scalyr-agent-2")
 
-    build_frozen_binary_script_path = "/scalyr-agent-2/tests/package_tests/frozen_test_runner/build_test_runner_frozen_binary.py"
+    docker_side_build_script_path = docker_side_source_path / pl.Path(__file__).relative_to(__SOURCE_ROOT__)
 
     command_args = [
         "python3",
-        str(build_frozen_binary_script_path),
+        str(docker_side_build_script_path),
         "--filename",
         filename,
         "--deployment-name",
@@ -85,11 +114,13 @@ def build_test_runner_frozen_binary(
         architecture=deployment.architecture,
         image_name=image_name,
         base_image_name=deployment.result_image_name,
-        output_path=output_path
+        output_path_mappings={output_path: pl.Path("/tmp/build")}
     )
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--filename", required=True)

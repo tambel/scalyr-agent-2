@@ -1,4 +1,4 @@
-orjson==3.5.1
+orjson==3.6.4
 # TODO: remove six from the code base.
 six==1.14.0
 requests==2.26.0

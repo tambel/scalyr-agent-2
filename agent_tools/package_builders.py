@@ -11,9 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import dataclasses
+
+"""
+This module defines all possible packages of the Scalyr Agent and how they can be built.
+"""
+
+
 import json
-import logging
 import pathlib as pl
 import shlex
 import tarfile
@@ -121,7 +125,6 @@ class BadChangeLogFormat(Exception):
     pass
 
 
-# <editor-fold defaultstate="collapsed" desc="Description">
 def parse_date(date_str):
     """Parses a date time string of the format MMM DD, YYYY HH:MM +ZZZZ and returns seconds past epoch.
 
@@ -176,7 +179,6 @@ def parse_date(date_str):
 
     base_time += local_offset_secs - tz_offset_secs
     return base_time
-# </editor-fold>
 
 
 def parse_change_log():
@@ -383,9 +385,13 @@ def parse_change_log():
 
 class PackageBuilder(abc.ABC):
     """
-    Base abstraction for all Scalyr agent package builders.
+        Base abstraction for all Scalyr agent package builders. it can perform build of the package directly on the
+    current system or inside docker.
+        It also uses ':py:module:`agent_tools.environment_deployments` features to define and deploy its build
+        environment in order to be able to perform the actual build.
     """
 
+    # Type of the package to build.
     PACKAGE_TYPE: constants.PackageType
 
     # Add agent source code as a bundled frozen binary if True, or
@@ -401,17 +407,20 @@ class PackageBuilder(abc.ABC):
     # Map package-specific architecture names to the architecture names that are used in build.
     PACKAGE_FILENAME_ARCHITECTURE_NAMES: Dict[constants.Architecture, str] = {}
 
-    RESULT_PACKAGE_FILENAME_GLOB = "scalyr-agent-2_*.*.*_{arch}.deb"
+    # The format string for the glob that has to match result package filename.
+    # For now, the format string accepts:
+    #   {arch}: architecture of the package.
+    # See more in the "filename_glob" property of the class.
+    RESULT_PACKAGE_FILENAME_GLOB: str
 
-    DEPLOYMENT_STEPS: List[Type[environment_deployments.DeploymentStep]]
-
-    BASE_DOCKER_IMAGE: str = None
-
+    # Special global collection of all builders. It can be used by CI/CD scripts to find needed package builder.
     ALL_BUILDERS: Dict[str, 'PackageBuilder'] = {}
 
     def __init__(
             self,
             architecture: constants.Architecture,
+            base_docker_image: str = None,
+            deployment_step_classes: List[Type[environment_deployments.DeploymentStep]] = None,
             variant: str = None,
             no_versioned_file_name: bool = False,
     ):
@@ -437,22 +446,32 @@ class PackageBuilder(abc.ABC):
 
         self.architecture = architecture
 
+        self.base_docker_image = base_docker_image
+
+        # Create personal deployment for the package builder.
         self.deployment = environment_deployments.Deployment(
             name=f"package-builder-{self.name}-deployment",
-            step_classes=type(self).DEPLOYMENT_STEPS,
+            step_classes=deployment_step_classes or [],
             architecture=architecture,
-            base_docker_image=type(self).BASE_DOCKER_IMAGE
+            base_docker_image=base_docker_image
         )
 
         PackageBuilder.ALL_BUILDERS[self.name] = self
 
     @property
     def name(self) -> str:
+        """
+        Unique name of the package builder. It considers the architecture of the package.
+        """
         return f"{type(self).PACKAGE_TYPE.value}_{self.architecture.value}"
 
     @property
     def filename_glob(self) -> str:
+        """
+        Final glob that has to match result package filename.
+        """
 
+        # Get appropriate glob format string and apply the appropriate architecture.
         package_specific_arch_name = type(self).PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(
             self.architecture, ''
         )
@@ -460,15 +479,16 @@ class PackageBuilder(abc.ABC):
             arch=package_specific_arch_name
         )
 
-
     def build(
-            self, output_path: Union[str, pl.Path],
-            cache_dir: pl.Path = None,
+            self,
+            output_path: Union[str, pl.Path],
             locally: bool = False
     ):
         """
         The function where the actual build of the package happens.
         :param output_path: Path to the directory where the resulting output has to be stored.
+        :param locally: Force builder to build the package on the current system, even if meant to be done inside
+            docker. This is needed to avoid loop when it is already inside the docker.
         """
 
         output_path = pl.Path(output_path).absolute()
@@ -478,12 +498,8 @@ class PackageBuilder(abc.ABC):
 
         output_path.mkdir(parents=True)
 
-        # deployer = deployers.DEPLOYERS_TO_NAMES[self.ENVIRONMENT_DEPLOYER_NAME]
-
-        # If locally option is specified or builder class is not dockerized by default then just build the package
-        # directly on this system.
-
-        if locally or not type(self).BASE_DOCKER_IMAGE:
+        # Build right here.
+        if locally or not self.deployment.in_docker:
             self._build_output_path = pl.Path(output_path)
             self._package_files_path = self._build_output_path / "package_root"
             self._package_files_path.mkdir()
@@ -492,24 +508,10 @@ class PackageBuilder(abc.ABC):
             self._build(output_path=output_path)
             return
 
-        self.build_in_docker(
-            output_path=output_path,
-            cache_dir=cache_dir
-        )
+        # Build in docker.
 
-    def build_in_docker(
-            self,
-            output_path: pl.Path,
-            cache_dir: pl.Path
-    ):
-
-        self.deployment.deploy(
-            cache_dir=cache_dir,
-        )
-
-        # Do the build in docker by using buildkit.
-        env = os.environ.copy()
-        env["DOCKER_BUILDKIT"] = "1"
+        # First make sure that the deployment with needed images are ready.
+        self.deployment.deploy()
 
         # To perform the build in docker we have to run the build_package.py script once more but in docker.
         build_package_script_path = pl.Path("/scalyr-agent-2/build_package.py")
@@ -526,8 +528,7 @@ class PackageBuilder(abc.ABC):
 
         command = shlex.join(command_args)
 
-        # Run the docker build.
-
+        # Run the docker build inside the result image of the deployment.
         base_image_name = self.deployment.result_image_name.lower()
 
         build_in_docker.build_stage(
@@ -536,9 +537,8 @@ class PackageBuilder(abc.ABC):
             architecture=self.architecture,
             image_name=f"agent-builder-{self.name}-{base_image_name}".lower(),
             base_image_name=base_image_name,
-            output_path=output_path
+            output_path_mappings={output_path: pl.Path("/tmp/build")}
         )
-
 
     @property
     def _build_info(self) -> Optional[str]:
@@ -834,12 +834,6 @@ class LinuxPackageBuilder(PackageBuilder):
     The base package builder for all Linux packages.
     """
 
-    BASE_DOCKER_IMAGE = "centos:7"
-    DEPLOYMENT_STEPS = [
-        environment_deployments.InstallPythonStep,
-        environment_deployments.InstallBuildRequirementsStep
-    ]
-
     def _build_package_files(self, output_path: Union[str, pl.Path]):
         """
         Add files to the agent's install root which are common for all linux packages.
@@ -1079,12 +1073,16 @@ class FpmBasedPackageBuilder(LinuxFhsBasedPackageBuilder):
     def __init__(
             self,
             architecture,
+            base_docker_image: str = None,
+            deployment_step_classes: List[Type[environment_deployments.DeploymentStep]] = None,
             variant: str = None,
             no_versioned_file_name: bool = False,
     ):
         super(FpmBasedPackageBuilder, self).__init__(
+            architecture=architecture,
+            base_docker_image=base_docker_image,
+            deployment_step_classes=deployment_step_classes,
             variant=variant, no_versioned_file_name=no_versioned_file_name,
-            architecture=architecture
         )
         # Path to generated changelog files.
         self._package_changelogs_path: Optional[pl.Path] = None
@@ -1298,14 +1296,17 @@ class DebPackageBuilder(FpmBasedPackageBuilder):
         constants.Architecture.X86_64: "amd64",
         constants.Architecture.ARM64: "arm64"
     }
+    RESULT_PACKAGE_FILENAME_GLOB = "scalyr-agent-2_*.*.*_{arch}.deb"
     FPM_PACKAGE_TYPE = "deb"
 
 
 class RpmPackageBuilder(FpmBasedPackageBuilder):
+    PACKAGE_TYPE = constants.PackageType.RPM
     PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: "x86_64",
         constants.Architecture.ARM64: "aarch64"
     }
+    RESULT_PACKAGE_FILENAME_GLOB = "scalyr-agent-2-*.*.*-1.{arch}.rpm"
     FPM_PACKAGE_TYPE = "rpm"
 
 
@@ -1314,7 +1315,6 @@ class TarballPackageBuilder(LinuxPackageBuilder):
     The builder for the tarball packages.
     """
 
-    #PACKAGE_TYPE = "tar"
     INSTALL_TYPE = "packageless"
     PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: constants.Architecture.X86_64.value,
@@ -1370,10 +1370,6 @@ class MsiWindowsPackageBuilder(PackageBuilder):
     PACKAGE_TYPE = constants.PackageType.MSI
     INSTALL_TYPE = "package"
     FROZEN_BINARY_FILE_NAME = "scalyr-agent-2.exe"
-    DEPLOYMENT_STEPS = [
-        environment_deployments.InstallWindowsBuilderToolsStep,
-        environment_deployments.InstallBuildRequirementsStep
-    ]
     RESULT_PACKAGE_FILENAME_GLOB = "ScalyrAgentInstaller-*.*.*.msi"
 
     # A GUID representing Scalyr products, used to generate a per-version guid for each version of the Windows
@@ -1483,192 +1479,46 @@ class MsiWindowsPackageBuilder(PackageBuilder):
             ],
             cwd=str(scalyr_dir.absolute().parent),
         )
-# </editor-fold>
 
+
+_DEFAULT_LINUX_BUILDERS_BASE_DOCKER_IMAGE = "centos:6"
+
+_DEFAULT_LINUX_BUILDER_DEPLOYMENT_STEPS = [
+    environment_deployments.InstallPythonStep,
+    environment_deployments.InstallBuildRequirementsStep
+]
 
 DEB_X86_64_BUILDER = DebPackageBuilder(
     architecture=constants.Architecture.X86_64,
+    base_docker_image=_DEFAULT_LINUX_BUILDERS_BASE_DOCKER_IMAGE,
+    deployment_step_classes=_DEFAULT_LINUX_BUILDER_DEPLOYMENT_STEPS,
 )
+
+RPM_X86_64_BUILDER = RpmPackageBuilder(
+    architecture=constants.Architecture.X86_64,
+    base_docker_image=_DEFAULT_LINUX_BUILDERS_BASE_DOCKER_IMAGE,
+    deployment_step_classes=_DEFAULT_LINUX_BUILDER_DEPLOYMENT_STEPS,
+)
+
+TAR_x86_64_BUILDER = TarballPackageBuilder(
+    architecture=constants.Architecture.X86_64,
+    base_docker_image=_DEFAULT_LINUX_BUILDERS_BASE_DOCKER_IMAGE,
+    deployment_step_classes=_DEFAULT_LINUX_BUILDER_DEPLOYMENT_STEPS
+)
+
+
+_WINDOWS_BUILDER_DEPLOYMENT_STEPS = [
+    environment_deployments.InstallWindowsBuilderToolsStep,
+    environment_deployments.InstallBuildRequirementsStep
+]
 
 # Widnows MSI Packages. Only support X86 architecture for now.
 MSI_x86_64_BUILDER = MsiWindowsPackageBuilder(
-    architecture=constants.Architecture.X86_64
+    architecture=constants.Architecture.X86_64,
+    deployment_step_classes=_WINDOWS_BUILDER_DEPLOYMENT_STEPS
 )
 
-a=10
 
-#
-#
-#
-#
-#
-# @dataclasses.dataclass
-# class PackageBuildSpec:
-#     """
-#     Since some of packages can be built for multiple processor architectures, the class :py:class:`PackageBuilder`,
-#     which is defined above, can not be a final target to build a package.
-#
-#     This class represents a final target of the build, because is already has all needed information to perform it.
-#     efe
-#
-#     Attributes:
-#         package_type: Type
-#         package_builder_cls:
-#
-#     """
-#     ALL_BUILD_SPECS: ClassVar[Dict[str, 'PackageBuildSpec']] = {}
-#     package_type: constants.PackageType
-#     package_builder_cls: Type[PackageBuilder]
-#     deployment_spec: environment_deployments.DeploymentSpec
-#     filename_glob: str
-#     # """
-#     # :param package_type: Type of the package to build.
-#     # :param package_builder_cls: One of the subclassed of the package.builders.PackageBuilder.
-#     # """
-#
-#     @property
-#     def architecture(self) -> constants.Architecture:
-#         return self.deployment_spec.architecture
-#
-#     @property
-#     def name(self) -> str:
-#         result = f"{self.package_type.value}"
-#         if self.architecture:
-#             result = f"{result}_{self.architecture.value}"
-#
-#         return result
-#
-#     def build_package(
-#             self,
-#             output_path: pl.Path,
-#             variant: str = None,
-#             no_versioned_file_name: bool = False,
-#             locally: bool = False
-#     ):
-#         """
-#         Build the package by running the appropriate package builder.
-#         :param output_path: Directory where with the result of the build.
-#         :param variant: Goes to :py:meth:`PackageBuilder.__init__`, see there for more info.
-#         :param no_versioned_file_name: Goes to :py:meth:`PackageBuilder.__init__`, see there for more info.
-#         :param locally: If True, then the package is built locally on the current system, otherwise it is build inside
-#             docker.
-#         """
-#
-#         if output_path.exists():
-#             shutil.rmtree(output_path)
-#         output_path.mkdir(parents=True)
-#
-#         # If it is a local build or the deployment os not based on docker images then build the package locally.
-#         if locally or not self.deployment_spec.in_docker:
-#             package_builder_cls = self.package_builder_cls
-#             package_builder = package_builder_cls(
-#                 architecture=self.architecture,
-#                 variant=variant, no_versioned_file_name=no_versioned_file_name
-#             )
-#             package_builder.build(
-#                 output_path=output_path
-#             )
-#             return
-#
-#         # Build package in docker.
-#
-#         # Prepare build environment in the base docker image by performing the deployment.
-#         if self.deployment_spec.in_docker:
-#             self.deployment_spec.deploy()
-#
-#         # Do the build in docker by using buildkit.
-#         env = os.environ.copy()
-#         env["DOCKER_BUILDKIT"] = "1"
-#
-#         # To perform the build in docker we have to run the build_package.py script once more but in docker.
-#         build_package_script_path = pl.Path("/scalyr-agent-2/build_package.py")
-#
-#         command_args = [
-#             "python3",
-#             str(build_package_script_path),
-#             self.name,
-#             "--output-dir",
-#             "/tmp/build",
-#             # Do not forget to specify this flag to avoid infinite docker build recursion.
-#             "--locally"
-#         ]
-#
-#         command = shlex.join(command_args)
-#
-#         # Run the docker build.
-#         build_in_docker.build_stage(
-#             command=command,
-#             stage_name="build",
-#             architecture=self.architecture,
-#             image_name=f"agent-builder-{self.name}-{self.deployment_spec.result_image_name}".lower(),
-#             base_image_name=self.deployment_spec.result_image_name,
-#             output_path=output_path
-#         )
-#
-#     @staticmethod
-#     def create_package_build_specs(
-#             package_type: constants.PackageType,
-#             package_builder_cls: Type[PackageBuilder],
-#             filename_glob_format: str,
-#             architectures: List[constants.Architecture],
-#             deployment: environment_deployments.Deployment = None,
-#             base_docker_image: str = None,
-#
-#     ) -> List['PackageBuildSpec']:
-#         """
-#         A helper function for a bulk creation of new instances of the :py:class:`PackageBuildSpec` class.
-#         This function accepts all package specifics and produces a separate instance of the :py:class:`PackageBuildSpec`
-#             For example, the majority of packages support both x86_64 and arm64 architectures. This method can produce
-#         two instances of the :py:class:`PackageBuildSpec` for each architecture and make the definition of the
-#         package build specifications less verbose.
-#
-#         :param package_type: Type of the package to build.
-#         :param package_builder_cls: Package builder class.
-#         :param filename_glob_format: The format string for the filename glob which goes to
-#             the :py:attr:`PackageBuildSpec.filename_glob` attribute. The final package filename may also depend on some
-#             specifics. This format string helps to produce the final glob for the package filename. For example, for the
-#             format string 'scalyr-agent-2_2.1.24_{arch}.deb' the architecture value of the package will be put into
-#             the '{arch}' field.
-#         :param architectures: List of architectures. A new :py:class:`PackageBuildSpec` is created for each of them.
-#         :param deployment: List of deployments that goes :py:attr:`PackageBuildSpec.filename_glob`
-#         :param base_docker_image: name of the public dockerhub image which will be used as a builder machine for the
-#             package.
-#         """
-#
-#         result_specs = []
-#
-#         # Create build spec for each specified architecture.
-#         for arch in architectures:
-#
-#             # Create an appropriate deployment spec from the specified common deployment.
-#             deployment_spec = environment_deployments.DeploymentSpec.create_new_deployment_spec(
-#                 deployment=deployment,
-#                 architecture=arch,
-#                 base_docker_image=base_docker_image
-#             )
-#
-#             # Get the package-specific architecture names of the package from the builder to form the result package
-#             # filename glob.
-#             package_arch_name = package_builder_cls.PACKAGE_FILENAME_ARCHITECTURE_NAMES.get(arch, "")
-#
-#             # Finally create the build spec.
-#             spec = PackageBuildSpec(
-#                 package_type=package_type,
-#                 package_builder_cls=package_builder_cls,
-#                 filename_glob=filename_glob_format.format(arch=package_arch_name),
-#                 deployment_spec=deployment_spec,
-#             )
-#
-#             # We store all build specs in a globally available collection, so check that their names are unique.
-#             if spec.name in PackageBuildSpec.ALL_BUILD_SPECS:
-#                 raise ValueError(f"Package build spec {spec.name} already exists.")
-#
-#             PackageBuildSpec.ALL_BUILD_SPECS[spec.name] = spec
-#             result_specs.append(spec)
-#
-#         return result_specs
-#
-#
 # # Name of the docker image that has to be used as a base image for all linux base packages.
 # _LINUX_SPECS_BASE_IMAGE = "centos:7"
 #

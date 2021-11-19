@@ -47,7 +47,7 @@ main_a = Analysis(
 )
 
 config_a = Analysis(
-    ["source_root\\scalyr_agent\\agent_config.py"],
+    ["source_root\\scalyr_agent\\config_main.py"],
     pathex=[
         "source_root\\scalyr_agent\\third_party",
         "source_root\\scalyr_agent\\third_party_python2",

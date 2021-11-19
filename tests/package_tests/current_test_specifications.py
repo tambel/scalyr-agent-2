@@ -1,26 +1,30 @@
-import abc
-import base64
+# Copyright 2014-2021 Scalyr Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import collections
 import dataclasses
 import enum
-import functools
-import os.path
-import pickle
-import shlex
 import shutil
 import pathlib as pl
 import subprocess
-import sys
-import stat
-import tempfile
-from typing import ClassVar, Dict, List, Union, Type, Optional
+from typing import Dict, List, Union, Type
 
 
 from agent_tools import constants
 from agent_tools import environment_deployments as env_deployers
 from agent_tools import package_builders
 from tests.package_tests.internals import deb_rpm_tar_msi_test
-from tests.package_tests.frozen_test_runner import build_test_runner_frozen_binary
 
 _PARENT_DIR = pl.Path(__file__).parent
 __SOURCE_ROOT__ = _PARENT_DIR.parent.parent.absolute()
@@ -28,7 +32,7 @@ __SOURCE_ROOT__ = _PARENT_DIR.parent.parent.absolute()
 
 class PackageTest:
     """
-    Specification of the particular package test. If combines information about the package type, architecture,
+    Particular package test. If combines information about the package type, architecture,
     deployment and the system where test has to run.
     """
 
@@ -47,22 +51,18 @@ class PackageTest:
         self.architecture = architecture or package_builder.architecture
 
         if not deployment_step_classes:
-            deployment_step_classes = package_builder.DEPLOYMENT_STEPS[:]
+            deployment_step_classes = package_builder.deployment.steps[:]
 
         self.deployment = env_deployers.Deployment(
             name=f"package_test_{self.unique_name}_deployment",
             step_classes=deployment_step_classes,
             architecture=architecture or package_builder.architecture,
-            base_docker_image=package_builder.BASE_DOCKER_IMAGE
+            base_docker_image=package_builder.base_docker_image
         )
 
         if self.unique_name not in type(self).ALL_TESTS:
             type(self).ALL_TESTS[self.unique_name] = self
             type(self).PACKAGE_TESTS[self.package_builder.name].append(self)
-
-    # test_name: str
-    # package_build_spec: package_builders.PackageBuildSpec
-    # deployment_spec: env_deployers.DeploymentSpec
 
     @property
     def unique_name(self) -> str:
@@ -96,7 +96,6 @@ class PackageTest:
             self,
             package_path: pl.Path,
             scalyr_api_key: str,
-            locally: bool = False
     ):
 
         if self.package_builder.PACKAGE_TYPE in [
@@ -124,8 +123,9 @@ class PackageTest:
         """
         Creates multiple test specs based on given specifics and put them into the global class attribute list.
         :param base_name: Common name for all produced tests.
-        :param package_build_specs: Specification for the package to build.
-        :param deployment: Deployment which ir required to perform the test.
+        :param package_builders: List of package builders.
+        :param additional_deployment_steps: Deployments which are required to perform the test.
+            They are installed on top of the deployment that 'package_builder' has.
         :param remote_machine_arch_specs: Specification of the "remote" machines to run the test in them instead of the
             current system. This is a dict where each element is a list of specifications of the remote machines for a
             particular processor architecture.
@@ -143,10 +143,11 @@ class PackageTest:
 
             for remote_machine_spec in remote_machine_specs:
 
+                builder_steps_classes = [type(step) for step in builder.deployment.steps]
                 kwargs = {
                     "test_name": base_name,
                     "package_builder": builder,
-                    "deployment_step_classes": [*builder.DEPLOYMENT_STEPS, *additional_deployment_steps]
+                    "deployment_step_classes": [*builder_steps_classes, *additional_deployment_steps]
                 }
                 if isinstance(remote_machine_spec, DockerBasedPackageTest.DockerImageInfo):
                     test_spec = DockerBasedPackageTest(
@@ -164,14 +165,6 @@ class PackageTest:
                     )
 
                 package_tests.append(test_spec)
-
-            # for package_test in list(package_tests):
-            #     if package_test.unique_name in PackageTest.ALL_TESTS:
-            #         package_tests.remove(package_test)
-            #     else:
-            #         PackageTest.ALL_TESTS[package_test.unique_name] = package_test
-            #
-            # PackageTest.PACKAGE_TESTS[builder.name] = package_tests
 
 
 class RemoteMachinePackageTest(PackageTest):
@@ -229,8 +222,6 @@ class DockerBasedPackageTest(RemoteMachinePackageTest):
 
         # Run the test inside the docker.
         # fmt: off
-
-        cmd_args = []
 
         subprocess.check_call(
             [
@@ -391,6 +382,20 @@ COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
 # )
 #
 #
+
+# Create specs for the RPM packages, which have to be performed in the centos 7 distribution.
+PackageTest.create_test_specs(
+    base_name="centos-6",
+    package_builders=[package_builders.RPM_X86_64_BUILDER],
+    remote_machine_arch_specs={
+        constants.Architecture.X86_64: [
+            DockerBasedPackageTest.DockerImageInfo("centos:6")
+        ],
+    },
+    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
+)
+
+
 # # Create specs for the RPM packages, which have to be performed in the centos 7 distribution.
 # PackageTest.create_test_specs(
 #     base_name="centos-7",
