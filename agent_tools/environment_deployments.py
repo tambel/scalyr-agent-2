@@ -423,6 +423,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
                 source_path=__SOURCE_ROOT__,
                 cache_dir=cache_dir
             ),
+            shell=True
         )
 
     def _run_in_docker(
