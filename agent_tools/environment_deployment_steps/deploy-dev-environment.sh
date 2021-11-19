@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script is used by "ShellScriptDeploymentStep"
+# (See more in class "ShellScriptDeploymentStep" in the "agent_tools/environment_deployments.py"
+
 set -e
 
 PARENT_DIR="$(dirname "$0")"
@@ -22,17 +25,14 @@ source "$PARENT_DIR/cache_lib.sh"
 
 pip_cache_dir="$(python3 -m pip cache dir)"
 
-restore_from_cache pipi "$pip_cache_dir"
+# Reuse cached pip cache if exists.
+restore_from_cache pip "$pip_cache_dir"
 
 python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
-save_to_cache pipi "$pip_cache_dir"
+# Save pipe cache to reuse it in future.
+save_to_cache pip "$pip_cache_dir"
 
-
-#
-#if $save_cache ; then
-#  cp -a "$pip_cache_dir" "$CACHE_DIR/pip"
-#fi
 
 
 
