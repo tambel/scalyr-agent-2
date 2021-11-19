@@ -394,6 +394,8 @@ def run(
         runner_cls = RpmPAckageRunner
     elif package_type == constants.PackageType.TAR:
         runner_cls = TarballAgentRunner
+    elif package_type == constants.PackageType.MSI:
+        runner_cls = MsiAgentRunner
 
     agent_runner = runner_cls(
         package_path=package_path,
