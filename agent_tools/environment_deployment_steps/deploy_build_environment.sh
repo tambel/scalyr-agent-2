@@ -26,7 +26,7 @@ source "$PARENT_DIR/cache_lib.sh"
 pip_cache_dir="$(python3 -m pip cache dir)"
 
 # Reuse cached pip cache if exists.
-restore_from_cache pipi "$pip_cache_dir"
+restore_from_cache pip "$pip_cache_dir"
 
 python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/main-requirements.txt"
 python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/monitors-requirements.txt"
