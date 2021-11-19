@@ -1315,13 +1315,13 @@ class TarballPackageBuilder(LinuxPackageBuilder):
     The builder for the tarball packages.
     """
 
+    PACKAGE_TYPE = constants.PackageType.TAR
     INSTALL_TYPE = "packageless"
     PACKAGE_FILENAME_ARCHITECTURE_NAMES = {
         constants.Architecture.X86_64: constants.Architecture.X86_64.value,
         constants.Architecture.ARM64: constants.Architecture.ARM64.value
     }
-
-    # DOCKERIZED = True
+    RESULT_PACKAGE_FILENAME_GLOB = "scalyr-agent-*.*.*_{arch}.tar.gz"
 
     def _build_package_files(self, output_path: Union[str, pl.Path]):
 
