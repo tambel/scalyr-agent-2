@@ -376,16 +376,16 @@ class ShellScriptDeploymentStep(DeploymentStep):
             self.used_files + [type(self).SCRIPT_PATH]
         )
 
-    def _get_command(
+    def _get_command_line_args(
             self,
             source_path: pl.Path,
             cache_dir: Union[str, pl.Path] = None,
 
-    ) -> str:
+    ) -> List[str]:
         """
-        Create string with the shell command that has to execute the shell script.
+        Create list with the shell command line arguments that has to execute the shell script.
             Optionally also adds cache path to the shell script as additional argument.
-        :param source_path: PAth to the source root. Since this coommand can be executed in docker within
+        :param source_path: PAth to the source root. Since this command can be executed in docker within
             different filesystem, then the source root also has to be different.
         :param cache_dir: Path to the cache dir.
         :return: String with shell command that can be executed to needed shell.
@@ -400,14 +400,14 @@ class ShellScriptDeploymentStep(DeploymentStep):
         # Create final absolute path to the script.
         final_script_path = source_path / type(self).SCRIPT_PATH.relative_to(__SOURCE_ROOT__)
 
-        command = [shell, str(final_script_path)]
+        command_args = [shell, str(final_script_path)]
 
         # If cache directory is presented, then we pass it as an additional argument to the
         # script, so it can use the cache too.
         if cache_dir:
-            command.append(str(pl.Path(cache_dir)))
+            command_args.append(str(pl.Path(cache_dir)))
 
-        return shlex.join(command)
+        return command_args
 
     def _run_locally(
             self,
@@ -418,12 +418,13 @@ class ShellScriptDeploymentStep(DeploymentStep):
         :param cache_dir: Path of the cache directory. If specified, then the script may save or reuse some intermediate
             result using it.
         """
-        subprocess.check_call(
-            self._get_command(
+        command_args = self._get_command_line_args(
                 source_path=__SOURCE_ROOT__,
                 cache_dir=cache_dir
-            ),
-            shell=True
+            )
+
+        subprocess.check_call(
+            command_args,
         )
 
     def _run_in_docker(
@@ -484,14 +485,14 @@ class ShellScriptDeploymentStep(DeploymentStep):
             subprocess.check_call(["docker", "commit", intermediate_image_name, intermediate_image_name])
 
             # Get command that has to run shell script.
-            command = self._get_command(
+            command_args = self._get_command_line_args(
                 source_path=pl.Path("/scalyr-agent-2"),
                 cache_dir=cache_dir
             )
 
             # Run command in the previously created intermediate image.
             build_in_docker.build_stage(
-                command=command,
+                command=shlex.join(command_args),
                 stage_name="step-build",
                 architecture=self.architecture,
                 image_name=self.result_image_name,
