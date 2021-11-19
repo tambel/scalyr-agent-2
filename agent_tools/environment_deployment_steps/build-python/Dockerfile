@@ -80,7 +80,7 @@ RUN git clone --depth 1 --branch 1.56.1 https://github.com/rust-lang/rust.git
 WORKDIR rust
 RUN git submodule update --init --recursive
 ADD config.toml config.toml
-RUN ./x.py build
+RUN ./x.py build -j "$(nproc)"
 RUN ./x.py install
 RUN ./x.py install cargo
 
