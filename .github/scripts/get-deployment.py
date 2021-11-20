@@ -6,12 +6,17 @@ import logging
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
+# This file can be executed as script. Add source root to the PYTHONPATH in order to be able to import
+# local packages.
 sys.path.append(str(__SOURCE_ROOT__))
 
-from agent_tools import package_builders
 from agent_tools import constants
 from agent_tools import environment_deployments
+
+# Import those files, since they are create all needed builders and tests.
+# Without them there also won't be any deployments.
 from tests.package_tests import current_test_specifications
+from agent_tools import package_builders
 
 
 def run_deployer(

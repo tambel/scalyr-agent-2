@@ -82,6 +82,9 @@ RUN git submodule update --init --recursive
 ADD config.toml config.toml
 RUN ./x.py build -j "$(nproc)"
 RUN ./x.py install
+
+ENV PKG_CONFIG_PATH /usr/local/lib64/pkgconfig
+
 RUN ./x.py install cargo
 
 #

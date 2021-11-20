@@ -19,9 +19,6 @@ if __name__ == '__main__':
     build_spec_name_parser = subparsers.add_parser("deployment-name")
     build_spec_name_parser.add_argument("build_spec_name", choices=package_builders.PackageBuilder.ALL_BUILDERS.keys())
 
-    get_test_deployments_parser = subparsers.add_parser("test-deployment-names")
-    get_test_deployments_parser.add_argument("build_spec_name", choices=package_builders.PackageBuilder.ALL_BUILDERS.keys())
-
     get_package_test_specs_parser = subparsers.add_parser("package-test-specs-matrix")
     get_package_test_specs_parser.add_argument("build_spec_name", choices=package_builders.PackageBuilder.ALL_BUILDERS.keys())
 
