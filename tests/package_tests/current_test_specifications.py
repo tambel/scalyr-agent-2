@@ -382,8 +382,20 @@ COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
 # )
 #
 #
-
 # Create specs for the RPM packages, which have to be performed in the centos 7 distribution.
+PackageTest.create_test_specs(
+    base_name="centos-7",
+    package_builders=[package_builders.RPM_X86_64_BUILDER],
+    remote_machine_arch_specs={
+        constants.Architecture.X86_64: [
+            DockerBasedPackageTest.DockerImageInfo("centos:7")
+        ],
+    },
+    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
+)
+
+
+# Create specs for the RPM packages, which have to be performed in the centos 6 distribution.
 PackageTest.create_test_specs(
     base_name="centos-6",
     package_builders=[package_builders.RPM_X86_64_BUILDER],

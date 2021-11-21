@@ -502,7 +502,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
         finally:
             # Remove intermediate container and image.
             subprocess.check_call(["docker", "rm", "-f", intermediate_image_name])
-            subprocess.check_call(["docker", "image ", "rm", "-f", intermediate_image_name])
+            subprocess.check_call(["docker", "image", "rm", "-f", intermediate_image_name])
 
 
 class Deployment:

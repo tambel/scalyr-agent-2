@@ -19,29 +19,6 @@ from tests.package_tests import current_test_specifications
 from agent_tools import package_builders
 
 
-def run_deployer(
-        deployer_name: str,
-        base_docker_image: str = None,
-        architecture_string: str = None,
-        cache_dir: str = None
-):
-
-    deployer = environment_deployments.Deployment.ALL_DEPLOYMENTS[deployer_name]
-
-    if args.base_docker_image:
-        if not architecture_string:
-            raise ValueError("Can not run deployer in docker without architecture.")
-        deployer.run_in_docker(
-            base_docker_image=base_docker_image,
-            architecture=constants.Architecture(architecture_string),
-            cache_dir=cache_dir,
-        )
-    else:
-        deployer.run(
-            cache_dir=args.cache_dir
-        )
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
 

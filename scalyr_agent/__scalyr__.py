@@ -21,6 +21,8 @@ __author__ = "czerwin@scalyr.com"
 
 import json
 import platform
+import re
+import subprocess
 import sys
 import pathlib as pl
 import enum
@@ -257,3 +259,31 @@ def __determine_version():
 
 
 SCALYR_VERSION = __determine_version()
+
+
+def __get_glibc_version() -> str:
+    """
+    Determine version of the libc. Since we use frozen binaries, knowing the version of the libc may be usefull
+        for troubleshooting.
+    """
+    version = None
+    try:
+        version_output = subprocess.check_output([
+            "ldd",
+            "--version"
+        ]).decode().strip()
+
+        print(version_output)
+        m = re.match(r"ldd \([^)]+\) (?P<version>\d+\.\d+).*", version_output)
+        print(m)
+        if m:
+            version = m.group('version')
+
+    finally:
+        if not version:
+            version = "Unknown"
+
+    return version
+
+
+GLIBC_VERSION = __get_glibc_version()

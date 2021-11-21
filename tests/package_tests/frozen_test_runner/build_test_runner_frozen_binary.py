@@ -36,6 +36,7 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import build_in_docker
 from agent_tools import environment_deployments
+import tests.package_tests
 
 
 def build_test_runner_frozen_binary(

@@ -64,6 +64,8 @@ def run_docker_build(
             "-t",
             image_name,
             *build_arg_options,
+            "--label",
+            "scalyr-agent-build",
             "-f",
             str(dockerfile_path),
             str(build_context_path)
