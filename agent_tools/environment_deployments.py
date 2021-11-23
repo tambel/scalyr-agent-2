@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is a helper library/script which can be used to deploy needed tools and programs.
-# It contains a set of pre-defined deployments. The whole purpose of deployers is to
-# provide unified and also "CI/CD platform agnostic" way of creating environments where agent packages are built.
 
 import abc
 import pathlib as pl
