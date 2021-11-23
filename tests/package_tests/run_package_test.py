@@ -173,7 +173,9 @@ if __name__ == '__main__':
             package_test_name=args.test_name,
             build_dir_path=args.build_dir_path,
             package_path=args.package_path,
-            scalyr_api_key=get_option("scalyr_api_key", args.scalyr_api_key)
+            scalyr_api_key=get_option("scalyr_api_key", args.scalyr_api_key),
+            frozen_package_test_runner_path=args.frozen_package_test_runner_path
+
         )
         exit(0)
 
