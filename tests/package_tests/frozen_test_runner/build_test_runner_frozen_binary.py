@@ -58,6 +58,8 @@ def build_test_runner_frozen_binary(
         agent_tools_path = __SOURCE_ROOT__ / "agent_tools"
         main_script_path = _PARENT_DIR / "frozen_test_runner_main.py"
 
+        main_script_path= main_script_path.absolute()
+
         build_path = output_path / "build"
         subprocess.check_call(
             [
