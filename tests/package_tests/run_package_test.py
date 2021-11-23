@@ -50,8 +50,11 @@ def get_option(name: str, default: str = None, type_=str, ):
 def test_package(
         package_test_name: str,
         build_dir_path: pl.Path,
-        package_path: Union[str, pl.Path],
-        scalyr_api_key: str
+        scalyr_api_key: str,
+        package_path: Union[str, pl.Path] = None,
+        frozen_package_test_runner_path: Union[str, pl.Path] = None
+
+,
 ):
 
     if not build_dir_path:
@@ -80,35 +83,39 @@ def test_package(
         package_path = pl.Path(package_path)
 
     if isinstance(package_test, current_test_specifications.RemoteMachinePackageTest):
-        frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"
-        if frozen_test_runner_build_dir_path.exists():
-            shutil.rmtree(frozen_test_runner_build_dir_path)
 
-        frozen_test_runner_build_dir_path.mkdir(parents=True)
+        if not frozen_package_test_runner_path:
 
-        package_test.deployment.deploy()
+            frozen_test_runner_build_dir_path = build_dir_path / "frozen_test_runner"
+            if frozen_test_runner_build_dir_path.exists():
+                shutil.rmtree(frozen_test_runner_build_dir_path)
 
-        test_runner_filename = "frozen_test_runner"
+            frozen_test_runner_build_dir_path.mkdir(parents=True)
 
-        build_test_runner_frozen_binary.build_test_runner_frozen_binary(
-            output_path=frozen_test_runner_build_dir_path,
-            filename=test_runner_filename,
-            deployment_name=package_test.deployment.name
-        )
+            package_test.deployment.deploy()
 
-        test_runner_frozen_binary_path = frozen_test_runner_build_dir_path / test_runner_filename
+            test_runner_filename = "frozen_test_runner"
 
+            build_test_runner_frozen_binary.build_test_runner_frozen_binary(
+                output_path=frozen_test_runner_build_dir_path,
+                filename=test_runner_filename,
+                deployment_name=package_test.deployment.name
+            )
+
+            frozen_package_test_runner_path = frozen_test_runner_build_dir_path / test_runner_filename
+        else:
+            frozen_package_test_runner_path = pl.Path(frozen_package_test_runner_path)
 
         if isinstance(package_test, current_test_specifications.DockerBasedPackageTest):
             package_test.run_in_docker(
                 package_path=package_path,
-                test_runner_frozen_binary_path=test_runner_frozen_binary_path,
+                test_runner_frozen_binary_path=frozen_package_test_runner_path,
                 scalyr_api_key=scalyr_api_key,
             )
         elif isinstance(package_test, current_test_specifications.Ec2BasedPackageTest):
             package_test.run_in_ec2(
                 package_path=package_path,
-                test_runner_frozen_binary_path=test_runner_frozen_binary_path,
+                test_runner_frozen_binary_path=frozen_package_test_runner_path,
                 scalyr_api_key=scalyr_api_key,
                 aws_access_key=get_option("aws_access_key"),
                 aws_secret_key = get_option("aws_secret_key"),
@@ -150,6 +157,11 @@ if __name__ == '__main__':
     run_test_parser = subparsers.add_parser("run")
     run_test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
     run_test_parser.add_argument("--package-path", dest="package_path", required=False)
+    run_test_parser.add_argument(
+        "--frozen-package-test-runner-path",
+        dest="frozen_package_test_runner_path",
+        required=False
+    )
     run_test_parser.add_argument("--scalyr-api-key", dest="scalyr_api_key", required=False)
 
     get_deployment_name_parser = subparsers.add_parser("get-deployment-name")

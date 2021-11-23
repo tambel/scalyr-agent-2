@@ -84,6 +84,13 @@ jobs:
           path: |
             agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
 
+      - name: Save package runner.
+        uses: actions/upload-artifact@v2
+        with:
+          name: package-${{ inputs.package_name }}-runner
+          path: |
+            package-runner-build-output/*
+
 
 
 
@@ -127,6 +134,12 @@ jobs:
           name: package-${{ inputs.package_name }}
           path: ~/package
 
+      - name: Download package test runner.
+        uses: actions/download-artifact@v2
+        with:
+          name: package-${{ inputs.package_name }}-runner
+          path: ~/package-test-runner
+
       - name: Start minikube for the test of the kubernetes build.
         if: inputs.package_name == 'k8s'
         shell: bash
@@ -156,4 +169,5 @@ jobs:
             ${{ matrix.test-name }} \
             run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
+            --egefg ~/package-test-runner/*
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
