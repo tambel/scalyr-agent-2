@@ -68,12 +68,23 @@ jobs:
           echo "::set-output name=package-tests-matrix::$(python3 .github/scripts/get-package-builder.py package-test-specs-matrix ${{ inputs.package_name }})"
           echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-builder.py package-filename-glob ${{ inputs.package_name }})"
 
+      - name: Build package test-runner.
+        id: build test runner
+        shell: bash
+        run: |
+          python tests/package_tests/frozen_test_runner/build_test_runner_frozen_binary.py  \
+            --output-dir package-runner-build-output \
+            --filename package-test-runner \
+            --deployment-name ${{ steps.deployment-name.outputs.deployment-name }}
+
       - name: Save the package.
         uses: actions/upload-artifact@v2
         with:
           name: package-${{ inputs.package_name }}
           path: |
             agent-build-output/${{ steps.build.outputs.package-build-filename-glob }}*
+
+
 
 
   test:
