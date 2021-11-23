@@ -69,7 +69,7 @@ jobs:
           echo "::set-output name=package-build-filename-glob::$(python3 .github/scripts/get-package-builder.py package-filename-glob ${{ inputs.package_name }})"
 
       - name: Build package test-runner.
-        id: build test runner
+        id: build-test-runner
         shell: bash
         run: |
           python tests/package_tests/frozen_test_runner/build_test_runner_frozen_binary.py  \
