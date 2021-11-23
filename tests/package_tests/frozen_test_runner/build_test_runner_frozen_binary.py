@@ -93,7 +93,7 @@ def build_test_runner_frozen_binary(
     # Build frozen binary inside the docker. To do that run the same script in docker again.
     docker_side_source_path = pl.Path("/scalyr-agent-2")
 
-    docker_side_build_script_path = docker_side_source_path / pl.Path(__file__).relative_to(__SOURCE_ROOT__)
+    docker_side_build_script_path = docker_side_source_path / pl.Path(__file__).absolute().relative_to(__SOURCE_ROOT__)
 
     command_args = [
         "python3",
