@@ -169,5 +169,5 @@ jobs:
             ${{ matrix.test-name }} \
             run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
-            --egefg ~/package-test-runner/*
+            --frozen-package-test-runner-path ~/package-test-runner/*
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
