@@ -169,6 +169,9 @@ jobs:
         shell: bash
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+          AWS_PRIVATE_KEY_PATH: ${{ AWS_DEV_US_EAST_1_KEYPAIR_NAME }}
+          AWS_KEYPAIR_NAME: scalyr_agent_github_actions_tests
+          AWS_REGION: us-east-1.
         run: |
 
 
