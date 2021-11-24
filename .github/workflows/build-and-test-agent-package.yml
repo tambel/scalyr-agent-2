@@ -164,6 +164,9 @@ jobs:
           echo $AWS_PRIVATE_KEY > ~/aws-key.pem
           export AWS_PRIVATE_KEY_PATH=~/aws-key.pem
 
+          # set test runner executable.
+          chmod +x ~/package-test-runner/package-test-runner*
+
           python3 tests/package_tests/run_package_test.py \
             ${{ matrix.test-name }} \
             run \
