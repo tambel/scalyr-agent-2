@@ -155,13 +155,12 @@ jobs:
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
           AWS_PRIVATE_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-          AWS_PRIVATE_KEY_PATH: ~/"aws-key.pem"
           AWS_KEYPAIR_NAME: scalyr_agent_github_actions_tests
           AWS_REGION: us-east-1.
         run: |
 
-          touch $AWS_PRIVATE_KEY_PATH
-          echo $AWS_PRIVATE_KEY > $AWS_PRIVATE_KEY_PATH
+          echo $AWS_PRIVATE_KEY > ~/aws-key.pem
+          export AWS_PRIVATE_KEY_PATH=~/aws-key.pem
 
           python3 tests/package_tests/run_package_test.py \
             ${{ matrix.test-name }} \
