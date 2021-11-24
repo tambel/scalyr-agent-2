@@ -262,6 +262,8 @@ SCALYR_VERSION = __determine_version()
 
 
 def __get_glibc_version() -> str:
+
+    return
     """
     Determine version of the libc. Since we use frozen binaries, knowing the version of the libc may be usefull
         for troubleshooting.

@@ -62,6 +62,8 @@ def test_package(
 ,
 ):
 
+    a = get_option("AWS_ACCESS_KEY")
+
     if not build_dir_path:
         build_dir_path = pl.Path(tempfile.mkdtemp())
     else:

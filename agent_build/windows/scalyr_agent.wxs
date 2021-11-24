@@ -67,6 +67,9 @@
             <Directory Id='DEFAULTAPPAGENTD' Name='agent.d'>
                 <Component Id='config_d_dir' Guid='7f375f4b-cc38-4d4a-af26-e60154f05392' SharedDllRefCount='no'
                            KeyPath='no' NeverOverwrite='no' Permanent='no' Transitive='no' Win64='no' Location='either'>
+                       <File Id='config_file' Name='config_file' KeyPath='yes' Checksum='yes' Source='Scalyr\config\agent.json'>
+                            <Permission GenericAll='yes' User='[UserSID]' />
+                       <File />
                 <CreateFolder />
                 </Component>
             </Directory>
@@ -150,6 +153,7 @@
             <ComponentRef Id='ApplicationShortcut' />
             <ComponentRef Id='ca_certs.crt' />
             <ComponentRef Id='config_tmpl' />
+            <ComponentRef Id='config_file' />
             <ComponentRef Id='log_dir' />
             <ComponentRef Id='data_dir' />
             <ComponentRef Id='config_d_dir' />
