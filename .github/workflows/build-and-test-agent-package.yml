@@ -113,11 +113,11 @@ jobs:
           python-version: ${{ inputs.python-version }}
 
 
-      - name: Perform the deployment of the build environment.
-        id: hello
-        uses: ./.github/actions/perform-deployment
-        with:
-          deployment-name: ${{ matrix.deployment-name }}
+#      - name: Perform the deployment of the build environment.
+#        id: hello
+#        uses: ./.github/actions/perform-deployment
+#        with:
+#          deployment-name: ${{ matrix.deployment-name }}
 
 #      - name: Prepare build environment by running appropriate deployer.
 #        uses: ./.github/actions/run-environment-deployer
@@ -162,6 +162,9 @@ jobs:
         with:
           platforms: all
 
+      - run: whoami
+        shell: bash
+
       - name: Test.
         shell: bash
         env:
@@ -175,6 +178,3 @@ jobs:
             --package-path ~/package/${{ matrix.package-filename-glob }} \
             --frozen-package-test-runner-path ~/package-test-runner/package-test-runner* \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
-
-      - run: whoami
-        shell: bash
