@@ -69,7 +69,7 @@
                            KeyPath='no' NeverOverwrite='no' Permanent='no' Transitive='no' Win64='no' Location='either'>
                        <File Id='config_file' Name='config_file' KeyPath='yes' Checksum='yes' Source='Scalyr\config\agent.json'>
                             <Permission GenericAll='yes' User='[UserSID]' />
-                       <File />
+                       </File>
                 <CreateFolder />
                 </Component>
             </Directory>
