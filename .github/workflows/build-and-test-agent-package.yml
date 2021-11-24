@@ -175,6 +175,7 @@ jobs:
           AWS_REGION: us-east-1.
         run: |
 
+          touch $AWS_PRIVATE_KEY_PATH
           echo $AWS_PRIVATE_KEY_PATH > $AWS_PRIVATE_KEY_PATH
 
           python3 tests/package_tests/run_package_test.py \
