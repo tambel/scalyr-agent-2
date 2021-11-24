@@ -91,6 +91,9 @@ jobs:
           path: |
             package-runner-build-output/*
 
+      - run: whoami
+        shell: bash
+
 
 
 
@@ -165,9 +168,13 @@ jobs:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
 
+
           python3 tests/package_tests/run_package_test.py \
             ${{ matrix.test-name }} \
             run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
             --frozen-package-test-runner-path ~/package-test-runner/package-test-runner* \
             --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
+
+      - run: whoami
+        shell: bash
