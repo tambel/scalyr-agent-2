@@ -81,7 +81,7 @@ jobs:
         with:
           name: package-${{ inputs.package_name }}-runner
           path: |
-            package-runner-build-output/*
+            package-runner-build-output/package-test-runner*
 
       - run: whoami
         shell: bash
@@ -162,12 +162,11 @@ jobs:
         run: |
 
           echo $AWS_PRIVATE_KEY > ~/aws-key.pem
-          export AWS_PRIVATE_KEY_PATH=~/aws-key.pem
 
           # set test runner executable.
           chmod +x ~/package-test-runner/package-test-runner*
 
-          python3 tests/package_tests/run_package_test.py \
+          AWS_PRIVATE_KEY_PATH=~/aws-key.pem python3 tests/package_tests/run_package_test.py \
             ${{ matrix.test-name }} \
             run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
