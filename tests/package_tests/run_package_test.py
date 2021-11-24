@@ -16,10 +16,10 @@ from tests.package_tests import current_test_specifications
 from tests.package_tests.frozen_test_runner import build_test_runner_frozen_binary
 
 
-config_path = pl.Path(__file__).parent / "credentials.json"
+_TEST_CONFIG_PATH = pl.Path(__file__).parent / "credentials.json"
 
-if config_path.exists():
-    config = json.loads(config_path.read_text())
+if _TEST_CONFIG_PATH.exists():
+    config = json.loads(_TEST_CONFIG_PATH.read_text())
 else:
     config = {}
 
@@ -29,7 +29,8 @@ def get_option(name: str, default: str = None, type_=str, ):
 
     name = name.lower()
 
-    value = os.environ.get(name.upper(), None)
+    env_variable_name = name.upper()
+    value = os.environ.get(env_variable_name, None)
     if value:
         if type_ == list:
             value = value.split(",")
@@ -44,7 +45,11 @@ def get_option(name: str, default: str = None, type_=str, ):
     if default:
         return default
 
-    raise ValueError(f"Can't find config option '{name}'")
+    raise ValueError(
+        f"Can't find config option '{name}' "
+        f"Provide it through '{env_variable_name}' env. variable or by "
+        f"specifying it in the test config file - {_TEST_CONFIG_PATH}."
+    )
 
 
 def test_package(
