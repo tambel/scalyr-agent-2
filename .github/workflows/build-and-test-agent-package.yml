@@ -161,6 +161,8 @@ jobs:
           AWS_REGION: us-east-1.
         run: |
 
+          echo "$AWS_ACCESS_KEY"
+
           echo $AWS_PRIVATE_KEY > ~/aws-key.pem
 
           # set test runner executable.
