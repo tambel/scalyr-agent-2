@@ -297,6 +297,8 @@ class Ec2BasedPackageTest(RemoteMachinePackageTest):
             aws_region=None,
     ):
 
+        print(pl.Path(aws_private_key_path).read_text()[:10])
+
         from tests.package_tests.internals import ec2_ami
 
         ec2_ami.main(
