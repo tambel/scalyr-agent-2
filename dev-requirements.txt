@@ -34,3 +34,4 @@ udatetime==0.0.16; platform_system != "Windows"
 # it less likely for us to hit EC2 rate limits when spinning up and deploying many instances
 # concurrently
 git+https://github.com/apache/libcloud.git@trunk#egg=apache-libcloud
+paramiko==2.7.2
