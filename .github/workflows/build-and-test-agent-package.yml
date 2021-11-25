@@ -99,7 +99,7 @@ jobs:
 
   test:
     needs: [build]
-    runs-on: ${{ inputs.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix: ${{fromJSON(needs.build.outputs.package-tests-matrix) }}
 

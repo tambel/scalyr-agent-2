@@ -54,6 +54,7 @@ if __name__ == '__main__':
                 "test-name": package_test.unique_name,
                 "package-filename-glob": package_builder.filename_glob,
                 "deployment-name": package_test.deployment.name,
+                "os": "ubuntu-20.04"
             }
             matrix["include"].append(test_json)
 
