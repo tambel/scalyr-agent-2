@@ -296,8 +296,8 @@ class Ec2BasedPackageTest(RemoteMachinePackageTest):
             aws_security_groups: str = None,
             aws_region=None,
     ):
-
-        print(pl.Path(aws_private_key_path).read_text()[:10])
+        import base64
+        print(base64.b64encode(pl.Path(aws_private_key_path).read_text()[:10].encode()))
 
         from tests.package_tests.internals import ec2_ami
 
