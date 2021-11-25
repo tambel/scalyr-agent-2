@@ -6,7 +6,7 @@ import sys
 import os
 import tempfile
 import shutil
-from typing import Union
+from typing import Union, Type
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
@@ -24,7 +24,7 @@ else:
     config = {}
 
 
-def get_option(name: str, default: str = None, type_=str, ):
+def get_option(name: str, default: str = None, type_: Union[Type[str], Type[list]] = str, ):
     global config
 
     name = name.lower()
@@ -127,7 +127,7 @@ def test_package(
                 aws_secret_key = get_option("aws_secret_key"),
                 aws_keypair_name = get_option("aws_keypair_name"),
                 aws_private_key_path = get_option("aws_private_key_path"),
-                aws_security_groups = get_option("aws_security_groups"),
+                aws_security_groups = get_option("aws_security_groups", type_=list),
                 aws_region=get_option("aws_region"),
             )
     else:
