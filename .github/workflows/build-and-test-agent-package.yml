@@ -177,7 +177,7 @@ jobs:
           echo "" >> ~/aws-key.pem
 
           chmod 0600 ~/aws-key.pem
-          ssh-keygen -p -N "" -m pem -f ~/aws-key.pem
+          #ssh-keygen -p -N "" -m pem -f ~/aws-key.pem
 
 
           # set test runner executable.
