@@ -154,8 +154,8 @@ jobs:
         shell: bash
         env:
           SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_ACCESS_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_AWS_ACCESS_SECRET }}
           AWS_PRIVATE_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
           AWS_KEYPAIR_NAME: scalyr_agent_github_actions_tests
           AWS_REGION: us-east-1.
