@@ -127,7 +127,7 @@ def test_package(
                 aws_secret_key = get_option("aws_secret_key"),
                 aws_keypair_name = get_option("aws_keypair_name"),
                 aws_private_key_path = get_option("aws_private_key_path"),
-                aws_security_groups = get_option("aws_security_groups"),
+                #aws_security_groups = get_option("aws_security_groups"),
                 aws_region=get_option("aws_region", "us-east-1"),
             )
     else:
