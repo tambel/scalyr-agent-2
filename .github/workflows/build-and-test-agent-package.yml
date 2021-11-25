@@ -167,6 +167,7 @@ jobs:
           AWS_PRIVATE_KEY: ${{ secrets.AWS_DEV_US_EAST_1_KEYPAIR_NAME }}
           AWS_KEYPAIR_NAME: scalyr_agent_github_actions_tests
           AWS_REGION: us-east-1
+          AWS_SECURITY_GROUPS: circleci-remote-access
         run: |
 
           echo "$AWS_ACCESS_KEY"
