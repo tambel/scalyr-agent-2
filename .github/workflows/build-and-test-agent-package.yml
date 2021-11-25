@@ -176,7 +176,7 @@ jobs:
           echo $AWS_PRIVATE_KEY > ~/aws-key.pem
 
           chmod 0600 ~/aws-key.pem
-          ssh-keygen -p -N "" -m rsa -f ~/aws-key.pem
+          ssh-keygen -p -N "" -m pem -f ~/aws-key.pem
 
 
           # set test runner executable.
