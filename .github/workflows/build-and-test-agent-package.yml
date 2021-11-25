@@ -166,7 +166,7 @@ jobs:
           AWS_SECRET_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_AWS_ACCESS_SECRET }}
           AWS_PRIVATE_KEY: ${{ secrets.AWS_DEV_US_EAST_1_KEYPAIR_NAME }}
           AWS_KEYPAIR_NAME: scalyr_agent_github_actions_tests
-          AWS_REGION: us-east-1.
+          AWS_REGION: us-east-1
         run: |
 
           echo "$AWS_ACCESS_KEY"
