@@ -153,7 +153,7 @@ jobs:
       - name: Test.
         shell: bash
         env:
-          SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+          SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
           AWS_ACCESS_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_AWS_ACCESS_KEY }}
           AWS_SECRET_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_AWS_ACCESS_SECRET }}
           AWS_PRIVATE_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
@@ -173,4 +173,3 @@ jobs:
             run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
             --frozen-package-test-runner-path ~/package-test-runner/package-test-runner* \
-            --scalyr-api-key "$SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN"
