@@ -342,7 +342,10 @@ PackageTest.create_test_specs(
 COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
     name="test_environment_x86_64",
     architecture=constants.Architecture.X86_64,
-    step_classes=[env_deployers.InstallBuildRequirementsStep],
+    step_classes=[
+        env_deployers.InstallBuildRequirementsStep,
+        env_deployers.InstallTestRequirementsDeploymentStep
+    ],
 )
 
 # # Create specs for the DEB packages, which have to be performed in the ubuntu 16.04 distribution.
