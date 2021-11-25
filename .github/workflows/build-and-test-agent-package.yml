@@ -175,7 +175,7 @@ jobs:
 
           echo $AWS_PRIVATE_KEY > ~/aws-key.pem
 
-          chmod 0640 ~/aws-key.pem
+          chmod 0600 ~/aws-key.pem
           ssh-keygen -p -N "" -m pem -f ~/aws-key.pem
 
 
