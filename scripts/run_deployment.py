@@ -51,24 +51,25 @@ if __name__ == '__main__':
         )
         exit(0)
 
-    if args.command == "get-deployment-all-cache-names":
-        # A special command which is needed to perform the Github action located in
-        # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step, so the
-        # Github action knows what keys to use to cache the results of those steps.
+    if args.command == "deployment":
+        if args.deployment_command == "get-deployment-all-cache-names":
+            # A special command which is needed to perform the Github action located in
+            # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step,
+            # so the Github action knows what keys to use to cache the results of those steps.
 
-        deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
+            deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
 
-        # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
-        # Github action.
-        step_checksums = []
-        for step in deployment.steps:
-            step_checksums.append(step.cache_key)
+            # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
+            # Github action.
+            step_checksums = []
+            for step in deployment.steps:
+                step_checksums.append(step.cache_key)
 
-        print(json.dumps(list(reversed(step_checksums))))
+            print(json.dumps(list(reversed(step_checksums))))
 
-        exit(0)
+            exit(0)
 
-    if args.command == "list":
-        for deployment_name in sorted(deployments.ALL_DEPLOYMENTS.keys()):
-            print(deployment_name)
-        exit(0)
+        if args.command == "list":
+            for deployment_name in sorted(deployments.ALL_DEPLOYMENTS.keys()):
+                print(deployment_name)
+            exit(0)
