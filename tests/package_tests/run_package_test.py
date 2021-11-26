@@ -195,7 +195,7 @@ if __name__ == '__main__':
         for package_test in package_tests:
             runner_os = "ubuntu-20.04"
             if package_test.package_builder.PACKAGE_TYPE == constants.PackageType.MSI:
-                if isinstance(package_test, current_test_specifications.PackageTest):
+                if not package_test.deployment.in_docker:
                     runner_os = "windows-2019"
 
             test_json = {
