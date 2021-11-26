@@ -68,7 +68,7 @@ jobs:
           python tests/package_tests/frozen_test_runner/build_test_runner_frozen_binary.py  \
             --output-dir package-runner-build-output \
             --filename package-test-runner \
-            --deployment-name ${{ steps.deployment-name.outputs.deployment-name }}
+            --deployment-name ${{ inputs.package_name }}
 
       - name: Save the package.
         uses: actions/upload-artifact@v2
