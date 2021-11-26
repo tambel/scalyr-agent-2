@@ -37,27 +37,25 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.command == "deploy":
-        # Perform the deployment with specified name.
-        deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
-
-        cache_dir = None
-
-        if args.cache_dir:
-            cache_dir = pl.Path(args.cache_dir)
-
-        deployment.deploy(
-            cache_dir=cache_dir,
-        )
-        exit(0)
-
     if args.command == "deployment":
+
+        deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
+        if args.deployment_command == "deploy":
+            # Perform the deployment with specified name.
+
+            cache_dir = None
+
+            if args.cache_dir:
+                cache_dir = pl.Path(args.cache_dir)
+
+            deployment.deploy(
+                cache_dir=cache_dir,
+            )
+            exit(0)
         if args.deployment_command == "get-deployment-all-cache-names":
             # A special command which is needed to perform the Github action located in
             # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step,
             # so the Github action knows what keys to use to cache the results of those steps.
-
-            deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
 
             # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
             # Github action.
