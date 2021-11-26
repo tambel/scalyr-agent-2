@@ -6,8 +6,6 @@ import logging
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
-import tests.package_tests.current_test_specifications
-
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
