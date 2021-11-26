@@ -14,6 +14,7 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import environment_deployments
 from agent_tools import constants
+from agent_tools import package_builders
 
 
 _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "environment_deployment_steps"
