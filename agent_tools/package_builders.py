@@ -1415,6 +1415,7 @@ class MsiWindowsPackageBuilder(PackageBuilder):
         )
 
         shutil.copy(_AGENT_BUILD_PATH / "windows/files/ScalyrShell.cmd", bin_path)
+        shutil.copy(_AGENT_BUILD_PATH / "windows/files/scalyr-agent-2-config.cmd", bin_path)
 
         # Copy config template.
         config_templates_dir_path = pl.Path(scalyr_dir / "config" / "templates")
