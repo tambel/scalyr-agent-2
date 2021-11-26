@@ -31,7 +31,7 @@ async function run() {
     const deployment_helper_script_path = path.join("scripts", "run_deployment.py")
     // Run special github-related helper command which returns names for all deployments, which are used in the current
     // deployment.
-    const code = child_process.execFileSync("python3", [deployment_helper_script_path, deploymentName, "get-deployment-all-cache-names"]);
+    const code = child_process.execFileSync("python3", [deployment_helper_script_path, "get-deployment-all-cache-names", deploymentName]);
 
     // Read and decode names from json.
     const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
@@ -61,7 +61,7 @@ async function run() {
     // has to reuse them.
     child_process.execFileSync(
         "python3",
-        [deployment_helper_script_path, deploymentName, "deploy", "--cache-dir", cacheDir],
+        [deployment_helper_script_path, "deploy", deploymentName, "--cache-dir", cacheDir],
         {stdio: 'inherit'}
     );
 
