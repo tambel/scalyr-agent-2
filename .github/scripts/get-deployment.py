@@ -23,14 +23,12 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
 
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command")
-
+    parser.add_argument("name")
+    subparsers = parser.add_subparsers(dest="command", required=True)
     deploy_parser = subparsers.add_parser("deploy")
-    deploy_parser.add_argument("name")
     deploy_parser.add_argument("--cache-dir", dest="cache_dir")
 
     get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
-    get_all_deployments_parser.add_argument("deployment_name")
 
     subparsers.add_parser("list")
 
@@ -51,7 +49,7 @@ if __name__ == '__main__':
 
     if args.command == "get-deployment-all-cache-names":
 
-        deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.deployment_name]
+        deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[args.name]
 
         step_checksums = []
         for step in deployment.steps:
