@@ -28,7 +28,7 @@ async function run() {
     const cacheDir = "deployment_caches"
 
     // Get json list with names of all deployments which are needed for this deployment.
-    const deployment_helper_script_path = path.join("agent_tools", "environment_deployments.py")
+    const deployment_helper_script_path = path.join("agent_tools", "predefined_builds.py")
     // Run special github-related helper command which returns names for all deployments, which are used in the current
     // deployment.
     const code = child_process.execFileSync("python3", [deployment_helper_script_path, deploymentName, "get-deployment-all-cache-names"]);
