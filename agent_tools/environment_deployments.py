@@ -23,13 +23,16 @@ import logging
 import re
 import argparse
 import json
+import sys
 
 from typing import Union, Optional, List, Dict, ClassVar, Type
 
 __PARENT_DIR__ = pl.Path(__file__).parent.absolute()
 __SOURCE_ROOT__ = __PARENT_DIR__.parent
 
-_AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
+# This file can be executed as script. Add source root to the PYTHONPATH in order to be able to import
+# local packages. All such imports also have to be done after that.
+sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import constants
 from agent_tools import build_in_docker
@@ -610,6 +613,8 @@ _HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS = [
     # bash library that provides a simple caching logic.
     __SOURCE_ROOT__ / _SCRIPTS_DIR_PATH / "cache_lib.sh"
 ]
+
+_AGENT_BUILD_DIR = __SOURCE_ROOT__ / "agent_build"
 
 # Glob that has to match all requirement files that are needed for the agent build.
 _AGENT_REQUIREMENT_FILES_PATH = _AGENT_BUILD_DIR / "requirement-files" / "*.txt"
