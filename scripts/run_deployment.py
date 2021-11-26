@@ -17,9 +17,6 @@ from agent_tools.environment_deployments import deployments
 from agent_build import package_builders
 from tests.package_tests import current_test_specifications
 
-ALL_DEPLOYMENTS: Dict[str, deployments.Deployment] = {}
-DEPLOYMENTS_LOCATIONS: Dict[str, str] = {}
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
@@ -28,7 +25,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest="command", required=True)
     get_list_parser = subparsers.add_parser("list")
     deployment_subparser = subparsers.add_parser("deployment")
-    deployment_subparser.add_argument("deployment_name", choices=ALL_DEPLOYMENTS.keys())
+    deployment_subparser.add_argument("deployment_name", choices=deployments.ALL_DEPLOYMENTS.keys())
 
     deployment_subparsers = deployment_subparser.add_subparsers(dest="deployment_command", required=True)
     deploy_parser = deployment_subparsers.add_parser("deploy")
