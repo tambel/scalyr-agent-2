@@ -69,7 +69,7 @@ def test_package(
     else:
         build_dir_path = pl.Path(build_dir_path)
 
-    package_test = current_test_specifications.PackageTest.ALL_TESTS[package_test_name]
+    package_test = current_test_specifications.ALL_PACKAGE_TESTS[package_test_name]
 
     if not package_path:
         package_output_dir_path = build_dir_path / "package"
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_test_parser = subparsers.add_parser("run")
-    run_test_parser.add_argument("test_name", choices=current_test_specifications.PackageTest.ALL_TESTS.keys())
+    run_test_parser.add_argument("test_name", choices=current_test_specifications.ALL_PACKAGE_TESTS.keys())
     run_test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
     run_test_parser.add_argument("--package-path", dest="package_path", required=False)
     run_test_parser.add_argument(
@@ -186,7 +186,7 @@ if __name__ == '__main__':
         exit(0)
 
     if args.command == "get-tests-github-matrix":
-        package_builder = package_builders.PackageBuilder.ALL_BUILDERS[args.build_name]
+        package_builder = package_builders.ALL_PACKAGE_BUILDERS[args.build_name]
         package_tests = current_test_specifications.PackageTest.PACKAGE_TESTS[args.build_name]
         test_specs_names = [s.unique_name for s in package_tests]
         test_specs_deployment_names = [s.deployment.name for s in package_tests]

@@ -36,9 +36,10 @@ _SOURCE_ROOT = _PARENT_DIR.parent.parent
 # local packages. All such imports also have to be done after that.
 sys.path.append(str(_SOURCE_ROOT))
 
-
+import agent_tools
 from agent_tools import constants
 from agent_tools import build_in_docker
+
 
 class DeploymentStep:
     """
@@ -48,9 +49,6 @@ class DeploymentStep:
         CI/CD such as Github Actions.
 
     """
-
-
-    # ALL_DEPLOYMENT_STEPS: Dict[str, 'DeploymentStep'] = {}
 
     # Set of files that are somehow used during the step. Needed to calculate the checksum of the whole step, so it can
     # be used as cache key.
@@ -84,9 +82,6 @@ class DeploymentStep:
             # the previous step is not specified.
             self.base_docker_image = None
             self.previous_step = None
-
-        ## Add this instance to the global collection of all deployment steps.
-        #type(self).ALL_DEPLOYMENT_STEPS[self.name] = self
 
         self.used_files = self._init_used_files(type(self).USED_FILES)
 
@@ -513,11 +508,6 @@ class Deployment:
     instances of the :py:class:`DeploymentStep`
     """
 
-    # Special collection where all created deployments are stored. All of the a saved with unique name as key, so
-    # it is possible to find any deployment by its names. The ability to find needed deployment step by its name is
-    # crucial if we want to run it on the CI/CD.
-    ALL_DEPLOYMENTS: Dict[str, 'Deployment'] = {}
-
     def __init__(
             self,
             name: str,
@@ -552,7 +542,10 @@ class Deployment:
             self.steps.append(step)
 
         # Add this instance to the global collection of all deployments.
-        type(self).ALL_DEPLOYMENTS[self.name] = self
+        if self.name in ALL_DEPLOYMENTS:
+            raise ValueError(f"The deployment with name: {self.name} already exists.")
+
+        ALL_DEPLOYMENTS[self.name] = self
 
     @property
     def in_docker(self) -> bool:
@@ -595,6 +588,12 @@ class Deployment:
             step.run(
                 cache_dir=step_cache_path,
             )
+
+
+# Special collection where all created deployments are stored. All of the  deployments are saved with unique name as
+# key, so it is possible to find any deployment by its name. The ability to find needed deployment step by its name is
+# crucial if we want to run it on the CI/CD.
+ALL_DEPLOYMENTS: Dict[str, 'Deployment'] = {}
 
 
 
@@ -892,58 +891,66 @@ class InstallWindowsBuilderToolsStep(ShellScriptDeploymentStep):
     ]
 
 
-# Common test environment. Just installs all dev environment to the current system.
-# Used by Github Actions CI/CD.
-COMMON_TEST_DEPLOYMENT = Deployment(
-    name="test_environment",
-    architecture=constants.Architecture.X86_64,
-    step_classes=[InstallBuildRequirementsStep]
-)
+# # Common test environment. Just installs all dev environment to the current system.
+# # Used by Github Actions CI/CD.
+# COMMON_TEST_DEPLOYMENT = Deployment(
+#     name="test_environment",
+#     architecture=constants.Architecture.X86_64,
+#     step_classes=[InstallBuildRequirementsStep]
+# )
 
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="Name of the deployment.")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    deploy_parser = subparsers.add_parser("deploy")
-    deploy_parser.add_argument(
-        "--cache-dir", dest="cache_dir", help="Cache directory to save/reuse deployment results."
-    )
-
-    get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
-
-    subparsers.add_parser("list")
-
-    args = parser.parse_args()
-
-    if args.command == "deploy":
-        # Perform the deployment with specified name.
-        deployment = Deployment.ALL_DEPLOYMENTS[args.name]
-
-        cache_dir = None
-
-        if args.cache_dir:
-            cache_dir = pl.Path(args.cache_dir)
-
-        deployment.deploy(
-            cache_dir=cache_dir,
-        )
-
-    if args.command == "get-deployment-all-cache-names":
-        # A special command which is needed to perform the Github action located in
-        # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step, so the
-        # Github action knows what keys to use to cache the results of those steps.
-
-        deployment = Deployment.ALL_DEPLOYMENTS[args.name]
-
-        # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
-        # Github action.
-        step_checksums = []
-        for step in deployment.steps:
-            step_checksums.append(step.cache_key)
-
-        print(json.dumps(list(reversed(step_checksums))))
-
-        exit(0)
+# if __name__ == '__main__':
+#     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
+#
+#     parser = argparse.ArgumentParser()
+#     subparsers = parser.add_subparsers(dest="command", required=True)
+#     deploy_parser = subparsers.add_parser("deploy")
+#     deploy_parser.add_argument("name", help="Name of the deployment.")
+#
+#     deploy_parser.add_argument(
+#         "--cache-dir", dest="cache_dir", help="Cache directory to save/reuse deployment results."
+#     )
+#
+#     get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
+#     get_all_deployments_parser.add_argument("name", help="Name of the deployment.")
+#
+#     get_list_parser = subparsers.add_parser("list")
+#
+#     args = parser.parse_args()
+#
+#     if args.command == "deploy":
+#         # Perform the deployment with specified name.
+#         deployment = Deployment.ALL_DEPLOYMENTS[args.name]
+#
+#         cache_dir = None
+#
+#         if args.cache_dir:
+#             cache_dir = pl.Path(args.cache_dir)
+#
+#         deployment.deploy(
+#             cache_dir=cache_dir,
+#         )
+#         exit(0)
+#
+#     if args.command == "get-deployment-all-cache-names":
+#         # A special command which is needed to perform the Github action located in
+#         # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step, so the
+#         # Github action knows what keys to use to cache the results of those steps.
+#
+#         deployment = Deployment.ALL_DEPLOYMENTS[args.name]
+#
+#         # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
+#         # Github action.
+#         step_checksums = []
+#         for step in deployment.steps:
+#             step_checksums.append(step.cache_key)
+#
+#         print(json.dumps(list(reversed(step_checksums))))
+#
+#         exit(0)
+#
+#     if args.command == "list":
+#         for deployment_name in Deployment.ALL_DEPLOYMENTS.keys():
+#             print(deployment_name)
+#         exit(0)

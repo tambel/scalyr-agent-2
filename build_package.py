@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument(
             "package_name",
             type=str,
-            choices=package_builders.PackageBuilder.ALL_BUILDERS.keys(),
+            choices=package_builders.ALL_PACKAGE_BUILDERS.keys(),
             help="Type of the package to build.",
         )
 
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Find the builder class.
-    package_builder = package_builders.PackageBuilder.ALL_BUILDERS[args.package_name]
+    package_builder = package_builders.ALL_PACKAGE_BUILDERS[args.package_name]
 
     logging.info(f"Build package '{args.package_name}'...")
 

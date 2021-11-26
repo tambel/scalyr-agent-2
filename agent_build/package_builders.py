@@ -383,6 +383,10 @@ def parse_change_log():
     return releases
 
 
+# Special global collection of all builders. It can be used by CI/CD scripts to find needed package builder.
+ALL_PACKAGE_BUILDERS: Dict[str, 'PackageBuilder'] = {}
+
+
 class PackageBuilder(abc.ABC):
     """
         Base abstraction for all Scalyr agent package builders. it can perform build of the package directly on the
@@ -412,9 +416,6 @@ class PackageBuilder(abc.ABC):
     #   {arch}: architecture of the package.
     # See more in the "filename_glob" property of the class.
     RESULT_PACKAGE_FILENAME_GLOB: str
-
-    # Special global collection of all builders. It can be used by CI/CD scripts to find needed package builder.
-    ALL_BUILDERS: Dict[str, 'PackageBuilder'] = {}
 
     def __init__(
             self,
@@ -450,13 +451,16 @@ class PackageBuilder(abc.ABC):
 
         # Create personal deployment for the package builder.
         self.deployment = environment_deployments.Deployment(
-            name=self.name,
+            name=f"package_builder_{self.name}_deployment",
             step_classes=deployment_step_classes or [],
             architecture=architecture,
             base_docker_image=base_docker_image
         )
 
-        PackageBuilder.ALL_BUILDERS[self.name] = self
+        if self.name in ALL_PACKAGE_BUILDERS:
+            raise ValueError(f"The package builder with name: {self.name} already exists.")
+
+        ALL_PACKAGE_BUILDERS[self.name] = self
 
     @property
     def name(self) -> str:

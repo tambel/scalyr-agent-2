@@ -22,12 +22,15 @@ from typing import Dict, List, Union, Type
 
 
 from agent_tools import constants
-from agent_tools import environment_deployments as env_deployers
+from agent_tools.environment_deployments import deployments
 from agent_build import package_builders
 from tests.package_tests.internals import deb_rpm_tar_msi_test
 
 _PARENT_DIR = pl.Path(__file__).parent
 __SOURCE_ROOT__ = _PARENT_DIR.parent.parent.absolute()
+
+ALL_PACKAGE_TESTS: Dict[str, 'PackageTest'] = {}
+PACKAGE_BUILDER_TESTS: Dict[package_builders.PackageBuilder, List['PackageTest']] = collections.defaultdict(list)
 
 
 class PackageTest:
@@ -36,14 +39,11 @@ class PackageTest:
     deployment and the system where test has to run.
     """
 
-    ALL_TESTS: Dict[str, 'PackageTest'] = {}
-    PACKAGE_TESTS: Dict[str, List['PackageTest']] = collections.defaultdict(list)
-
     def __init__(
             self,
             test_name: str,
             package_builder: package_builders.PackageBuilder,
-            deployment_step_classes: List[Type[env_deployers.DeploymentStep]],
+            deployment_step_classes: List[Type[deployments.DeploymentStep]],
             architecture: constants.Architecture = None,
     ):
         self.test_name = test_name
@@ -53,16 +53,18 @@ class PackageTest:
         if not deployment_step_classes:
             deployment_step_classes = package_builder.deployment.steps[:]
 
-        self.deployment = env_deployers.Deployment(
+        self.deployment = deployments.Deployment(
             name=f"package_test_{self.unique_name}_deployment",
             step_classes=deployment_step_classes,
             architecture=architecture or package_builder.architecture,
             base_docker_image=package_builder.base_docker_image
         )
 
-        if self.unique_name not in type(self).ALL_TESTS:
-            type(self).ALL_TESTS[self.unique_name] = self
-            type(self).PACKAGE_TESTS[self.package_builder.name].append(self)
+        if self.unique_name in ALL_PACKAGE_TESTS:
+            raise ValueError(f"The package test with name: {self.unique_name} already exists.")
+
+        ALL_PACKAGE_TESTS[self.unique_name] = self
+        PACKAGE_BUILDER_TESTS[self.package_builder].append(self)
 
     @property
     def unique_name(self) -> str:
@@ -115,7 +117,7 @@ class PackageTest:
     def create_test_specs(
             base_name: str,
             package_builders: List[package_builders.PackageBuilder],
-            additional_deployment_steps: List[Type[env_deployers.DeploymentStep]],
+            additional_deployment_steps: List[Type[deployments.DeploymentStep]],
             remote_machine_arch_specs: Dict[constants.Architecture, List[Union[
                 'RemoteMachinePackageTest.Ec2MachineInfo']]] = None,
 
@@ -201,7 +203,7 @@ class DockerBasedPackageTest(RemoteMachinePackageTest):
             package_builder: package_builders.PackageBuilder,
             docker_image_info: DockerImageInfo,
             architecture: constants.Architecture = None,
-            deployment_step_classes: List[Type[env_deployers.DeploymentStep]] = None,
+            deployment_step_classes: List[Type[deployments.DeploymentStep]] = None,
 
     ):
         super(DockerBasedPackageTest, self).__init__(
@@ -272,7 +274,7 @@ class Ec2BasedPackageTest(RemoteMachinePackageTest):
             package_builder: package_builders.PackageBuilder,
             ec2_machine_info: Ec2MachineInfo,
             architecture: constants.Architecture = None,
-            deployment_step_classes: List[Type[env_deployers.DeploymentStep]] = None,
+            deployment_step_classes: List[Type[deployments.DeploymentStep]] = None,
 
     ):
         super(Ec2BasedPackageTest, self).__init__(
@@ -320,6 +322,14 @@ LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT_STEPS = [
 
 ]
 
+# Common test environment. Just installs all dev environment to the current system.
+# Used by Github Actions CI/CD.
+COMMON_TEST_DEPLOYMENT = deployments.Deployment(
+    name="test_environment",
+    architecture=constants.Architecture.X86_64,
+    step_classes=[deployments.InstallBuildRequirementsStep]
+)
+
 PackageTest.create_test_specs(
     base_name="ubuntu-1404",
     package_builders=[package_builders.DEB_X86_64_BUILDER],
@@ -338,15 +348,15 @@ PackageTest.create_test_specs(
             DockerBasedPackageTest.DockerImageInfo("ubuntu:14.04")
         ]
     },
-    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
+    additional_deployment_steps=[deployments.InstallTestRequirementsDeploymentStep]
 )
 
-COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
+COMMON_TEST_ENVIRONMENT = deployments.Deployment(
     name="test_environment_x86_64",
     architecture=constants.Architecture.X86_64,
     step_classes=[
-        env_deployers.InstallBuildRequirementsStep,
-        env_deployers.InstallTestRequirementsDeploymentStep
+        deployments.InstallBuildRequirementsStep,
+        deployments.InstallTestRequirementsDeploymentStep
     ],
 )
 
@@ -359,7 +369,7 @@ COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
 #             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:16.04")
 #         ],
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 # # Create specs for the DEB packages, which have to be performed in the ubuntu 18.04 distribution.
@@ -371,7 +381,7 @@ COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
 #             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:18.04")
 #         ],
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 # # Create specs for the DEB packages, which have to be performed in the ubuntu 20.04 distribution.
@@ -383,7 +393,7 @@ COMMON_TEST_ENVIRONMENT = env_deployers.Deployment(
 #             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
 #         ],
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 #
@@ -396,7 +406,7 @@ PackageTest.create_test_specs(
             DockerBasedPackageTest.DockerImageInfo("centos:7")
         ],
     },
-    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
+    additional_deployment_steps=[deployments.InstallTestRequirementsDeploymentStep]
 )
 
 
@@ -409,7 +419,7 @@ PackageTest.create_test_specs(
             DockerBasedPackageTest.DockerImageInfo("centos:6")
         ],
     },
-    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep]
+    additional_deployment_steps=[deployments.InstallTestRequirementsDeploymentStep]
 )
 
 
@@ -425,7 +435,7 @@ PackageTest.create_test_specs(
 #             DockerBasedPackageTestSpec.DockerImageInfo("centos:7")
 #         ]
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 # # Create specs for the RPM packages, which have to be performed in the centos 8 distribution.
@@ -440,7 +450,7 @@ PackageTest.create_test_specs(
 #             DockerBasedPackageTestSpec.DockerImageInfo("centos:8")
 #         ]
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 # # Create specs for the RPM packages, which have to be performed in the amazonlinux distribution.
@@ -455,7 +465,7 @@ PackageTest.create_test_specs(
 #             DockerBasedPackageTestSpec.DockerImageInfo("amazonlinux:2")
 #         ]
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 # # Create specs for the tar packages, which have to be performed in the ubuntu 20.04 distribution.
@@ -472,7 +482,7 @@ PackageTest.create_test_specs(
 #             DockerBasedPackageTestSpec.DockerImageInfo("ubuntu:20.04")
 #         ]
 #     },
-#     deployment=env_deployers.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
+#     deployment=deployments.LINUX_PACKAGE_TESTS_ENVIRONMENT_DEPLOYMENT
 # )
 #
 
@@ -480,11 +490,13 @@ PackageTest.create_test_specs(
 PackageTest.create_test_specs(
     base_name="windows",
     package_builders=[package_builders.MSI_x86_64_BUILDER],
-    additional_deployment_steps=[env_deployers.InstallTestRequirementsDeploymentStep],
+    additional_deployment_steps=[deployments.InstallTestRequirementsDeploymentStep],
 )
 
 #
-# env_deployers.DeploymentSpec.create_new_deployment_spec(
+# deployments.DeploymentSpec.create_new_deployment_spec(
 #     architecture=constants.Architecture.X86_64,
-#     deployment=env_deployers.COMMON_TEST_ENVIRONMENT
+#     deployment=deployments.COMMON_TEST_ENVIRONMENT
 # )
+
+
