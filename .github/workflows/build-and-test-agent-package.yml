@@ -177,7 +177,7 @@ jobs:
           chmod +x ~/package-test-runner/package-test-runner*
 
           AWS_PRIVATE_KEY_PATH=~/aws-key.pem python3 tests/package_tests/run_package_test.py \
+            run-package-test \
             ${{ matrix.test-name }} \
-            run \
             --package-path ~/package/${{ matrix.package-filename-glob }} \
             --frozen-package-test-runner-path ~/package-test-runner/package-test-runner* \
