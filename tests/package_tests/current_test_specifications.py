@@ -298,8 +298,7 @@ class Ec2BasedPackageTest(RemoteMachinePackageTest):
     ):
         import base64
         print("++++")
-        print(len(pl.Path(aws_private_key_path).read_text()))
-        #print(base64.b64encode(pl.Path(aws_private_key_path).read_text()[].encode()))
+        print(len(pl.Path(aws_private_key_path).read_text().splitlines()))
 
         from tests.package_tests.internals import ec2_ami
 
