@@ -26,23 +26,23 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
-    deploy_parser = subparsers.add_parser("deploy")
-    deploy_parser.add_argument("name", help="Name of the deployment.")
+    get_list_parser = subparsers.add_parser("list")
+    deployment_subparser = subparsers.add_parser("deployment")
+    deployment_subparser.add_argument("deployment_name", choices=ALL_DEPLOYMENTS.keys())
 
+    deployment_subparsers = deployment_subparser.add_subparsers(dest="deployment_command", required=True)
+    deploy_parser = deployment_subparsers.add_parser("deploy")
     deploy_parser.add_argument(
         "--cache-dir", dest="cache_dir", help="Cache directory to save/reuse deployment results."
     )
 
-    get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
-    get_all_deployments_parser.add_argument("name", help="Name of the deployment.")
-
-    get_list_parser = subparsers.add_parser("list")
+    get_all_deployments_parser = deployment_subparsers.add_parser("get-deployment-all-cache-names")
 
     args = parser.parse_args()
 
     if args.command == "deploy":
         # Perform the deployment with specified name.
-        deployment = deployments.ALL_DEPLOYMENTS[args.name]
+        deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
 
         cache_dir = None
 
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step, so the
         # Github action knows what keys to use to cache the results of those steps.
 
-        deployment = deployments.ALL_DEPLOYMENTS[args.name]
+        deployment = deployments.ALL_DEPLOYMENTS[args.deployment_name]
 
         # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
         # Github action.
