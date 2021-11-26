@@ -37,7 +37,7 @@ __PARENT_DIR__ = pl.Path(__file__).absolute().parent
 __SOURCE_ROOT__ = __PARENT_DIR__
 
 # This file can be executed as script. Add source root to the PYTHONPATH in order to be able to import
-# local packages.
+# local packages. All such imports also have to be done after that.
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
