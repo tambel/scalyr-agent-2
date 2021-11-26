@@ -54,7 +54,7 @@ class PackageTest:
             deployment_step_classes = package_builder.deployment.steps[:]
 
         self.deployment = deployments.Deployment(
-            name=f"package_test_{self.unique_name}_deployment",
+            name=self.unique_name,
             step_classes=deployment_step_classes,
             architecture=architecture or package_builder.architecture,
             base_docker_image=package_builder.base_docker_image

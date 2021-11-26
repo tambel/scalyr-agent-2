@@ -451,7 +451,7 @@ class PackageBuilder(abc.ABC):
 
         # Create personal deployment for the package builder.
         self.deployment = environment_deployments.Deployment(
-            name=f"package_builder_{self.name}_deployment",
+            name=self.name,
             step_classes=deployment_step_classes or [],
             architecture=architecture,
             base_docker_image=base_docker_image
