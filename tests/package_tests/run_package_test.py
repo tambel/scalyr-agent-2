@@ -14,6 +14,7 @@ sys.path.append(str(__SOURCE_ROOT__))
 
 from tests.package_tests import current_test_specifications
 from tests.package_tests.frozen_test_runner import build_test_runner_frozen_binary
+from agent_build import package_builders
 
 
 _TEST_CONFIG_PATH = pl.Path(__file__).parent / "credentials.json"
@@ -156,11 +157,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("test_name", choices=current_test_specifications.PackageTest.ALL_TESTS.keys())
-
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_test_parser = subparsers.add_parser("run")
+    run_test_parser.add_argument("test_name", choices=current_test_specifications.PackageTest.ALL_TESTS.keys())
     run_test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
     run_test_parser.add_argument("--package-path", dest="package_path", required=False)
     run_test_parser.add_argument(
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     )
     run_test_parser.add_argument("--scalyr-api-key", dest="scalyr_api_key", required=False)
 
-    get_deployment_name_parser = subparsers.add_parser("get-deployment-name")
+    get_tests_github_matrix_parser = subparsers.add_parser("get-tests-github-matrix")
 
     args = parser.parse_args()
 
@@ -185,10 +185,31 @@ if __name__ == '__main__':
         )
         exit(0)
 
-    if args.command == "get-deployment-name":
-        package_test = current_test_specifications.PackageTest.ALL_TESTS[args.test_name]
+    if args.command == "get-tests-github-matrix":
+        package_builder = package_builders.PackageBuilder.ALL_BUILDERS[args.build_name]
+        package_tests = current_test_specifications.PackageTest.PACKAGE_TESTS[args.build_name]
+        test_specs_names = [s.unique_name for s in package_tests]
+        test_specs_deployment_names = [s.deployment.name for s in package_tests]
+        package_filename_globs = [package_builder.filename_glob for s in package_tests]
 
-        package_test.deployment.deploy()
+        matrix = {
+            "include": []
+        }
 
-        print(package_test.deployment.name)
+        for package_test in package_tests:
+            runner_os = "ubuntu-20.04"
+            if package_test.package_builder.PACKAGE_TYPE == constants.PackageType.MSI:
+                if isinstance(package_test, current_test_specifications.Ec2BasedPackageTest):
+                    runner_os = "windows-2019"
+
+            test_json = {
+                "test-name": package_test.unique_name,
+                "package-filename-glob": package_builder.filename_glob,
+                "deployment-name": package_test.deployment.name,
+                "os": runner_os
+            }
+            matrix["include"].append(test_json)
+
+        print(matrix)
+        exit(0)
 

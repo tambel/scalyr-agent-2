@@ -23,7 +23,7 @@ from typing import Dict, List, Union, Type
 
 from agent_tools import constants
 from agent_tools import environment_deployments as env_deployers
-from agent_tools import package_builders
+from agent_build import package_builders
 from tests.package_tests.internals import deb_rpm_tar_msi_test
 
 _PARENT_DIR = pl.Path(__file__).parent
@@ -296,7 +296,6 @@ class Ec2BasedPackageTest(RemoteMachinePackageTest):
             aws_security_groups: str = None,
             aws_region=None,
     ):
-        import base64
         print("++++")
         print(len(pl.Path(aws_private_key_path).read_text().splitlines()))
 

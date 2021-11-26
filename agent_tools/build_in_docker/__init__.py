@@ -87,12 +87,13 @@ def build_stage(
         in the same directory with current module.
     :param command: Command to execute.
     :param stage_name: Name of one of the stages in the Dockerfile. Those stages are used in different scenarios, for
-        example agent package build, and include different set of files.
-    :param architecture: Architecture of the build. Translated to the docker's --platform option.
+        example agent package build or package tests, and include different set of files needed for those scenarios.
+    :param architecture: Architecture of the build. Translated to the docker's '--platform' option.
     :param image_name: Name of the result image.
     :param base_image_name: Name of the base image to use.
-    :param output_path_mappings:
-    :return:
+    :param output_path_mappings: Dict with mapping of the host paths to the paths that are used inside the docker.
+        After the build is completed, files or folders that are located inside the docker will be copied to the
+        appropriate host paths.
     """
     run_docker_build(
         architecture=architecture,
@@ -105,27 +106,6 @@ def build_stage(
             "BUILD_STAGE": stage_name
         }
     )
-
-    # subprocess.check_call(
-    #     [
-    #         "docker",
-    #         "build",
-    #         "--platform",
-    #         architecture.as_docker_platform.value,
-    #         "-t",
-    #         image_name,
-    #         "--build-arg",
-    #         f"BASE_IMAGE_NAME={base_image_name}",
-    #         "--build-arg",
-    #         f"BUILD_COMMAND={command}",
-    #         "--build-arg",
-    #         f"BUILD_STAGE={stage_name}",
-    #         "-f",
-    #         str(__PARENT_DIR__ / "Dockerfile"),
-    #         str(__SOURCE_ROOT__),
-    #     ],
-    #     env=env
-    # )
 
     # If there are output mapping specified, than we has to copy result files from the result build.
     # To do that we have to create a container and copy files from it.

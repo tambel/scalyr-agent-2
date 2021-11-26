@@ -21,6 +21,8 @@ import subprocess
 import hashlib
 import logging
 import re
+import json
+import argparse
 
 from typing import Union, Optional, List, Dict, Type
 
@@ -28,7 +30,8 @@ from agent_tools import constants
 from agent_tools import build_in_docker
 
 
-__SOURCE_ROOT__ = pl.Path(__file__).parent.parent.absolute()
+_PARENT_DIR = pl.Path(__file__).parent.absolute()
+_SOURCE_ROOT = _PARENT_DIR.parent.absolute()
 
 
 class DeploymentStep:
@@ -40,10 +43,8 @@ class DeploymentStep:
 
     """
 
-    # Special collection where all created deployment steps are stored. All of the a saved with unique name as key, so
-    # it is possible to find any deployment step by its names. The ability to find needed deployment step by its name is
-    # crucial if we want to run it on the CI/CD.
-    ALL_DEPLOYMENT_STEPS: Dict[str, 'DeploymentStep'] = {}
+
+    # ALL_DEPLOYMENT_STEPS: Dict[str, 'DeploymentStep'] = {}
 
     # Set of files that are somehow used during the step. Needed to calculate the checksum of the whole step, so it can
     # be used as cache key.
@@ -78,8 +79,8 @@ class DeploymentStep:
             self.base_docker_image = None
             self.previous_step = None
 
-        # Add this instance to the global collection of all deployment steps.
-        type(self).ALL_DEPLOYMENT_STEPS[self.name] = self
+        ## Add this instance to the global collection of all deployment steps.
+        #type(self).ALL_DEPLOYMENT_STEPS[self.name] = self
 
         self.used_files = self._init_used_files(type(self).USED_FILES)
 
@@ -95,8 +96,8 @@ class DeploymentStep:
             path = pl.Path(path)
 
             # match glob against source code root and include all matched paths.
-            relative_path = path.relative_to(__SOURCE_ROOT__)
-            found = list(__SOURCE_ROOT__.glob(str(relative_path)))
+            relative_path = path.relative_to(_SOURCE_ROOT)
+            found = list(_SOURCE_ROOT.glob(str(relative_path)))
 
             used_files.extend(found)
 
@@ -177,7 +178,7 @@ class DeploymentStep:
         sha256 = hashlib.sha256()
         for file_glob in self.used_files:
             for file_path in file_glob.parent.glob(file_glob.name):
-                sha256.update(str(file_path.relative_to(__SOURCE_ROOT__)).encode())
+                sha256.update(str(file_path.relative_to(_SOURCE_ROOT)).encode())
                 sha256.update(str(file_path.stat().st_mode).encode())
                 sha256.update(file_path.read_bytes())
 
@@ -393,7 +394,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
             shell = shutil.which("bash")
 
         # Create final absolute path to the script.
-        final_script_path = source_path / type(self).SCRIPT_PATH.relative_to(__SOURCE_ROOT__)
+        final_script_path = source_path / type(self).SCRIPT_PATH.relative_to(_SOURCE_ROOT)
 
         command_args = [shell, str(final_script_path)]
 
@@ -414,7 +415,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
             result using it.
         """
         command_args = self._get_command_line_args(
-                source_path=__SOURCE_ROOT__,
+                source_path=_SOURCE_ROOT,
                 cache_dir=cache_dir
             )
 
@@ -444,8 +445,8 @@ class ShellScriptDeploymentStep(DeploymentStep):
         # All files, which are used in the build have to be mapped to the docker container filesystem.
         volumes_mappings = []
         for used_path in self.used_files:
-            rel_used_path = pl.Path(used_path).relative_to(__SOURCE_ROOT__)
-            abs_host_path = __SOURCE_ROOT__ / rel_used_path
+            rel_used_path = pl.Path(used_path).relative_to(_SOURCE_ROOT)
+            abs_host_path = _SOURCE_ROOT / rel_used_path
             abs_container_path = mounted_container_root_path / rel_used_path
             volumes_mappings.extend(["-v", f"{abs_host_path}:{abs_container_path}"])
 
@@ -831,3 +832,112 @@ class Deployment:
 #     name="test_environment",
 #     steps=[INSTALL_TEST_REQUIREMENT_STEP]
 # )
+
+
+
+_SCRIPTS_DIR_PATH = _PARENT_DIR / "environment_deployment_steps"
+
+
+# Docker based step that build image with Python and other needed tools.
+# The specific of this Python, is that it is build against very early version of glibc (2.12), so the statically bundled
+# frozen binary has to work starting from centos:6
+class InstallPythonStep(DockerFileDeploymentStep):
+    USED_FILES = [_SCRIPTS_DIR_PATH / "build-python" / "*"]
+    DOCKERFILE_PATH = _SCRIPTS_DIR_PATH / "build-python" / "Dockerfile"
+
+
+# Paths to the helper files that may be helpful for the main deployment script.
+_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS = [
+    # bash library that provides a simple caching logic.
+    _SOURCE_ROOT / _SCRIPTS_DIR_PATH / "cache_lib.sh"
+]
+
+_AGENT_BUILD_DIR = _SOURCE_ROOT / "agent_build"
+
+# Glob that has to match all requirement files that are needed for the agent build.
+_AGENT_REQUIREMENT_FILES_PATH = _AGENT_BUILD_DIR / "requirement-files" / "*.txt"
+
+
+# Step that rn small script which install all needed agent build requirements from requirement files.
+class InstallBuildRequirementsStep(ShellScriptDeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy_build_environment.sh"
+    USED_FILES = [
+        *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+        _AGENT_REQUIREMENT_FILES_PATH
+    ]
+
+
+# Step that rn small script which installs requirements from the test/dev environment.
+class InstallTestRequirementsDeploymentStep(ShellScriptDeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy-dev-environment.sh"
+    USED_FILES = [
+        *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+        _AGENT_REQUIREMENT_FILES_PATH, _SOURCE_ROOT / "dev-requirements.txt"
+    ]
+
+
+# Step that prepare all tools that are needed for the windows package build.
+# For now it just a WIX toolset, which is needed to  create msi packages.
+class InstallWindowsBuilderToolsStep(ShellScriptDeploymentStep):
+    SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy_agent_windows_builder.ps1"
+    USED_FILES = used_files = [
+        *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
+        _AGENT_REQUIREMENT_FILES_PATH
+    ]
+
+
+# Common test environment. Just installs all dev environment to the current system.
+# Used by Github Actions CI/CD.
+COMMON_TEST_DEPLOYMENT = Deployment(
+    name="test_environment",
+    architecture=constants.Architecture.X86_64,
+    step_classes=[InstallBuildRequirementsStep]
+)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("name", help="Name of the deployment.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    deploy_parser = subparsers.add_parser("deploy")
+    deploy_parser.add_argument(
+        "--cache-dir", dest="cache_dir", help="Cache directory to save/reuse deployment results."
+    )
+
+    get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
+
+    subparsers.add_parser("list")
+
+    args = parser.parse_args()
+
+    if args.command == "deploy":
+        # Perform the deployment with specified name.
+        deployment = Deployment.ALL_DEPLOYMENTS[args.name]
+
+        cache_dir = None
+
+        if args.cache_dir:
+            cache_dir = pl.Path(args.cache_dir)
+
+        deployment.deploy(
+            cache_dir=cache_dir,
+        )
+
+    if args.command == "get-deployment-all-cache-names":
+        # A special command which is needed to perform the Github action located in
+        # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step, so the
+        # Github action knows what keys to use to cache the results of those steps.
+
+        deployment = Deployment.ALL_DEPLOYMENTS[args.name]
+
+        # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
+        # Github action.
+        step_checksums = []
+        for step in deployment.steps:
+            step_checksums.append(step.cache_key)
+
+        print(json.dumps(list(reversed(step_checksums))))
+
+        exit(0)
