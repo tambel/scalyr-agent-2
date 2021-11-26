@@ -23,16 +23,22 @@ import logging
 import re
 import json
 import argparse
+import sys
 
 from typing import Union, Optional, List, Dict, Type
-
-from agent_tools import constants
-from agent_tools import build_in_docker
 
 
 _PARENT_DIR = pl.Path(__file__).parent.absolute()
 _SOURCE_ROOT = _PARENT_DIR.parent.parent
 
+
+# This file can be executed as script. Add source root to the PYTHONPATH in order to be able to import
+# local packages. All such imports also have to be done after that.
+sys.path.append(str(_SOURCE_ROOT))
+
+
+from agent_tools import constants
+from agent_tools import build_in_docker
 
 class DeploymentStep:
     """
@@ -765,7 +771,7 @@ class Deployment:
 # # Paths to the helper files that may be helpful for the main deployment script.
 # _HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS = [
 #     # bash library that provides a simple caching logic.
-#     __SOURCE_ROOT__ / _SCRIPTS_DIR_PATH / "cache_lib.sh"
+#     _SOURCE_ROOT / _SCRIPTS_DIR_PATH / "cache_lib.sh"
 # ]
 #
 # # Glob that has to match all requirement files that are needed for the agent build.
@@ -803,7 +809,7 @@ class Deployment:
 #     deployment_script_path=_SCRIPTS_DIR_PATH / "deploy-dev-environment.sh",
 #     used_files=[
 #         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
-#         _AGENT_REQUIREMENT_FILES_PATH, __SOURCE_ROOT__ / "dev-requirements.txt"],
+#         _AGENT_REQUIREMENT_FILES_PATH, _SOURCE_ROOT / "dev-requirements.txt"],
 # )
 #
 #
