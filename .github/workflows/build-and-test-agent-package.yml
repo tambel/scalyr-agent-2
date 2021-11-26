@@ -59,7 +59,7 @@ jobs:
         run: |
           python build_package.py ${{ inputs.package_name }} --output-dir agent-build-output
 
-          echo "::set-output name=package-tests-matrix::$(python3 tests/package_tests/run_package_test.py get-tests-github-matrix ${{ inputs.package_name }})"
+          echo "::set-output name=package-tests-matrix::$(python3 tests/package_tests/run_package_test.py get-package-builder-tests-github-matrix ${{ inputs.package_name }})"
 
       - name: Build package test-runner.
         id: build-test-runner

@@ -137,20 +137,6 @@ def test_package(
             scalyr_api_key=scalyr_api_key
         )
 
-    #
-    # current_test_specifications.run_package_test(
-    #     package_test_name=package_test_name,
-    #     package_path=package_path,
-    #     build_dir_path=build_dir_path,
-    #     aws_access_key=get_option("aws_access_key"),
-    #     aws_secret_key = get_option("aws_secret_key"),
-    #     aws_keypair_name = get_option("aws_keypair_name"),
-    #     aws_private_key_path = get_option("aws_private_key_path"),
-    #     aws_security_groups = get_option("aws_security_groups"),
-    #     aws_region=get_option("aws_region", "us-east-1"),
-    #     scalyr_api_key=scalyr_api_key,
-    # )
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s][%(module)s] %(message)s")
@@ -158,23 +144,31 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers(dest="command", required=True)
+    list_command_parser = subparsers.add_parser("list")
 
-    run_test_parser = subparsers.add_parser("run")
-    run_test_parser.add_argument("test_name", choices=current_test_specifications.ALL_PACKAGE_TESTS.keys())
-    run_test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
-    run_test_parser.add_argument("--package-path", dest="package_path", required=False)
-    run_test_parser.add_argument(
+    package_test_parser = subparsers.add_parser("run-package-test")
+    package_test_parser.add_argument("test_name", choices=current_test_specifications.ALL_PACKAGE_TESTS.keys())
+
+    package_test_parser.add_argument("--build-dir-path", dest="build_dir_path", required=False)
+    package_test_parser.add_argument("--package-path", dest="package_path", required=False)
+    package_test_parser.add_argument(
         "--frozen-package-test-runner-path",
         dest="frozen_package_test_runner_path",
         required=False
     )
-    run_test_parser.add_argument("--scalyr-api-key", dest="scalyr_api_key", required=False)
+    package_test_parser.add_argument("--scalyr-api-key", dest="scalyr_api_key", required=False)
 
-    get_tests_github_matrix_parser = subparsers.add_parser("get-tests-github-matrix")
+    get_tests_github_matrix_parser = subparsers.add_parser("get-package-builder-tests-github-matrix")
+    get_tests_github_matrix_parser.add_argument("package_name")
 
     args = parser.parse_args()
 
-    if args.command == "run":
+    if args.command == "list":
+        names = [t.unique_name for t in current_test_specifications.ALL_PACKAGE_TESTS.values()]
+        for test_name in sorted(names):
+            print(test_name)
+
+    if args.command == "run-package-test":
         test_package(
             package_test_name=args.test_name,
             build_dir_path=args.build_dir_path,
@@ -185,9 +179,9 @@ if __name__ == '__main__':
         )
         exit(0)
 
-    if args.command == "get-tests-github-matrix":
-        package_builder = package_builders.ALL_PACKAGE_BUILDERS[args.build_name]
-        package_tests = current_test_specifications.PackageTest.PACKAGE_TESTS[args.build_name]
+    if args.package_test_command == "get-package-builder-tests-github-matrix":
+        package_builder = package_builders.ALL_PACKAGE_BUILDERS[args.package_name]
+        package_tests = current_test_specifications.PACKAGE_BUILDER_TESTS[args.package_name]
         test_specs_names = [s.unique_name for s in package_tests]
         test_specs_deployment_names = [s.deployment.name for s in package_tests]
         package_filename_globs = [package_builder.filename_glob for s in package_tests]
