@@ -33,5 +33,5 @@ udatetime==0.0.16; platform_system != "Windows"
 # NOTE: We rely on change in Libcloud which allows us to specify a custom wait_period which makes
 # it less likely for us to hit EC2 rate limits when spinning up and deploying many instances
 # concurrently
-git+https://github.com/apache/libcloud.git@trunk#egg=apache-libcloud
-paramiko==2.7.2
+git+https://github.com/apache/libcloud.git@trunk#egg=apache-libcloud; platform_system != "Windows"
+paramiko==2.7.2; platform_system != "Windows"
