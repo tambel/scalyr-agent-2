@@ -15,6 +15,8 @@ sys.path.append(str(__SOURCE_ROOT__))
 from tests.package_tests import current_test_specifications
 from tests.package_tests.frozen_test_runner import build_test_runner_frozen_binary
 from agent_build import package_builders
+from tests.package_tests import current_test_specifications
+from agent_tools import constants
 
 
 _TEST_CONFIG_PATH = pl.Path(__file__).parent / "credentials.json"
@@ -179,9 +181,9 @@ if __name__ == '__main__':
         )
         exit(0)
 
-    if args.package_test_command == "get-package-builder-tests-github-matrix":
+    if args.command == "get-package-builder-tests-github-matrix":
         package_builder = package_builders.ALL_PACKAGE_BUILDERS[args.package_name]
-        package_tests = current_test_specifications.PACKAGE_BUILDER_TESTS[args.package_name]
+        package_tests = current_test_specifications.PACKAGE_BUILDER_TESTS[package_builder]
         test_specs_names = [s.unique_name for s in package_tests]
         test_specs_deployment_names = [s.deployment.name for s in package_tests]
         package_filename_globs = [package_builder.filename_glob for s in package_tests]
