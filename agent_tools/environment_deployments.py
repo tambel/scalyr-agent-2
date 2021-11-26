@@ -21,6 +21,8 @@ import subprocess
 import hashlib
 import logging
 import re
+import argparse
+import json
 
 from typing import Union, Optional, List, Dict, ClassVar, Type
 
@@ -893,3 +895,50 @@ class LinuxPackageBuilderDeployment(Deployment):
 #     name="test_environment",
 #     steps=[INSTALL_TEST_REQUIREMENT_STEP]
 # )
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] [%(filename)s] %(message)s")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("name", help="Name of the deployment.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    deploy_parser = subparsers.add_parser("deploy")
+    deploy_parser.add_argument(
+        "--cache-dir", dest="cache_dir", help="Cache directory to save/reuse deployment results."
+    )
+
+    get_all_deployments_parser = subparsers.add_parser("get-deployment-all-cache-names")
+
+    subparsers.add_parser("list")
+
+    args = parser.parse_args()
+
+    if args.command == "deploy":
+        # Perform the deployment with specified name.
+        deployment = Deployment.ALL_DEPLOYMENTS[args.name]
+
+        cache_dir = None
+
+        if args.cache_dir:
+            cache_dir = pl.Path(args.cache_dir)
+
+        deployment.deploy(
+            cache_dir=cache_dir,
+        )
+
+    if args.command == "get-deployment-all-cache-names":
+        # A special command which is needed to perform the Github action located in
+        # '.github/actions/perform-deployment'. The command provides names of the caches of the deployment step, so the
+        # Github action knows what keys to use to cache the results of those steps.
+
+        deployment = Deployment.ALL_DEPLOYMENTS[args.name]
+
+        # Get cache names of from all steps and print them as JSON list. This format is required by the mentioned
+        # Github action.
+        step_checksums = []
+        for step in deployment.steps:
+            step_checksums.append(step.cache_key)
+
+        print(json.dumps(list(reversed(step_checksums))))
+
+        exit(0)

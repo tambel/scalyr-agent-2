@@ -1,5 +1,18 @@
+// Copyright 2014-2021 Scalyr Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 const core = require('@actions/core');
-const github = require('@actions/github');
 const cache = require('@actions/cache');
 const fs = require('fs');
 const path = require('path')
@@ -15,10 +28,10 @@ async function run() {
     const cacheDir = "deployment_caches"
 
     // Get json list with names of all deployments which are needed for this deployment.
-    const deployment_helper_script_path = path.join(".github", "scripts", "get-deployment.py")
+    const deployment_helper_script_path = path.join("agent_tools", "environment_deployments.py")
     // Run special github-related helper command which returns names for all deployments, which are used in the current
     // deployment.
-    const code = child_process.execFileSync("python3", [deployment_helper_script_path,"get-deployment-all-cache-names", deploymentName]);
+    const code = child_process.execFileSync("python3", [deployment_helper_script_path, deploymentName, "get-deployment-all-cache-names"]);
 
     // Read and decode names from json.
     const json_encoded_deployment_names = buffer.Buffer.from(code, 'utf8').toString()
@@ -48,7 +61,7 @@ async function run() {
     // has to reuse them.
     child_process.execFileSync(
         "python3",
-        [deployment_helper_script_path,"deploy", deploymentName, "--cache-dir", cacheDir],
+        [deployment_helper_script_path, deploymentName, "deploy", "--cache-dir", cacheDir],
         {stdio: 'inherit'}
     );
 
