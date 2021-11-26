@@ -6,6 +6,8 @@ import logging
 
 __SOURCE_ROOT__ = pl.Path(__file__).parent.parent.parent.absolute()
 
+import tests.package_tests.current_test_specifications
+
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import package_builders
@@ -50,11 +52,16 @@ if __name__ == '__main__':
         }
 
         for package_test in package_tests:
+            runner_os = "ubuntu-20.04"
+            if package_test.package_builder.PACKAGE_TYPE == constants.PackageType.MSI:
+                if isinstance(package_test, tests.package_tests.current_test_specifications.Ec2BasedPackageTest):
+                    runner_os = "windows-2019"
+
             test_json = {
                 "test-name": package_test.unique_name,
                 "package-filename-glob": package_builder.filename_glob,
                 "deployment-name": package_test.deployment.name,
-                "os": "ubuntu-20.04"
+                "os": runner_os
             }
             matrix["include"].append(test_json)
 
