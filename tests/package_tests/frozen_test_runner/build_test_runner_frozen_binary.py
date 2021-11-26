@@ -35,7 +35,7 @@ __SOURCE_ROOT__ = _PARENT_DIR.parent.parent.parent
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_tools import build_in_docker
-from agent_tools import environment_deployments
+from agent_tools.environment_deployments import deployments
 import tests.package_tests
 
 
@@ -52,7 +52,7 @@ def build_test_runner_frozen_binary(
     :param deployment_name: Name of the environment deployment which is required to build the frozen binary.
     :param locally: If True build on current system, otherwise in docker.
     """
-    deployment = environment_deployments.Deployment.ALL_DEPLOYMENTS[deployment_name]
+    deployment = deployments.ALL_DEPLOYMENTS[deployment_name]
 
     if locally or not deployment.in_docker:
         agent_tools_path = __SOURCE_ROOT__ / "agent_tools"
