@@ -14,24 +14,21 @@
 # limitations under the License.
 
 # This script is used by "ShellScriptDeploymentStep"
-# (See more in class "ShellScriptDeploymentStep" in the "agent_tools/environment_deployments.py"
+# (See more in class "ShellScriptDeploymentStep" in the "agent_tools/environment_deployments/deployments.py"
 
 set -e
 
 PARENT_DIR="$(dirname "$0")"
-SOURCE_ROOT=$(dirname "$(dirname "$PARENT_DIR")")
-
+SOURCE_ROOT=$(dirname "$(dirname "$(dirname "$PARENT_DIR")")")
 source "$PARENT_DIR/cache_lib.sh"
+
 
 pip_cache_dir="$(python3 -m pip cache dir)"
 
 # Reuse cached pip cache if exists.
 restore_from_cache pip "$pip_cache_dir"
 
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/main-requirements.txt"
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/monitors-requirements.txt"
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/compression-requirements.txt"
-python3 -m pip install -r "${SOURCE_ROOT}/agent_build/requirement-files/frozen-binaries-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
 
 # Save pipe cache to reuse it in future.
 save_to_cache pip "$pip_cache_dir"

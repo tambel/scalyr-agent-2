@@ -31,7 +31,7 @@ from agent_tools import build_in_docker
 
 
 _PARENT_DIR = pl.Path(__file__).parent.absolute()
-_SOURCE_ROOT = _PARENT_DIR.parent.absolute()
+_SOURCE_ROOT = _PARENT_DIR.parent.parent
 
 
 class DeploymentStep:
@@ -752,7 +752,7 @@ class Deployment:
 #         return spec
 #
 #
-# _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "environment_deployment_steps"
+# _SCRIPTS_DIR_PATH = __PARENT_DIR__ / "steps"
 #
 # # This deployer is used in the package building.
 # # Since we use frozen binaries, it is important to produce the binary using the earliest glibc possible,
@@ -835,7 +835,7 @@ class Deployment:
 
 
 
-_SCRIPTS_DIR_PATH = _PARENT_DIR / "environment_deployment_steps"
+_SCRIPTS_DIR_PATH = _PARENT_DIR / "steps"
 
 
 # Docker based step that build image with Python and other needed tools.

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # This is a primitive caching library that can be used to save or reuse some intermediate results by some
-# "Deployment Steps". See more in class "ShellScriptDeploymentStep" in the "agent_tools/environment_deployments.py"
+# "Deployment Steps". See more in class "ShellScriptDeploymentStep" in the "agent_tools/environment_deployments/deployments.py"
 set -e
 
 CACHE_DIR="$1"
