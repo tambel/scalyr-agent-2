@@ -69,4 +69,6 @@ workflows:
   setup:
     jobs:
       - prepare-setup
-      - setup
+      - setup:
+          requires:
+            - prepare-setup
