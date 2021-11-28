@@ -8,6 +8,8 @@ commands:
         description: "Version of the Python to install"
         type: string
         default: 3.8.10
+      os:
+        type: executor
 
     steps:
       - restore_cache:
