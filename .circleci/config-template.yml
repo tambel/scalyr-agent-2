@@ -54,7 +54,7 @@ jobs:
     steps:
       - checkout
       - install-python
-      - test_environment_x86_64
+      - test_environment_x86_64<< parameters.ggg >>
       - run:
           name: Run unit tests.
           command: |
@@ -68,3 +68,4 @@ workflows:
           matrix:
             parameters:
               os: [windows]
+              ggg: ['']
