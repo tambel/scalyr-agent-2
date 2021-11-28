@@ -1,40 +1,33 @@
 version: 2.1
 
 commands:
-  deployment-step:
-    description: "A base command for all tox based unit test jobs"
+  install-python:
+    description: "Install python"
     parameters:
-
-      step-name:
-        description: "Name of the step. Will be also used as cache key."
+      version:
+        description: "Version of the Python to install"
         type: string
-
-      action:
-        description: "Save or restore from cache."
+        default: 3.8.10
+      os:
+        description: "What OS Python installation to use."
         type: enum
-        enum: ["save-cache", "restore-cache", "perform"]
+        enum: [windows]
 
     steps:
-      - run: |
-          if [ "$CIRCLE_BRANCH" = "develop" ]; then
-              circleci-agent step halt
-          fi
+      - restore_cache:
+          key: python-install-cache-<< parameters.os >>-<< parameters.version >>
 
-      - when:
+      - run:
           condition:
-            equal: [ restore, << parameters.action >> ]
+            equal: [ windows, << parameters.os >> ]
           steps:
-            - restore_cache:
-                key: deployment-steps-cache-<< parameters.step-name >>
+          name: "Install Python"
+          command: choco install python --version=3.8.10 --cache ~/python-cache
 
-      - when:
-          condition:
-            equal: [ save, << parameters.action >> ]
-          steps:
-            - save_cache:
-                key: deployment-steps-cache-<< parameters.step-name >>
-                paths:
-                  ~/deployment-steps-cache/<< parameters.step-name >>
+      - save_cache:
+          key: python-install-cache-<< parameters.os >>-<< parameters.version >>
+          paths:
+            ~/python-cache
 
 {{ deployments_commands }}
 
@@ -64,10 +57,7 @@ jobs:
     executor: << parameters.os >>
     steps:
       - checkout
-      - run:
-          name: "Install Python"
-          command: choco install python --version=3.8.10
-
+      - install-python
       - test_environment_x86_64
       - run:
           name: Run unit tests.
