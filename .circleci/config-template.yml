@@ -55,7 +55,6 @@ jobs:
         type: executor
     working_directory: ~/scalyr-agent-2
     executor: << parameters.os >>
-    shell: bash
     steps:
       - checkout
       - test_environment_x86_64
@@ -71,4 +70,8 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: [docker, win/default]
+              os:
+                - docker
+                - win/default:
+                    size: medium
+                    shell: bash
