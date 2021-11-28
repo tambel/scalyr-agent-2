@@ -38,7 +38,7 @@ restore_cache_steps = []
 for step in all_steps.values():
     restore_cache_steps.append({
         "deployment-step": {
-            "step-cache-key": step.cache_key,
+            "step-name": step.cache_key,
             "action": "restore-cache"
         }
     })
