@@ -23,7 +23,10 @@ commands:
           command: |
             #choco config set cacheLocation ~/python-cache
             #choco install python --version=<< parameters.version >>
+            conda remove python
+            conda clean --packages
             conda install python=3.8.10
+
 
       - run:
           command: |
