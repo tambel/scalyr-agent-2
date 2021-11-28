@@ -32,20 +32,20 @@ commands:
                 ~/deployment-steps-cache/<< parameters.step-name >>
 
 
-    perform-deployment-steps:
-      description: "A base command for all tox based unit test jobs"
-      parameters:
+  perform-deployment-steps:
+    description: "A base command for all tox based unit test jobs"
+    parameters:
 
-        step-cache-name:
-          description: "Name of the step cache. Will be used as cache key."
-          type: string
+      step-cache-name:
+        description: "Name of the step cache. Will be used as cache key."
+        type: string
 
-        action:
-          description: "Save or restore from cache."
-          type: enum
-          enum: [ "save", "restore" ]
+      action:
+        description: "Save or restore from cache."
+        type: enum
+        enum: [ "save", "restore" ]
 
-      steps:
+    steps:
 {{ used_steps }}
 
 

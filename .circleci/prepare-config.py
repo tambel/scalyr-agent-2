@@ -47,7 +47,7 @@ for step in all_steps.values():
 
 yaml_step_data = yaml.dump(restore_cache_steps)
 
-yaml_step_data = textwrap.indent(yaml_step_data, "        ")
+yaml_step_data = textwrap.indent(yaml_step_data, "      ")
 
 data = {
     "used_steps": yaml_step_data
