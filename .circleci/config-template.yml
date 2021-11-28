@@ -64,4 +64,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: ["docker", "windows"]
+              os: [docker, windows]
