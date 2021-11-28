@@ -55,6 +55,7 @@ jobs:
         type: executor
     working_directory: ~/scalyr-agent-2
     executor: << parameters.os >>
+    shell: bash
     steps:
       - checkout
       - test_environment_x86_64
