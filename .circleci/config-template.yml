@@ -50,7 +50,7 @@ jobs:
   unit_test:
     parameters:
       os:
-        type: executor
+        type: string
       deployment-name:
         type: string
 
