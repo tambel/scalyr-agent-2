@@ -21,8 +21,9 @@ commands:
           steps:
           name: "Install Python"
           command: |
-            choco config set cacheLocation ~/python-cache
-            choco install python --version=<< parameters.version >>
+            #choco config set cacheLocation ~/python-cache
+            #choco install python --version=<< parameters.version >>
+            conda install python=3.8.10
 
       - run:
           command: |
