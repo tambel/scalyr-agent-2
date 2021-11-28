@@ -47,6 +47,7 @@ jobs:
       ggg:
         type: string
     working_directory: ~/scalyr-agent-2
+    executors: << parameters.os >>
     docker:
       - image: cimg/python:3.8.10
     steps:
@@ -63,4 +64,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              ggg: ["1"]
+              os: ["docker", "windows"]
