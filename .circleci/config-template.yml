@@ -44,7 +44,7 @@ executors:
     docker:
       - image: cimg/python:3.8.10
 
-  windows:
+  windows-2019:
     windows:
       name: win/default
       size: medium
@@ -73,4 +73,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: [docker, windows]
+              os: [docker, windows-2019]
