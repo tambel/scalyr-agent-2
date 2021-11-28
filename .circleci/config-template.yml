@@ -25,6 +25,7 @@ commands:
             #choco install python --version=<< parameters.version >>
             conda remove python
             conda clean --packages
+            conda clean --all --yes
             conda install python=3.8.10
 
 
