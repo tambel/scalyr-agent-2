@@ -20,7 +20,7 @@ jobs:
       - checkout
       - restore_cache:
           name: "Restore setup dependencies cache"
-          key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
+          key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}-v1
 
       - run:
           name: Install setup dependencies.
@@ -45,9 +45,8 @@ jobs:
 
       - save_cache:
           name: "Save setup dependencies cache"
-          key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
+          key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}-v1
           paths:
-            - "venv"
             - "~/.cache/pip"
 
   setup:
