@@ -33,6 +33,11 @@ jobs:
             mkdir workspace
             python3 .circleci/prepare-config.py > workspace/generated-config.yml
 
+      - run:
+          name: Print generated config.
+          command: |
+            cat workspace/generated-config.yml
+
       - persist_to_workspace:
           root: workspace
           paths:
