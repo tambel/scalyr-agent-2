@@ -59,7 +59,7 @@ jobs:
     steps:
       - checkout
       - install-python:
-          os: << parameters.os >>
+          os: << parameters.os.name >>
       - << parameters.deployment-name >>
       - run:
           name: Run unit tests.
@@ -73,5 +73,6 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: [windows]
+              os: [docker, windows]
               deployment-name: ['test_environment_x86_64']
+            exclude:
