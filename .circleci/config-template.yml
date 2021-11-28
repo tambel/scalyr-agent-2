@@ -45,7 +45,7 @@ jobs:
   unit_test:
     parameters:
       os:
-        type: string
+        type: executor
     working_directory: ~/scalyr-agent-2
     executor: << parameters.os >>
     docker:
