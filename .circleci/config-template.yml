@@ -8,14 +8,10 @@ commands:
         description: "Version of the Python to install"
         type: string
         default: 3.8.10
-      os:
-        description: "What OS Python installation to use."
-        type: enum
-        enum: [windows]
 
     steps:
       - restore_cache:
-          key: python-install-cache-<< parameters.os >>-<< parameters.version >>
+          key: python-install-cache-{{ arch }}-<< parameters.version >>
 
       - run:
           condition:
@@ -25,7 +21,7 @@ commands:
           command: choco install python --version=<< parameters.version >> --cache ~/python-cache
 
       - save_cache:
-          key: python-install-cache-<< parameters.os >>-<< parameters.version >>
+          key: python-install-cache-{{ arch }}-<< parameters.version >>
           paths:
             ~/python-cache
 
