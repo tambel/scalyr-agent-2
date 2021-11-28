@@ -6,8 +6,15 @@ jobs:
       - image: cimg/python:3.8.10
     steps:
       - checkout
+      - run:
+          command: |
+            echo << parameters.ggg >>
 
 workflows:
   build_and_test:
     jobs:
-      - unit_test
+      - unit_test:
+          matrix:
+            parameters:
+              os: [ docker ]
+              ggg: [1, 2]

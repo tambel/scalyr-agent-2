@@ -33,7 +33,3 @@ workflows:
   setup:
     jobs:
       - setup
-
-  setup2:
-    jobs:
-      - setup
