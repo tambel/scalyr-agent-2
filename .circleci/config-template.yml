@@ -25,6 +25,8 @@ commands:
             choco uninstall python
             choco install python --version=<< parameters.version >> --cache ~/python-cache
             python --version
+            which python
+            which python3
 
       - save_cache:
           key: python-install-cache-{{ arch }}-<< parameters.version >>
