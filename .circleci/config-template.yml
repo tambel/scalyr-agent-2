@@ -1,7 +1,5 @@
 version: 2.1
 
-{{ used_steps }}
-
 commands:
   deployment-step:
     description: "A base command for all tox based unit test jobs"
@@ -48,10 +46,7 @@ commands:
           enum: [ "save", "restore" ]
 
       steps:
-        <<: *used_steps
-#        - deployment-step:
-#            step-cache-name: ""
-#            action: ""
+{{ used_steps }}
 
 
 

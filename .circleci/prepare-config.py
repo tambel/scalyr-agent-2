@@ -1,6 +1,7 @@
 import collections
 import pathlib as pl
 import sys
+import textwrap
 from typing import Dict
 
 import jinja2
@@ -42,15 +43,14 @@ for step in all_steps.values():
         }
     })
 
-a=10
-step_data = {
-    "used-steps": restore_cache_steps
-}
 
 
+yaml_step_data = yaml.dump(restore_cache_steps)
+
+yaml_step_data = textwrap.indent(yaml_step_data, "        ")
 
 data = {
-    "used_steps": yaml.dump(step_data)
+    "used_steps": yaml_step_data
 }
 
 final_config = template.render(data)
