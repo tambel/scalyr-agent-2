@@ -24,7 +24,8 @@ commands:
             choco config set cacheLocation ~/python-cache
             choco install python --version=<< parameters.version >>
 
-      - run: |
+      - run:
+        command: |
           refreshenv
         shell: powershell
 
