@@ -45,9 +45,10 @@ executors:
       - image: cimg/python:3.8.10
 
   windows:
-    name: win/default
-    size: medium
-    shell: bash
+    machine:
+      name: win/default
+      size: medium
+      shell: bash
 
 
 jobs:
@@ -57,8 +58,6 @@ jobs:
         type: executor
     working_directory: ~/scalyr-agent-2
     executor: << parameters.os >>
-    docker:
-      - image:
     steps:
       - checkout
       - test_environment_x86_64
