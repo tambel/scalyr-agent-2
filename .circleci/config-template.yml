@@ -44,7 +44,7 @@ commands:
 jobs:
   unit_test:
     parameters:
-      ggg:
+      os:
         type: string
     working_directory: ~/scalyr-agent-2
     executor: << parameters.os >>
