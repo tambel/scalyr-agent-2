@@ -58,7 +58,8 @@ jobs:
     executor: << parameters.os >>
     steps:
       - checkout
-      - install-python
+      - install-python:
+          os: << parameters.os >>
       - << parameters.deployment-name >>
       - run:
           name: Run unit tests.
