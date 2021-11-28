@@ -24,6 +24,10 @@ jobs:
       - continuation/continue:
           configuration_path: .circleci/generated_config.yml # use newly generated config to continue
 
+      - run:
+          command: |
+            echo "BYE"
+
 # our single workflow, that triggers the setup job defined above
 workflows:
   setup:
