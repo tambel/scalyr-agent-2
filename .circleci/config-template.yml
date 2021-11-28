@@ -59,7 +59,7 @@ jobs:
     steps:
       - checkout
       - install-python:
-          os: << parameters.os.name >>
+          os: << parameters.os >>
       - << parameters.deployment-name >>
       - run:
           name: Run unit tests.
