@@ -50,7 +50,7 @@ executors:
   windows:
     description: Windows executor.
     machine:
-      image: 'windows-server-2019-vs2019:2.1'
+      image: 'windows-server-2019-vs2019:stable'
       resource_class: windows.medium
       shell: bash
 
