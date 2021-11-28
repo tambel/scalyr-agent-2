@@ -17,25 +17,24 @@ commands:
     steps:
       - when:
           condition:
-            equal: [restore, << parameters.action >> ]
+            equal: [ restore, << parameters.action >> ]
           steps:
             - restore_cache:
                 key: deployment-steps-cache-<< parameters.step-name >>
 
       - when:
           condition:
-            equal: [save, << parameters.action >> ]
+            equal: [ save, << parameters.action >> ]
           steps:
             - save_cache:
-              key: deployment-steps-cache-<< parameters.step-name >>
-              paths:
-                ~/deployment-steps-cache/<< parameters.step-name >>
+                key: deployment-steps-cache-<< parameters.step-name >>
+                paths:
+                  ~/deployment-steps-cache/<< parameters.step-name >>
 
 
   perform-deployment-steps:
     description: "A base command for all tox based unit test jobs"
     parameters:
-
       step-cache-name:
         description: "Name of the step cache. Will be used as cache key."
         type: string
