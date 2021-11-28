@@ -19,7 +19,8 @@ jobs:
       - checkout
       - restore_cache:
           name: "Restore setup dependencies cache"
-            key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
+          key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
+
       - run:
           name: Generate config
           command: |
