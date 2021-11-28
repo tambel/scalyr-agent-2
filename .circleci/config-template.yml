@@ -22,7 +22,7 @@ commands:
             equal: [ windows, << parameters.os >> ]
           steps:
           name: "Install Python"
-          command: choco install python --version=3.8.10 --cache ~/python-cache
+          command: choco install python --version=<< parameters.version >> --cache ~/python-cache
 
       - save_cache:
           key: python-install-cache-<< parameters.os >>-<< parameters.version >>
