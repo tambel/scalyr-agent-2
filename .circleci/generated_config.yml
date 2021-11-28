@@ -19,4 +19,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              ggg: [1, 2]
+              ggg: ["1", "2"]
