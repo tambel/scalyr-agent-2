@@ -1,5 +1,61 @@
 version: 2.1
-orbs:
+
+{{ used_steps }}
+
+commands:
+  deployment-step:
+    description: "A base command for all tox based unit test jobs"
+    parameters:
+
+      step-name:
+        description: "Name of the step. Will be also used as cache key."
+        type: string
+
+      action:
+        description: "Save or restore from cache."
+        type: enum
+        enum: ["save-cache", "restore-cache", "perform"]
+
+    steps:
+      - when:
+          condition:
+            equal: [restore, << parameters.action >> ]
+          steps:
+            - restore_cache:
+                key: deployment-steps-cache-<< parameters.step-name >>
+
+      - when:
+          condition:
+            equal: [save, << parameters.action >> ]
+          steps:
+            - save_cache:
+              key: deployment-steps-cache-<< parameters.step-name >>
+              paths:
+                ~/deployment-steps-cache/<< parameters.step-name >>
+
+
+    perform-deployment-steps:
+      description: "A base command for all tox based unit test jobs"
+      parameters:
+
+        step-cache-name:
+          description: "Name of the step cache. Will be used as cache key."
+          type: string
+
+        action:
+          description: "Save or restore from cache."
+          type: enum
+          enum: [ "save", "restore" ]
+
+      steps:
+        <<: *used_steps
+#        - deployment-step:
+#            step-cache-name: ""
+#            action: ""
+
+
+
+
 jobs:
   unit_test:
     parameters:
