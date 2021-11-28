@@ -36,13 +36,13 @@ for deployment in deployments.ALL_DEPLOYMENTS.values():
     for step in deployment.steps:
 
         restore_cache_steps.append({
-            "restore-cache": {
+            "restore_cache": {
                 "key": f'deployment-steps-cache-{step.cache_key}'
             }
         })
 
         save_cache_steps.append({
-            "save-cache": {
+            "save_cache": {
                 "key": f'deployment-steps-cache-{step.cache_key}',
                 "paths": f"~/deployments-cache/{step.cache_key}"
             }
