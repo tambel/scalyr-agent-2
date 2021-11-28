@@ -13,7 +13,7 @@ commands:
 
     steps:
       - restore_cache:
-          key: python-install-cache-<< parameters.os >>-<< parameters.version >>
+          key: python-install-cache-<< parameters.os >>-<< parameters.version >>-v1
 
       - run:
           condition:
@@ -22,16 +22,19 @@ commands:
           name: "Install Python"
           command: |
             choco config set cacheLocation ~/python-cache
-            choco install python --version=<< parameters.version >> --cache ~/python-cache
+            choco install python --version=<< parameters.version >>
 
       - run: |
           refreshenv
+        shell: powershell
+
+      - run: |
           python3 --version
           which python
           which python3
 
       - save_cache:
-          key: python-install-cache-<< parameters.os >>-<< parameters.version >>
+          key: python-install-cache-<< parameters.os >>-<< parameters.version >>-v1
           paths:
             ~/python-cache
 
