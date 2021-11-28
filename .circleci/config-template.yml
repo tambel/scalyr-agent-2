@@ -64,6 +64,10 @@ jobs:
     executor: << parameters.os >>
     steps:
       - checkout
+      - run:
+          name: "Install Python"
+          command: choco install python --version=3.8.10
+
       - test_environment_x86_64
       - run:
           name: Run unit tests.
@@ -77,4 +81,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: [docker, windows]
+              os: [windows]
