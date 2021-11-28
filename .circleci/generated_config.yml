@@ -2,6 +2,9 @@ version: 2.1
 orbs:
 jobs:
   unit_test:
+    parameters:
+      ggg:
+        type: string
     docker:
       - image: cimg/python:3.8.10
     steps:
@@ -16,5 +19,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: [ docker ]
               ggg: [1, 2]
