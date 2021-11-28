@@ -20,7 +20,7 @@ jobs:
       - run: # run a command
           name: Generate config
           command: |
-            ./generate-config > generated_config.yml
+            echo "HI"
       - continuation/continue:
           configuration_path: generated_config.yml # use newly generated config to continue
 
