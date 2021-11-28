@@ -21,6 +21,7 @@ commands:
           steps:
           name: "Install Python"
           command: |
+            conda update -n base -c defaults conda
             conda remove -y python
             choco config set cacheLocation ~/python-cache
             choco install python --version=<< parameters.version >>
