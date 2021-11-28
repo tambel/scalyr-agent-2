@@ -47,6 +47,13 @@ executors:
     docker:
       - image: cimg/python:3.8.10
 
+  windows:
+    description: Windows executor.
+    machine:
+      image: 'windows-server-2019-vs2019:2.1'
+      resource_class: windows.medium
+      shell: bash
+
 
 jobs:
   unit_test:
@@ -70,8 +77,4 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os:
-                - docker
-                - win/default:
-                    size: medium
-                    shell: bash
+              os: [docker, windows]
