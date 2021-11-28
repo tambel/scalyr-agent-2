@@ -17,10 +17,12 @@ commands:
 
       - run:
           condition:
-            equal: [ windows, << parameters.os >> ]
+            equal: [windows, << parameters.os >> ]
           steps:
           name: "Install Python"
-          command: choco install python --version=<< parameters.version >> --cache ~/python-cache
+          command: |
+            choco install python --version=<< parameters.version >> --cache ~/python-cache
+            python --version
 
       - save_cache:
           key: python-install-cache-{{ arch }}-<< parameters.version >>
@@ -73,6 +75,6 @@ workflows:
       - unit_test:
           matrix:
             parameters:
-              os: [docker, windows]
+              os: [windows]
               deployment-name: ['test_environment_x86_64']
             exclude:
