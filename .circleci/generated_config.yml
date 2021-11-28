@@ -21,8 +21,8 @@ workflows:
             parameters:
               ggg: ["1", "2"]
 
-    build_and_test2:
-      jobs:
-        - unit_test:
-            parameters:
-              ggg: [ "3", "4" ]
+  build_and_test2:
+    jobs:
+      - unit_test:
+          parameters:
+            ggg: [ "3", "4" ]
