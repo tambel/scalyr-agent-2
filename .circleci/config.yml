@@ -22,6 +22,11 @@ jobs:
           key: setup-deps-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
 
       - run:
+          name: Install setup dependencies.
+          command: |
+            python3 -m pip install -r dev-requirements.txt
+
+      - run:
           name: Generate config
           command: |
             echo "HI"
