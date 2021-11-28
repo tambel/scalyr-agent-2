@@ -21,22 +21,18 @@ commands:
           steps:
           name: "Install Python"
           command: |
-            conda update --all
-            #choco config set cacheLocation ~/python-cache
-            #choco install python --version=<< parameters.version >>
             conda remove python
-            conda clean --packages
-            conda clean --all --yes
-            conda install python=3.8.10
+            choco config set cacheLocation ~/python-cache
+            choco install python --version=<< parameters.version >>
 
 
-      - run:
-          command: |
-            refreshenv
-          shell: powershell
+#      - run:
+#          command: |
+#            refreshenv
+#          shell: powershell
 
       - run: |
-          python3 --version
+          python --version
           which python
           which python3
 
