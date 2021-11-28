@@ -15,8 +15,7 @@ orbs:
 jobs:
   setup:
     executor: continuation/default
-    docker:
-      image: circleci/python:3.8.10
+    docker: circleci/python:3.8.10
     steps:
       - checkout
       - restore_cache:
