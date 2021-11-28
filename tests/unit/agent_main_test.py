@@ -25,7 +25,6 @@ import json
 import mock
 import pytest
 
-import agent_common
 from scalyr_agent import __scalyr__
 from scalyr_agent.test_base import BaseScalyrLogCaptureTestCase
 from scalyr_agent import agent_main, agent_status
@@ -52,7 +51,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         reason="Both ca and intermediate cert files are checked only on Unix"
     )
     @mock.patch(
-        "scalyr_agent.__scalyr__.INSTALL_TYPE", agent_common.InstallType.PACKAGE_INSTALL
+        "scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.PACKAGE_INSTALL
     )
     def test_create_client_ca_file_and_intermediate_certs_file_doesnt_exist(self):
         from scalyr_agent.agent_main import ScalyrAgent
@@ -114,7 +113,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
 
         # 1. Dev install (boths checks should be skipped)
         with mock.patch(
-            "scalyr_agent.__scalyr__.INSTALL_TYPE", agent_common.InstallType.DEV_INSTALL
+            "scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.DEV_INSTALL
         ):
 
             # ca_cert_path file doesn't exist
@@ -141,7 +140,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         # 2. MSI(Windows) install (only intermediate_certs_path check should be skipped)
         with mock.patch(
             "scalyr_agent.__scalyr__.INSTALL_TYPE",
-            agent_common.InstallType.PACKAGE_INSTALL,
+            __scalyr__.InstallType.PACKAGE_INSTALL,
         ), mock.patch(
             # Monkeypatch the platform to Windows to fool the test.
             "scalyr_agent.__scalyr__.PLATFORM_TYPE",
@@ -200,7 +199,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         from scalyr_agent.platform_controller import PlatformController
 
         with mock.patch(
-            "scalyr_agent.__scalyr__.INSTALL_TYPE", agent_common.InstallType.DEV_INSTALL
+            "scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.DEV_INSTALL
         ):
 
             config = mock.Mock()
@@ -254,7 +253,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         from scalyr_agent.agent_main import ScalyrAgent
         from scalyr_agent.platform_controller import PlatformController
 
-        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", agent_common.InstallType.DEV_INSTALL):
+        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.DEV_INSTALL):
             config = mock.Mock()
             config.scalyr_server = "foo.bar.com"
             config.server_attributes = {"serverHost": "test"}
@@ -303,7 +302,7 @@ class AgentMainTestCase(BaseScalyrLogCaptureTestCase):
         from scalyr_agent.agent_main import ScalyrAgent
         from scalyr_agent.platform_controller import PlatformController
 
-        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", agent_common.InstallType.DEV_INSTALL):
+        with mock.patch("scalyr_agent.__scalyr__.INSTALL_TYPE", __scalyr__.InstallType.DEV_INSTALL):
             config = mock.Mock()
             config.scalyr_server = "foo.bar.com"
             config.server_attributes = {"serverHost": "test"}

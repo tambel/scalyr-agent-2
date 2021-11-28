@@ -54,7 +54,7 @@ jobs:
       - run:
           name: Run unit tests.
           command: |
-            PYTHONPATH=. python3 -m pytest tests/unit
+            python3 -m pytest tests/unit
 
 workflows:
   build_and_test:
