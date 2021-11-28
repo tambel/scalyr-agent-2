@@ -50,11 +50,10 @@ jobs:
       - image: cimg/python:3.8.10
     steps:
       - checkout
+      - test_environment
       - run:
           command: |
             echo << parameters.ggg >>
-
-      -
 
 workflows:
   build_and_test:
