@@ -18,7 +18,7 @@ from agent_tools.environment_deployments import deployments
 from agent_build import package_builders
 from tests.package_tests import current_test_specifications
 
-template_config_path = _PARENT_DIR / "generated_config.yml"
+template_config_path = _PARENT_DIR / "config-template.yml"
 
 
 template = jinja2.Template(template_config_path.read_text())

@@ -13,9 +13,9 @@ orbs:
 
 # our defined job, and its steps
 jobs:
-  setup:
-    executor: continuation/default
-    docker: circleci/python:3.8.10
+  prepare-setup:
+    docker:
+      - image: circleci/python:3.8.10
     steps:
       - checkout
       - restore_cache:
@@ -28,11 +28,14 @@ jobs:
             python3 -m pip install -r dev-requirements.txt
 
       - run:
-          name: Generate config
+          name: Generate CircleCi config.
           command: |
-            echo "HI"
-      - continuation/continue:
-          configuration_path: .circleci/generated_config.yml # use newly generated config to continue
+            python3 .circleci/prepare-config.py > workspace/generated-config.yml
+
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - generated-config.yml
 
       - save_cache:
           name: "Save setup dependencies cache"
@@ -40,6 +43,22 @@ jobs:
           paths:
             - "venv"
             - "~/.cache/pip"
+
+  setup:
+    executor: continuation/default
+    steps:
+      - checkout
+
+      - run:
+          name: Generate config
+          command: |
+            echo "HI"
+
+      - attach_workspace:
+          at: workspace
+
+      - continuation/continue:
+          configuration_path: workspace/generated-config.yml # use newly generated config to continue
 
       - run:
           command: |
