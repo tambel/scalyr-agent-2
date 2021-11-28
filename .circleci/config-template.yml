@@ -52,8 +52,9 @@ jobs:
       - checkout
       - test_environment
       - run:
+          name: Run unit tests.
           command: |
-            echo << parameters.ggg >>
+            python3 -m pytest tests/unit
 
 workflows:
   build_and_test:
