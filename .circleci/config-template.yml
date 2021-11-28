@@ -15,6 +15,11 @@ commands:
         enum: ["save-cache", "restore-cache", "perform"]
 
     steps:
+      - run: |
+          if [ "$CIRCLE_BRANCH" = "develop" ]; then
+              circleci-agent step halt
+          fi
+
       - when:
           condition:
             equal: [ restore, << parameters.action >> ]
@@ -31,21 +36,7 @@ commands:
                 paths:
                   ~/deployment-steps-cache/<< parameters.step-name >>
 
-
-  perform-deployment-steps:
-    description: "A base command for all tox based unit test jobs"
-    parameters:
-      step-cache-name:
-        description: "Name of the step cache. Will be used as cache key."
-        type: string
-
-      action:
-        description: "Save or restore from cache."
-        type: enum
-        enum: [ "save", "restore" ]
-
-    steps:
-{{ used_steps }}
+{{ deployments_commands }}
 
 
 
@@ -63,17 +54,12 @@ jobs:
           command: |
             echo << parameters.ggg >>
 
+      -
+
 workflows:
   build_and_test:
     jobs:
       - unit_test:
           matrix:
             parameters:
-              ggg: ["1", "2"]
-
-  build_and_test2:
-    jobs:
-      - unit_test:
-          matrix:
-            parameters:
-              ggg: [ "3", "4" ]
+              ggg: ["1"]

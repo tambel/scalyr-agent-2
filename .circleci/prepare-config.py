@@ -27,30 +27,53 @@ template = jinja2.Template(template_config_path.read_text())
 
 all_steps: Dict[str, deployments.DeploymentStep] = {}
 
+deployment_commands = {}
+
 for deployment in deployments.ALL_DEPLOYMENTS.values():
+
+    restore_cache_steps = []
+    save_cache_steps = []
     for step in deployment.steps:
-        all_steps[step.unique_name] = step
 
-all_steps = collections.OrderedDict(sorted(all_steps.items(), key=lambda x: x[0]))
+        restore_cache_steps.append({
+            "restore-cache": {
+                "key": f'deployment-steps-cache-{step.cache_key}'
+            }
+        })
 
-restore_cache_steps = []
+        save_cache_steps.append({
+            "save-cache": {
+                "key": f'deployment-steps-cache-{step.cache_key}',
+                "paths": f"~/deployments-cache/{step.cache_key}"
+            }
+        })
 
-for step in all_steps.values():
-    restore_cache_steps.append({
-        "deployment-step": {
-            "step-name": step.cache_key,
-            "action": "restore-cache"
-        }
-    })
+    deployment_command = {
+        "description": "",
+        "steps": [
+            *restore_cache_steps,
+            {
+                "run":
+                    {
+                        f"name": f"Perform deployment: {deployment.name}.",
+                        "command": f"python3 scripts/run_deployment.py deployment "
+                                   f"{deployment.name} deploy --cache-dir ~/deployments-cache"
+                    }
+            },
+            *save_cache_steps
+        ]
+    }
+
+    deployment_commands[deployment.name] = deployment_command
 
 
 
-yaml_step_data = yaml.dump(restore_cache_steps)
+yaml_step_data = yaml.dump(deployment_commands)
 
-yaml_step_data = textwrap.indent(yaml_step_data, "      ")
+yaml_step_data = textwrap.indent(yaml_step_data, "  ")
 
 data = {
-    "used_steps": yaml_step_data
+    "deployments_commands": yaml_step_data
 }
 
 final_config = template.render(data)
