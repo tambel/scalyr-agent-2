@@ -39,6 +39,9 @@ commands:
 {{ deployments_commands }}
 
 
+orbs:
+  win: circleci/windows@2.3.0
+
 executors:
   docker:
     docker:
