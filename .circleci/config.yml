@@ -30,6 +30,7 @@ jobs:
       - run:
           name: Generate CircleCi config.
           command: |
+            mkdir workspace
             python3 .circleci/prepare-config.py > workspace/generated-config.yml
 
       - persist_to_workspace:
