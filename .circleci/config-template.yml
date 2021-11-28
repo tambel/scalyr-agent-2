@@ -45,10 +45,9 @@ executors:
       - image: cimg/python:3.8.10
 
   windows:
-    machine:
-      name: win/default
-      size: medium
-      shell: bash
+    name: win/default
+    size: medium
+    shell: bash
 
 
 jobs:
