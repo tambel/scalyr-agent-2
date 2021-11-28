@@ -21,6 +21,7 @@ commands:
           steps:
           name: "Install Python"
           command: |
+            choco list
             choco uninstall python
             choco install python --version=<< parameters.version >> --cache ~/python-cache
             python --version
