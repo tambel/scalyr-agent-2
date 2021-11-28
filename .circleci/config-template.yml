@@ -49,6 +49,9 @@ jobs:
     parameters:
       os:
         type: executor
+      deployment-name:
+        type: string
+
     working_directory: ~/scalyr-agent-2
     executor: << parameters.os >>
     steps:
