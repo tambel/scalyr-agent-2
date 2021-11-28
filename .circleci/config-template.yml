@@ -25,9 +25,9 @@ commands:
             choco install python --version=<< parameters.version >>
 
       - run:
-        command: |
-          refreshenv
-        shell: powershell
+          command: |
+            refreshenv
+          shell: powershell
 
       - run: |
           python3 --version
