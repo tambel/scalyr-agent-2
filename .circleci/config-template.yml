@@ -9,7 +9,7 @@ commands:
         type: string
         default: 3.8.10
       os:
-        type: executor
+        type: string
 
     steps:
       - restore_cache:
