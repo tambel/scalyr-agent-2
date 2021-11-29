@@ -1902,7 +1902,7 @@ jobs:
   smoke-monitors-tests:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.8.10
     steps:
       - monitors-tests:
           distribution: "ubuntu1804"
@@ -1914,7 +1914,7 @@ jobs:
   smoke-rpm-package-py3:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.8.10
     steps:
       - package-test:
           distribution: "amazonlinux2"
@@ -1925,7 +1925,7 @@ jobs:
   smoke-rpm-package-py2:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.8.10
     steps:
       - package-test:
           distribution: "amazonlinux2"
@@ -1935,7 +1935,7 @@ jobs:
   smoke-deb-package-py3:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.8.10
     steps:
       - package-test:
           distribution: "ubuntu1804"
@@ -1945,7 +1945,7 @@ jobs:
   smoke-deb-package-py2:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.8.10
     steps:
       - package-test:
           distribution: "ubuntu1804"
@@ -1956,7 +1956,7 @@ jobs:
     description: "Job which emails weekly Circle CI usage report"
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6-jessie
+      - image: circleci/python:3.8.10-jessie
     steps:
       - checkout
       - run:
@@ -2092,7 +2092,7 @@ jobs:
         # NOTE: fpm and git gem depend on Ruby >= 2.3 so we need to use Debian
         # 10 which ships with Ruby 2.5. Jessie (Debian 8) ships with 2.1 which
         # doesn't work anymore with those gems.
-        - image: circleci/python:3.6-buster
+        - image: circleci/python:3.8.10-buster
     environment:
       RELEASE_REPO_NAME: "<< pipeline.parameters.release_repo_name >>"
       RELEASE_REPO_BASE_URL: "<< pipeline.parameters.release_repo_base_url >>"
@@ -2149,7 +2149,7 @@ jobs:
     description: "Run scalyr agent packages install sanity tests for the stable packages from the Scalyr repository."
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6-jessie
+      - image: circleci/python:3.8.10-jessie
     # TODO: Remove resource_class and use default medium one if tests are still
     # failing with large
     resource_class: large
@@ -2162,7 +2162,7 @@ jobs:
     description: "Run scalyr agent packages sanity tests for the new packages which are built on the current revision."
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.6-jessie
+      - image: circleci/python:3.8.10-jessie
     # TODO: Remove resource_class and use default medium one if tests are still
     # failing with large
     resource_class: large
