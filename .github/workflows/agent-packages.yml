@@ -27,3 +27,7 @@ jobs:
         uses: ./.github/actions/perform-deployment
         with:
           deployment-name: 'test_environment'
+
+      - name: Run unit tests.
+        run: |
+          python3 -m pytest tests/unit
