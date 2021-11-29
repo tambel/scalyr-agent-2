@@ -1229,7 +1229,7 @@ jobs:
   smoke-docker-json:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7-jessie
+      - image: circleci/python:python:3.8.10-jessie
     steps:
       - setup_remote_docker:
           docker_layer_caching: false
@@ -1281,7 +1281,7 @@ jobs:
   smoke-docker-api-raw-logs-disabled:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7-jessie
+      - image: circleci/python:python:3.8.10-jessie
     steps:
       - setup_remote_docker:
           docker_layer_caching: false
@@ -1333,7 +1333,7 @@ jobs:
   smoke-docker-syslog:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7-jessie
+      - image: circleci/python:3.8.10-jessie
     steps:
       - setup_remote_docker:
           docker_layer_caching: false
@@ -1385,7 +1385,7 @@ jobs:
   smoke-k8s:
     working_directory: ~/scalyr-agent-2
     machine:
-      image: ubuntu-2004:202111-01
+      image: ubuntu-1604:202104-01
     environment:
       K8S_VERSION: v1.10.0
       KUBECONFIG: /home/circleci/.kube/config
