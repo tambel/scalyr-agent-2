@@ -2348,7 +2348,7 @@ workflows:
            branches:
              only:
                - master
-   jobs:
+#   jobs:
 #     - ami-tests-stable:
 #         context: scalyr-agent
 #     - unittest-27:
