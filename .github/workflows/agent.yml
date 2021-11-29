@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: 3.8.10
 
-      - name: Install python dependencies:
+      - name: Install python dependencies
         run: |
           python3 -m pip install -r dev-requirements.txt
 
