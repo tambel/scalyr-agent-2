@@ -1,0 +1,8 @@
+orjson==3.6.4
+# TODO: remove six from the code base.
+six==1.14.0
+requests==2.26.0
+
+
+psutil==5.7.0; platform_system == "Windows"
+pywin32==300; platform_system == "Windows"
