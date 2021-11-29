@@ -60,8 +60,10 @@ log.setLevel(scalyr_logging.DEBUG_LEVEL_5)
 def pytest_generate_tests(metafunc):
     if "worker_type" in metafunc.fixturenames:
         test_params = ["thread"]
-        # if the OS is not Windows and python version > 2.7 then also do the multiprocess workers testing.
-        if platform.system() != "Windows" and sys.version_info >= (2, 7):
+        # if the OS is not Linux and python version > 2.7 then also do the multiprocess workers testing.
+        # Windows and Mac systems can not work with multiprocess workers since their process method is 'spawn'
+        # and the copying manager relies on 'fork'
+        if platform.system() == "Linux" and sys.version_info >= (2, 7):
             test_params.append("process")
 
         metafunc.parametrize("worker_type", test_params)
