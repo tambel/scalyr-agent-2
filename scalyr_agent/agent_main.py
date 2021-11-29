@@ -2115,7 +2115,10 @@ if __name__ == "__main__":
     if command_args.command == "service":
         # Windows specific command that tell to start Agent's Windows service.
         from scalyr_agent import platform_windows
-        platform_windows.parse_options(other_argv)
+
+        # Create fully valid command line args so the Windows service could handle it properly.
+        argv = [sys.argv[0], *other_argv]
+        platform_windows.parse_options(argv)
         exit(0)
 
     parser = argparse.ArgumentParser()
