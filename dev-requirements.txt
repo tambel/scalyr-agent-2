@@ -39,6 +39,7 @@ six==1.14.0
 requests==2.26.0
 pg8000==1.10.6
 pymysql==0.9.3
+redis==2.10.5
 
 psutil==5.7.0; platform_system == "Windows"
 pywin32==300; platform_system == "Windows"
