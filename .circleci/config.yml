@@ -1401,6 +1401,7 @@ jobs:
       - run:
           name: "Install Python Dependencies"
           command: |
+            apt-get install -y build-essential python3-dev
             virtualenv venv
             source venv/bin/activate
             pip3 install -r dev-requirements.txt
