@@ -1688,23 +1688,10 @@ jobs:
           command:
             ${SCANNER_DIRECTORY}/sonar-scanner-${VERSION}-${OS}/bin/sonar-scanner -Dproject.settings=.sonarcloud.properties
 
-  benchmarks-idle-agent-py-27:
+  benchmarks-idle-agent-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7.17
-    steps:
-      - codespeed_agent_process_benchmark:
-          codespeed_executable: "Python 2.7.17 - idle conf 1"
-          codespeed_environment: "Circle CI Docker Executor Medium Size"
-          agent_config: "benchmarks/configs/agent_no_monitored_logs.json"
-          agent_server_host: "ci-codespeed-benchmarks-py27-idle-conf-1"
-          capture_line_counts: true
-          cache_key_name: "benchmarks-idle-27"
-
-  benchmarks-idle-agent-py-35:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - codespeed_agent_process_benchmark:
           codespeed_executable: "Python 3.5.9 - idle conf 1"
@@ -1714,23 +1701,10 @@ jobs:
           capture_line_counts: true
           cache_key_name: "benchmarks-idle-35"
 
-  benchmarks-idle-agent-no-monitors-py-27:
+  benchmarks-idle-agent-no-monitors-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7.17
-    steps:
-      - codespeed_agent_process_benchmark:
-          codespeed_executable: "Python 2.7.17 - idle conf 2"
-          codespeed_environment: "Circle CI Docker Executor Medium Size"
-          agent_config: "benchmarks/configs/agent_no_monitored_logs_no_monitors.json"
-          agent_server_host: "ci-codespeed-benchmarks-py27-idle-conf-2"
-          capture_line_counts: true
-          cache_key_name: "benchmarks-idle-agent-no-monitors-py-27"
-
-  benchmarks-idle-agent-no-monitors-py-35:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - codespeed_agent_process_benchmark:
           codespeed_executable: "Python 3.5.9 - idle conf 2"
@@ -1740,26 +1714,10 @@ jobs:
           capture_line_counts: true
           cache_key_name: "benchmarks-idle-agent-no-monitors-py-35"
 
-  benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-27:
+  benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7.17
-    steps:
-      - codespeed_agent_process_benchmark:
-          codespeed_executable: "Python 2.7.17 - loaded conf 1"
-          codespeed_environment: "Circle CI Docker Executor Medium Size"
-          agent_config: "benchmarks/configs/agent_single_50mb_access_log_file.json"
-          agent_pre_run_command: "wget --directory-prefix=/tmp https://github.com/scalyr/codespeed-agent-fixtures/raw/master/fixtures/logs/access_log_50_mb.log"
-          agent_server_host: "ci-codespeed-benchmarks-py27-loaded-conf-1"
-          run_time: 140
-          capture_agent_status_metrics: true
-          capture_line_counts: true
-          cache_key_name: "benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-27"
-
-  benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-35:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - codespeed_agent_process_benchmark:
           codespeed_executable: "Python 3.5.9 - loaded conf 1"
@@ -1774,26 +1732,10 @@ jobs:
   # NOTE: For the benchmarks below to work correctly "/tmp/random.log" file
   # which is being written to during the benchmark must existing before the
   # agent process is started.
-  benchmarks-loaded-agent-single-growing-log-file-20mb-py-27:
+  benchmarks-loaded-agent-single-growing-log-file-20mb-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7.17
-    steps:
-      - codespeed_agent_process_benchmark:
-          codespeed_executable: "Python 2.7.17 - loaded conf 2"
-          codespeed_environment: "Circle CI Docker Executor Medium Size"
-          agent_config: "benchmarks/configs/agent_single_growing_log_file_with_shell_and_url_monitor.json"
-          run_time: 140
-          agent_pre_run_command: "touch /tmp/random.log"
-          agent_post_run_command: "benchmarks/scripts/write-random-lines.sh /tmp/random.log 2M 10 100 1"
-          agent_server_host: "ci-codespeed-benchmarks-py27-loaded-conf-2"
-          capture_line_counts: true
-          cache_key_name: "benchmarks-loaded-agent-growing-log-file-py-27"
-
-  benchmarks-loaded-agent-single-growing-log-file-20mb-py-35:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - codespeed_agent_process_benchmark:
           codespeed_executable: "Python 3.5.9 - loaded conf 2"
@@ -1806,31 +1748,10 @@ jobs:
           capture_line_counts: true
           cache_key_name: "benchmarks-loaded-agent-growing-log-file-py-35"
 
-  benchmarks-loaded-agent-single-growing-log-file-180mb-py-27:
+  benchmarks-loaded-agent_2-growing_logs-monitors-multiprocess-2-worker-20mb-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7.17
-    steps:
-      - codespeed_agent_process_benchmark:
-          codespeed_executable: "Python 2.7.17 - loaded conf 3"
-          codespeed_environment: "Circle CI Docker Executor Medium Size"
-          agent_config: "benchmarks/configs/agent_single_growing_log_file.json"
-          # NOTE: We set agent run time slightly longer than the insert script time run so we give a chance for memory and
-          # other metrics to stabilize.
-          run_time: 390
-          agent_pre_run_command: "touch /tmp/random.log"
-          # NOTE: We write a chunk every 1 seconds for a total of 6 minutes.
-          # Each chunk is 0.5 MB in size which means we write a total of 360 * 1
-          # / 0.5 MB of data
-          agent_post_run_command: "benchmarks/scripts/write-random-lines.sh /tmp/random.log 500K 360 100 1 &> /tmp/write_lines_script.log &"
-          agent_server_host: "ci-codespeed-benchmarks-py27-loaded-conf-3"
-          capture_line_counts: true
-          cache_key_name: "benchmarks-loaded-agent-growing-log-file-180-py-27"
-
-  benchmarks-loaded-agent_2-growing_logs-monitors-multiprocess-2-worker-20mb-py-35:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - codespeed_agent_process_benchmark:
           codespeed_executable: "Python 3.5.9 - loaded conf 4"
@@ -1843,26 +1764,10 @@ jobs:
           capture_line_counts: true
           cache_key_name: "agent_2-growing_logs-monitors-multiprocess-2-worker-py-35"
 
-  benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-27:
+  benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:2.7.17
-    steps:
-      - codespeed_agent_process_benchmark:
-          codespeed_executable: "Python 2.7.17 - loaded conf 5"
-          codespeed_environment: "Circle CI Docker Executor Medium Size"
-          agent_config: "benchmarks/configs/agent_single_50mb_genlog_500k_line_file.json"
-          agent_pre_run_command: "wget --directory-prefix=/tmp https://github.com/scalyr/codespeed-agent-fixtures/raw/master/fixtures/logs/scalyr_genlog_500k_line_50_mb.log"
-          agent_server_host: "ci-codespeed-benchmarks-py27-loaded-conf-5"
-          run_time: 140
-          capture_agent_status_metrics: true
-          capture_line_counts: true
-          cache_key_name: "benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-27"
-
-  benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-35:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - codespeed_agent_process_benchmark:
           codespeed_executable: "Python 3.5.9 - loaded conf 5"
@@ -1875,10 +1780,10 @@ jobs:
           capture_line_counts: true
           cache_key_name: "benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-27"
 
-  benchmarks-micro-py-35:
+  benchmarks-micro-py-38:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     # NOTE: We use larger resource class to speed up the tests. This job only runs on master merge
     # aka not often.
     resource_class: large
@@ -1888,19 +1793,6 @@ jobs:
           codespeed_environment: "Circle CI Docker Executor Large Size"
           cache_key_name: "benchmarks-micro-py36"
 
-  benchmarks-micro-py-27:
-    working_directory: ~/scalyr-agent-2
-    docker:
-      - image: circleci/python:2.7.17
-    # NOTE: We use larger resource class to speed up the tests. This job only runs on master merge
-    # aka not often.
-    resource_class: large
-    steps:
-      - codespeed_micro_benchmarks:
-          codespeed_executable: "Python 2.7.17"
-          codespeed_environment: "Circle CI Docker Executor Large Size"
-          cache_key_name: "benchmarks-micro-py27"
-
   # Job which sends notification to Slack after benchmark run has completed
   # on master merge / push.
   send-benchmark-results-and-graphs-to-slack:
@@ -1908,7 +1800,7 @@ jobs:
     circleci_ip_ranges: true # opt into this functionlity for whitelisting purposes. Needed some Slack blocks
                              # some EC2 IP ranges
     docker:
-      - image: circleci/python:3.5.9
+      - image: circleci/python:3.8.10
     steps:
       - checkout
       - run:
@@ -1917,7 +1809,7 @@ jobs:
             # Set permissions so we can directly restore into /usr/local/bin
             sudo chmod 777 /usr/local/bin
       - restore_cache:
-          key: deps2-tox-{{ .Branch }}-3.5-capture-screenshot
+          key: deps2-tox-{{ .Branch }}-3.8-capture-screenshot
       - run:
           name: Download and install Phantom JS
           command: |
@@ -1929,7 +1821,7 @@ jobs:
             fi
       - save_cache:
           name: Save PhantomJS Cache
-          key: deps2-tox-{{ .Branch }}-3.5-capture-screenshot
+          key: deps2-tox-{{ .Branch }}-3.8-capture-screenshot
           paths:
             - /usr/local/bin/phantomjs
       - run:
@@ -1950,11 +1842,11 @@ jobs:
   smoke-standalone-35-rate-limit:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.8
     steps:
       - smoke-standalone-tox:
-          python_version: "3.5"
-          tox_target: "py3.5-smoke-tests-rate-limit"
+          python_version: "3.8"
+          tox_target: "py3.8-smoke-tests-rate-limit"
 
   smoke-standalone-38:
     working_directory: ~/scalyr-agent-2
@@ -1986,11 +1878,11 @@ jobs:
   smoke-standalone-35:
     working_directory: ~/scalyr-agent-2
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.8
     steps:
       - smoke-standalone-tox:
-          python_version: "3.5"
-          tox_target: "py3.5-smoke-tests"
+          python_version: "3.8"
+          tox_target: "py3.8-smoke-tests"
 
   smoke-standalone-27:
     working_directory: ~/scalyr-agent-2
@@ -2405,29 +2297,16 @@ workflows:
  benchmarks:
    <<: *skip_release_build_branch_push
    jobs:
-     - benchmarks-micro-py-27
      - benchmarks-micro-py-35
-     - benchmarks-idle-agent-py-27:
-         <<: *benchmarks_master_and_release_only
      - benchmarks-idle-agent-py-35:
-         <<: *benchmarks_master_and_release_only
-     - benchmarks-idle-agent-no-monitors-py-27:
          <<: *benchmarks_master_and_release_only
      - benchmarks-idle-agent-no-monitors-py-35:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-27:
-         <<: *benchmarks_master_and_release_only
      - benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-35:
-         <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-growing-log-file-20mb-py-27:
          <<: *benchmarks_master_and_release_only
      - benchmarks-loaded-agent-single-growing-log-file-20mb-py-35:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-growing-log-file-180mb-py-27:
-         <<: *benchmarks_master_and_release_only
      - benchmarks-loaded-agent_2-growing_logs-monitors-multiprocess-2-worker-20mb-py-35:
-         <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-27:
          <<: *benchmarks_master_and_release_only
      - benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-35:
          <<: *benchmarks_master_and_release_only
@@ -2472,14 +2351,14 @@ workflows:
    jobs:
 #     - ami-tests-stable:
 #         context: scalyr-agent
-     - unittest-27:
-         context: scalyr-agent
-     - unittest-35:
-         context: scalyr-agent
-     - unittest-35-osx:
-         context: scalyr-agent
-     - unittest-38-windows:
-         context: scalyr-agent
+#     - unittest-27:
+#         context: scalyr-agent
+#     - unittest-35:
+#         context: scalyr-agent
+#     - unittest-35-osx:
+#         context: scalyr-agent
+#     - unittest-38-windows:
+#         context: scalyr-agent
 #     - build-linux-packages-and-installer-script
 #     - build-windows-package
 #     - package-test-rpm:

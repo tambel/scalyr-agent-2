@@ -42,3 +42,6 @@ pymysql==0.9.3
 
 psutil==5.7.0; platform_system == "Windows"
 pywin32==300; platform_system == "Windows"
+
+# dependencies for docker images.
+docker==4.1.0
