@@ -177,7 +177,7 @@ def test_standalone_agent_kill():
 @pytest.mark.timeout(300)
 def test_standalone_agent_stop():
     runner = AgentRunner(
-        DEV_INSTALL,
+        __scalyr__.InstallType.DEV_INSTALL,
         enable_debug_log=True,
         workers_type="process",
         workers_session_count=2,
@@ -200,7 +200,7 @@ def test_standalone_agent_stop():
 @pytest.mark.timeout(300)
 def test_standalone_agent_restart():
     runner = AgentRunner(
-        DEV_INSTALL,
+        __scalyr__.InstallType.DEV_INSTALL,
         enable_debug_log=True,
         workers_type="process",
         workers_session_count=2,
@@ -248,7 +248,7 @@ def test_standalone_agent_restart():
 @pytest.mark.timeout(300)
 def test_standalone_agent_config_reload():
     runner = AgentRunner(
-        DEV_INSTALL,
+        __scalyr__.InstallType.DEV_INSTALL,
         enable_debug_log=True,
         workers_type="process",
         workers_session_count=2,

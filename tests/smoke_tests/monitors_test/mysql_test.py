@@ -47,7 +47,7 @@ DATABASE = "scalyr_test_db"
 def mysql_client():
     # we change owner of the mysql files to workaround the issue which happens with mysql server in docker.
     # see: https://serverfault.com/a/872576
-    os.system("chown -R mysql:mysql /var/lib/mysql /var/run/mysqld")
+    os.system("chown -R mysql:mysql /var/lib/mysql")
 
     exit_code = os.system("service mysql start --ssl")
 
@@ -215,20 +215,9 @@ def _test(
 
 @pytest.mark.usefixtures("agent_environment")
 @dockerized_case(CommonMonitorBuilder, __file__)
-def test_mysql_python2(request):
-    _test(request, python_version="python2")
-
-
-@pytest.mark.usefixtures("agent_environment")
-@dockerized_case(CommonMonitorBuilder, __file__)
 def test_mysql_python3(request):
     _test(request, python_version="python3")
 
-
-@pytest.mark.usefixtures("agent_environment")
-@dockerized_case(CommonMonitorBuilder, __file__)
-def test_mysql_python2_host(request):
-    _test(request, python_version="python2", use_socket=False)
 
 
 @pytest.mark.usefixtures("agent_environment")
@@ -237,29 +226,12 @@ def test_mysql_python3_host(request):
     _test(request, python_version="python3", use_socket=False)
 
 
-@pytest.mark.usefixtures("agent_environment")
-@dockerized_case(CommonMonitorBuilder, __file__)
-def test_mysql_python2_ssl(request):
-    _test(request, python_version="python2", use_socket=False, use_ssl=True)
-
 
 @pytest.mark.usefixtures("agent_environment")
 @dockerized_case(CommonMonitorBuilder, __file__)
 def test_mysql_python3_ssl(request):
     _test(request, python_version="python3", use_socket=False, use_ssl=True)
 
-
-@pytest.mark.usefixtures("agent_environment")
-@dockerized_case(CommonMonitorBuilder, __file__)
-def test_mysql_python2_ssl_bad_cafile(request):
-    _test(
-        request,
-        python_version="python2",
-        use_socket=False,
-        use_ssl=True,
-        ca_file="notarealfile.ca",
-        expected_exception="No such file or directory",
-    )
 
 
 @pytest.mark.usefixtures("agent_environment")
@@ -274,18 +246,6 @@ def test_mysql_python3_ssl_bad_cafile(request):
         expected_exception="No such file or directory",
     )
 
-
-@pytest.mark.usefixtures("agent_environment")
-@dockerized_case(CommonMonitorBuilder, __file__)
-def test_mysql_python2_ssl_bad_hostname(request):
-    _test(
-        request,
-        python_version="python2",
-        use_socket=False,
-        use_ssl=True,
-        ca_file="/var/lib/mysql/ca.pem",
-        expected_exception=r"hostname '127.0.0.1' doesn't match 'MySQL_Server_5.7.\d+_Auto_Generated_Server_Certificate'",
-    )
 
 
 @pytest.mark.usefixtures("agent_environment")

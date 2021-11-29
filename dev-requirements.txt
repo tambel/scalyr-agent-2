@@ -2,11 +2,6 @@
 # These dependencies are not needed to run the Scalyr Agent, but mainly used for
 # running test suites, and mocking Python Objects for the Scalyr Agent.
 
--r agent_build/requirement-files/main-requirements.txt
--r agent_build/requirement-files/monitors-requirements.txt
--r agent_build/requirement-files/compression-requirements.txt
--r agent_build/requirement-files/frozen-binaries-requirements.txt
--r agent_build/requirement-files/docker-and-k8s-requirements.txt
 
 # Testing tools and libraries
 mock==3.0.5
@@ -35,3 +30,15 @@ udatetime==0.0.16; platform_system != "Windows"
 # concurrently
 git+https://github.com/apache/libcloud.git@trunk#egg=apache-libcloud; platform_system != "Windows"
 paramiko==2.7.2; platform_system != "Windows"
+
+
+#agent dependencies
+orjson==3.6.4
+# TODO: remove six from the code base.
+six==1.14.0
+requests==2.26.0
+pg8000==1.10.6
+pymysql==0.9.3
+
+psutil==5.7.0; platform_system == "Windows"
+pywin32==300; platform_system == "Windows"

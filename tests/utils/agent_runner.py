@@ -195,7 +195,7 @@ class AgentRunner(object):
             self._agent_config_path, json.dumps(self._agent_config, indent=4)
         )
 
-    def start(self, executable="python"):
+    def start(self, executable="python3"):
         self.clear_agent_logs()
         # important to call this function before agent was started.
         self._create_agent_files()
@@ -257,7 +257,7 @@ class AgentRunner(object):
         if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             cmd = "/usr/sbin/scalyr-agent-2 status -v"
         else:
-            cmd = "python {0} status -v".format(_AGENT_MAIN_PATH)
+            cmd = "python3 {0} status -v".format(_AGENT_MAIN_PATH)
 
         output = compat.subprocess_check_output(cmd=cmd, shell=True)
         output = six.ensure_text(output)
@@ -271,7 +271,7 @@ class AgentRunner(object):
         if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             cmd = "/usr/sbin/scalyr-agent-2 status -v --format=json"
         else:
-            cmd = "python {0} status -v --format=json".format(_AGENT_MAIN_PATH)
+            cmd = "python3 {0} status -v --format=json".format(_AGENT_MAIN_PATH)
 
         output = compat.subprocess_check_output(cmd=cmd, shell=True)
         output = six.ensure_text(output)
@@ -301,12 +301,12 @@ class AgentRunner(object):
             )
         else:
             subprocess.check_call(
-                "python {0} --set-python {1}".format(_CONFIG_MAIN_PATH, version),
+                "python3 {0} --set-python {1}".format(_CONFIG_MAIN_PATH, version),
                 shell=True,
                 **kwargs  # type: ignore
             )
 
-    def stop(self, executable="python"):
+    def stop(self, executable="python3"):
         if six.PY3:
             atexit.unregister(self.stop)
 
@@ -355,7 +355,7 @@ class AgentRunner(object):
         print("Agent stopped.")
         self._stopped = True
 
-    def restart(self, executable="python"):
+    def restart(self, executable="python3"):
         print("Restarting agent process...")
 
         if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
