@@ -1401,10 +1401,11 @@ jobs:
       - run:
           name: "Install Python Dependencies"
           command: |
+            pyenv global 3.7.0
             virtualenv venv
             source venv/bin/activate
-            python3.7 -m pip install -r dev-requirements.txt
-            python3.7 -m pip install "apache-libcloud==2.8.2"
+            python3 -m pip install -r dev-requirements.txt
+            python3 -m pip install "apache-libcloud==2.8.2"
       - save_cache:
           name: "Save Dependencies Cache"
           key: deps2-{{ .Branch }}-smoke-k8s-{{ checksum "dev-requirements.txt" }}
@@ -1465,7 +1466,7 @@ jobs:
             # Combine it and upload it to S3
             ./venv/bin/coverage combine || true
             export PYTHONPATH=.
-            python3.7 ./scripts/circleci/upload-coverage-data-to-s3.py ".coverage"
+            python3 ./scripts/circleci/upload-coverage-data-to-s3.py ".coverage"
 
       - slack/status:
           fail_only: true
