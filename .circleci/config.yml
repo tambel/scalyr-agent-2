@@ -2340,14 +2340,14 @@ workflows:
  # daily basis.
  # This helps us detect various installer script and other potential upstream
  # issues.
- daily-stable-ami-package-install-tests:
-   triggers:
-     - schedule:
-         cron: "0 2 * * *"
-         filters:
-           branches:
-             only:
-               - master
+# daily-stable-ami-package-install-tests:
+#   triggers:
+#     - schedule:
+#         cron: "0 2 * * *"
+#         filters:
+#           branches:
+#             only:
+#               - master
 #   jobs:
 #     - ami-tests-stable:
 #         context: scalyr-agent
