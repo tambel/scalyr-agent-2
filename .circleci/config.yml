@@ -2297,18 +2297,18 @@ workflows:
  benchmarks:
    <<: *skip_release_build_branch_push
    jobs:
-     - benchmarks-micro-py-35
-     - benchmarks-idle-agent-py-35:
+     - benchmarks-micro-py-38
+     - benchmarks-idle-agent-py-38:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-idle-agent-no-monitors-py-35:
+     - benchmarks-idle-agent-no-monitors-py-38:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-35:
+     - benchmarks-loaded-agent-single-50mb-log-file-with-parser-py-38:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-growing-log-file-20mb-py-35:
+     - benchmarks-loaded-agent-single-growing-log-file-20mb-py-38:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent_2-growing_logs-monitors-multiprocess-2-worker-20mb-py-35:
+     - benchmarks-loaded-agent_2-growing_logs-monitors-multiprocess-2-worker-20mb-py-38:
          <<: *benchmarks_master_and_release_only
-     - benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-35:
+     - benchmarks-loaded-agent-single-50mb-log-file-with-500k-lines-py-38:
          <<: *benchmarks_master_and_release_only
      - send-benchmark-results-and-graphs-to-slack:
          requires:
