@@ -275,7 +275,7 @@ def perform_setup():
                 "dest_base": "scalyr-agent-2",
             },
             {
-                "script": path.join("source_root", "scalyr_agent", "config_main.py"),
+                "script": path.join("source_root", "scalyr_agent", "agent_config.py"),
                 "dest_base": "scalyr-agent-2-config",
             },
         ],

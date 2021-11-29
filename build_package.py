@@ -979,7 +979,7 @@ def build_base_files(base_configs="config"):
         certs/ca_certs.pem         -- The trusted SSL CA root list.
         config/agent.json          -- The configuration file.
         bin/scalyr-agent-2         -- Symlink to the agent_main.py file to run the agent.
-        bin/scalyr-agent-2-config  -- Symlink to config_main.py to run the configuration tool
+        bin/scalyr-agent-2-config  -- Symlink to agent_config.py to run the configuration tool
         build_info                 -- A file containing the commit id of the latest commit included in this package,
                                       the time it was built, and other information.
 
@@ -1024,8 +1024,8 @@ def build_base_files(base_configs="config"):
     os.chmod(agent_main_py2_path, main_permissions)
     os.chmod(agent_main_py3_path, main_permissions)
 
-    # create copies of the config_main.py with python2 and python3 shebang.
-    config_main_path = os.path.join(agent_source_root, "scalyr_agent", "config_main.py")
+    # create copies of the agent_config.py with python2 and python3 shebang.
+    config_main_path = os.path.join(agent_source_root, "scalyr_agent", "agent_config.py")
     config_main_py2_path = os.path.join("scalyr_agent", "config_main_py2.py")
     config_main_py3_path = os.path.join("scalyr_agent", "config_main_py3.py")
     replace_shebang(config_main_path, config_main_py2_path, "#!/usr/bin/env python2")
@@ -1091,7 +1091,7 @@ def build_base_files(base_configs="config"):
     os.chdir("bin")
 
     make_soft_link("../py/scalyr_agent/agent_main.py", "scalyr-agent-2")
-    make_soft_link("../py/scalyr_agent/config_main.py", "scalyr-agent-2-config")
+    make_soft_link("../py/scalyr_agent/agent_config.py", "scalyr-agent-2-config")
 
     # add switch python version script.
     shutil.copy(
@@ -1340,7 +1340,7 @@ def parse_date(date_str):
     return base_time
 
 
-# TODO:  This code is shared with config_main.py.  We should move this into a common
+# TODO:  This code is shared with agent_config.py.  We should move this into a common
 # utility location both commands can import it from.
 def run_command(command_str, exit_on_fail=True, fail_quietly=False, command_name=None):
     """Executes the specified command string returning the exit status.
