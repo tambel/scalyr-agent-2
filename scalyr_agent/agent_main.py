@@ -44,12 +44,15 @@ import os
 import sys
 import time
 import re
-import ssl
 from io import open
+import pathlib as pl
+import argparse
 
 if False:
     from typing import Optional
     from typing import Dict
+
+import six
 
 # Work around with a striptime race we see every now and then with docker monitor run() method.
 # That race would occur very rarely, since it depends on the order threads are started and when
@@ -59,32 +62,16 @@ if False:
 # 2. https://bugs.python.org/issue7980
 import _strptime  # NOQA
 
-try:
-    from __scalyr__ import SCALYR_VERSION
-    from __scalyr__ import scalyr_init
-    from __scalyr__ import INSTALL_TYPE
-    from __scalyr__ import DEV_INSTALL
-    from __scalyr__ import MSI_INSTALL
-except ImportError:
-    from scalyr_agent.__scalyr__ import SCALYR_VERSION
-    from scalyr_agent.__scalyr__ import scalyr_init
-    from scalyr_agent.__scalyr__ import INSTALL_TYPE
-    from scalyr_agent.__scalyr__ import DEV_INSTALL
-    from scalyr_agent.__scalyr__ import MSI_INSTALL
+# Since this file can be executes as script, add the source root to the PYTHONPATH in case if it isn't there.
+# If it is not there, then the further import of the 'scalyr_agent' package will fail.
+sys.path.append(str(pl.Path(os.path.realpath(__file__)).parent.parent))
 
-# We must invoke this since we are an executable script.
-scalyr_init()
-
-import six
-
-try:
-    import glob
-except ImportError:
-    import glob2 as glob  # type: ignore
+from scalyr_agent import __scalyr__
 
 import scalyr_agent.scalyr_logging as scalyr_logging
 import scalyr_agent.util as scalyr_util
 import scalyr_agent.remote_shell as remote_shell
+from scalyr_agent import agent_config
 
 # We have to be careful to set this logger class very early in processing, even before other
 # imports to ensure that any loggers created are AgentLoggers.
@@ -97,11 +84,7 @@ log = scalyr_logging.getLogger("scalyr_agent")
 
 scalyr_logging.set_log_destination(use_stdout=True)
 
-
-from optparse import OptionParser
-
 from scalyr_agent.profiler import ScalyrProfiler
-from scalyr_agent.scalyr_client import ScalyrClientSession
 from scalyr_agent.scalyr_client import create_client, verify_server_certificate
 from scalyr_agent.copying_manager import CopyingManager
 from scalyr_agent.configuration import Configuration
@@ -119,8 +102,6 @@ from scalyr_agent.platform_controller import (
 )
 from scalyr_agent.platform_controller import AgentNotRunning
 from scalyr_agent.build_info import get_build_revision
-from scalyr_agent import compat
-
 
 STATUS_FILE = "last_status"
 STATUS_FORMAT_FILE = "status_format"
@@ -313,7 +294,7 @@ class ScalyrAgent(object):
 
         # We process for the 'version' command early since we do not need the configuration file for it.
         if command == "version":
-            print("The Scalyr Agent 2 version is %s" % SCALYR_VERSION)
+            print("The Scalyr Agent 2 version is %s" % __scalyr__.SCALYR_VERSION)
             return 0
 
         # Read the configuration file.  Fail if we can't read it, unless the command is stop or status.
@@ -1585,7 +1566,7 @@ class ScalyrAgent(object):
         @type config: Configuration
         """
 
-        if self.__controller.install_type == DEV_INSTALL:
+        if self.__controller.install_type == __scalyr__.InstallType.DEV_INSTALL:
             # The agent is running from source, make sure that its directories exist.
             if not os.path.exists(config.agent_log_path):
                 os.makedirs(config.agent_log_path)
@@ -1647,7 +1628,7 @@ class ScalyrAgent(object):
         result.launch_time = self.__start_time
         result.user = self.__controller.get_current_user()
         result.revision = get_build_revision()
-        result.version = SCALYR_VERSION
+        result.version = __scalyr__.SCALYR_VERSION
         result.server_host = self.__config.server_attributes["serverHost"]
         result.compression_type = self.__config.compression_type
         result.compression_level = self.__config.compression_level
@@ -2107,24 +2088,52 @@ class WorkerThread(object):
 
 if __name__ == "__main__":
     my_controller = PlatformController.new_platform()
-    parser = OptionParser(
-        usage="Usage: scalyr-agent-2 [options] (start|stop|status|restart|condrestart|version)",
-        version="scalyr-agent v" + SCALYR_VERSION,
+
+    commands = ["start", "stop", "status", "restart", "condrestart", "version", "config"]
+
+    if __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS:
+        # If this is Windows, then also add service option.
+        # Using this option we can use windows executable as a base for the Windows Agent service.
+        # It has to save us from building multiple frozen binaries, when packaging.
+        commands.append("service")
+
+    command_parser = argparse.ArgumentParser(
+        usage=f"Usage: scalyr-agent-2 [options] ({commands})",
     )
-    parser.add_option(
+    command_parser.add_argument(
+        "command",
+        choices=commands
+    )
+
+    command_args, other_argv = command_parser.parse_known_args()
+    # Add the config option. So we can configure the agent from the same executable.
+    # It has to save us from building multiple frozen binaries, when packaging.
+    if command_args.command == "config":
+        agent_config.parse_config_options(other_argv)
+        exit(0)
+
+    if command_args.command == "service":
+        # Windows specific command that tell to start Agent's Windows service.
+        from scalyr_agent import platform_windows
+        platform_windows.parse_options(other_argv)
+        exit(0)
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
         "-c",
         "--config-file",
         dest="config_filename",
         help="Read configuration from FILE",
         metavar="FILE",
     )
-    parser.add_option(
+    parser.add_argument(
         "--extra-config-dir",
         default=None,
         help="An extra directory to check for configuration files",
         metavar="PATH",
     )
-    parser.add_option(
+    parser.add_argument(
         "-q",
         "--quiet",
         action="store_true",
@@ -2132,7 +2141,7 @@ if __name__ == "__main__":
         default=False,
         help="Only print error messages when running the start, stop, and condrestart commands",
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -2140,7 +2149,7 @@ if __name__ == "__main__":
         default=False,
         help="For status command, prints detailed information about running agent.",
     )
-    parser.add_option(
+    parser.add_argument(
         "-H",
         "--health_check",
         action="store_true",
@@ -2148,23 +2157,21 @@ if __name__ == "__main__":
         default=False,
         help="For status command, prints health check status. Return code will be 0 for a passing check, and 2 for failing",
     )
-    parser.add_option(
+    parser.add_argument(
         "--format",
         dest="status_format",
         default="text",
         help="Format to use (text / json) for the agent status command.",
     )
 
-    parser.add_option(
-        "",
+    parser.add_argument(
         "--no-fork",
         action="store_true",
         dest="no_fork",
         default=False,
         help="For the run command, does not fork the program to the background.",
     )
-    parser.add_option(
-        "",
+    parser.add_argument(
         "--no-check-remote-server",
         action="store_true",
         dest="no_check_remote",
@@ -2175,34 +2182,8 @@ if __name__ == "__main__":
     )
     my_controller.add_options(parser)
 
-    (options, args) = parser.parse_args()
+    options = parser.parse_args(args=other_argv)
     my_controller.consume_options(options)
-
-    if len(args) < 1:
-        print(
-            'You must specify a command, such as "start", "stop", or "status".',
-            file=sys.stderr,
-        )
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-    elif len(args) > 1:
-        print(
-            'Too many commands specified.  Only specify one of "start", "stop", "status".',
-            file=sys.stderr,
-        )
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-    elif args[0] not in (
-        "start",
-        "stop",
-        "status",
-        "restart",
-        "condrestart",
-        "version",
-    ):
-        print('Unknown command given: "%s"' % args[0], file=sys.stderr)
-        parser.print_help(sys.stderr)
-        sys.exit(1)
 
     if options.config_filename is not None and not os.path.isabs(
         options.config_filename
@@ -2212,7 +2193,7 @@ if __name__ == "__main__":
     main_rc = 1
     try:
         main_rc = ScalyrAgent(my_controller).main(
-            options.config_filename, args[0], options
+            options.config_filename, command_args.command, options
         )
     except Exception as mainExcept:
         print(six.text_type(mainExcept), file=sys.stderr)

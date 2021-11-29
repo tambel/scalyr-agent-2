@@ -46,7 +46,7 @@ if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] 
 
 # We import pymysql from the third_party directory.  This
 # relies on PYTHONPATH being set up correctly, which is done
-# in both agent_main.py and config_main.py
+# in both agent_main.py and agent_config.py
 #
 # noinspection PyUnresolvedReferences,PyPackageRequirements
 import pymysql  # pylint: disable=import-error

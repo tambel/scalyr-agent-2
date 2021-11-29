@@ -28,10 +28,11 @@ import copy
 import json
 import pprint
 import subprocess
+import pathlib as pl
 
 from distutils.spawn import find_executable
 
-from scalyr_agent.__scalyr__ import PACKAGE_INSTALL, DEV_INSTALL, get_package_root
+from scalyr_agent import __scalyr__
 from scalyr_agent import compat
 from scalyr_agent.platform_controller import PlatformController
 from scalyr_agent.configuration import Configuration
@@ -41,8 +42,15 @@ from tests.utils.common import get_env
 
 import six
 
-_AGENT_MAIN_PATH = Path(get_package_root(), "agent_main.py")
-_CONFIG_MAIN_PATH = Path(get_package_root(), "config_main.py")
+
+# This has to be a DEV installation so we can use install root as source root
+_SOURCE_ROOT = __scalyr__.get_install_root()
+
+_AGENT_PACKAGE_PATH = pl.Path(_SOURCE_ROOT, "scalyr_agent")
+
+
+_AGENT_MAIN_PATH = Path(_AGENT_PACKAGE_PATH, "agent_main.py")
+_CONFIG_MAIN_PATH = Path(_AGENT_PACKAGE_PATH, "agent_config.py")
 
 
 def _make_or_clear_directory(path):  # type: (Path) -> None
@@ -70,7 +78,7 @@ class AgentRunner(object):
 
     def __init__(
         self,
-        installation_type=DEV_INSTALL,
+        installation_type=__scalyr__.InstallType.DEV_INSTALL,
         enable_coverage=False,
         enable_debug_log=False,
         send_to_server=True,
@@ -78,7 +86,7 @@ class AgentRunner(object):
         workers_session_count=1,
     ):  # type: (int, bool, bool, bool, six.text_type, int) -> None
 
-        if enable_coverage and installation_type != DEV_INSTALL:
+        if enable_coverage and installation_type != __scalyr__.InstallType.DEV_INSTALL:
             raise ValueError("Coverage is only supported for dev installs")
 
         # agent data directory path.
@@ -192,7 +200,7 @@ class AgentRunner(object):
         # important to call this function before agent was started.
         self._create_agent_files()
 
-        if self._installation_type == PACKAGE_INSTALL:
+        if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             # use service command to start agent, because stop command hands on some of the RHEL based distributions
             # if agent is started differently.
             service_executable = find_executable("service")
@@ -246,7 +254,7 @@ class AgentRunner(object):
         atexit.register(self.stop)
 
     def status(self):
-        if self._installation_type == PACKAGE_INSTALL:
+        if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             cmd = "/usr/sbin/scalyr-agent-2 status -v"
         else:
             cmd = "python {0} status -v".format(_AGENT_MAIN_PATH)
@@ -260,7 +268,7 @@ class AgentRunner(object):
         """
         :param parse_json: True to parse result as json and return a dict.
         """
-        if self._installation_type == PACKAGE_INSTALL:
+        if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             cmd = "/usr/sbin/scalyr-agent-2 status -v --format=json"
         else:
             cmd = "python {0} status -v --format=json".format(_AGENT_MAIN_PATH)
@@ -285,7 +293,7 @@ class AgentRunner(object):
             kwargs = {"env": env}
         else:
             kwargs = {}
-        if self._installation_type == PACKAGE_INSTALL:
+        if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             subprocess.check_call(
                 "/usr/sbin/scalyr-agent-2-config --set-python {0}".format(version),
                 shell=True,
@@ -307,7 +315,7 @@ class AgentRunner(object):
 
         print("Stopping agent process...")
 
-        if self._installation_type == PACKAGE_INSTALL:
+        if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             service_executable = find_executable("service")
             if service_executable:
                 cmd = "%s scalyr-agent-2 stop" % (service_executable)
@@ -350,7 +358,7 @@ class AgentRunner(object):
     def restart(self, executable="python"):
         print("Restarting agent process...")
 
-        if self._installation_type == PACKAGE_INSTALL:
+        if self._installation_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             service_executable = find_executable("service")
             if service_executable:
                 cmd = "%s scalyr-agent-2 restart" % (service_executable)

@@ -18,7 +18,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import absolute_import
 
-
+import argparse
 import atexit
 import errno
 
@@ -84,27 +84,10 @@ except ImportError:
         "the following command:  pip install psutil"
     )
 
-# [start of 2->TODO]
-# Check for suitability.
-# This file can be executed as script and imported as module.
-if __name__ == "__main__":
-    # run as script, can not import __scalyr__.py as part of the package.
-    from __scalyr__ import get_install_root, scalyr_init
-else:
-    # run as package module.
-    # Python3 does not allow to import __scalyr__.py file within the same package just by its name. (PEP 328)
-    from scalyr_agent.__scalyr__ import get_install_root, scalyr_init
-# [end of 2->TOD0]
+import six
 
-scalyr_init()
 
-# [start of 2->TODO]
-# Check for suitability.
-# Important. Import six as any other dependency from "third_party" libraries after "__scalyr__.scalyr_init"
-from six.moves import input
-
-# [end of 2->TOD0]t
-
+from scalyr_agent import __scalyr__
 from scalyr_agent.json_lib import JsonObject
 from scalyr_agent.util import RedirectorServer, RedirectorClient, RedirectorError
 from scalyr_agent.platform_controller import (
@@ -295,7 +278,7 @@ class WindowsPlatformController(PlatformController):
         @return: True if this platform instance can handle the current server.
         @rtype: bool
         """
-        return "win32" == sys.platform
+        return __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.WINDOWS
 
     @property
     def default_paths(self):
@@ -306,7 +289,7 @@ class WindowsPlatformController(PlatformController):
         """
         # NOTE: For this module, it is assumed that the 'install_type' is always PACKAGE_INSTALL
 
-        root = get_install_root()
+        root = __scalyr__.get_install_root()
         logdir = os.path.join(root, "log")
         libdir = os.path.join(root, "data")
         config = os.path.join(root, "config", "agent.json")
@@ -590,8 +573,8 @@ class WindowsPlatformController(PlatformController):
         @type agent_run_method: func(PlatformController)
         @type quiet: bool
         """
-        # NOTE:  The config_main.py file relies on it being ok to pass in None for agent_run_method.
-        # If this assumption changes, fix that in config_main.py.
+        # NOTE:  The agent_config.py file relies on it being ok to pass in None for agent_run_method.
+        # If this assumption changes, fix that in agent_config.py.
         try:
             _set_config_path_registry_entry(self.__config_file_path)
         except Exception as e:
@@ -702,21 +685,19 @@ class WindowsPlatformController(PlatformController):
             else:
                 raise e
 
-    def add_options(self, options_parser):
+    def add_options(self, options_parser: argparse.ArgumentParser):
         """Invoked by the main method to allow the platform to add in platform-specific options to the
         OptionParser used to parse the commandline options.
 
         @param options_parser:
         @type options_parser: optparse.OptionParser
         """
-        options_parser.add_option(
-            "",
+        options_parser.add_argument(
             "--redirect-to-pipe",
             dest="redirect_pipe",
             help="Used to redirect stdin/stdout to a named pipe.  Used internally.",
         )
-        options_parser.add_option(
-            "",
+        options_parser.add_argument(
             "--no-change-user",
             action="store_true",
             dest="no_change_user",
@@ -726,8 +707,7 @@ class WindowsPlatformController(PlatformController):
             "in changing to the correct user.  Users should not need to set this option.",
         )
 
-        options_parser.add_option(
-            "-n",
+        options_parser.add_argument(
             "--no-warn-escalation",
             action="store_true",
             dest="no_escalation_warning",
@@ -738,7 +718,7 @@ class WindowsPlatformController(PlatformController):
             "requires that dialog box to be presented.",
         )
 
-    def consume_options(self, options):
+    def consume_options(self, options: argparse.Namespace):
         """Invoked by the main method to allow the platform to consume any command line options previously requested
         in the 'add_options' call.
 
@@ -923,10 +903,14 @@ class PipeRedirectorClient(RedirectorClient):
                 self.__pipe_handle = None
 
 
-if __name__ == "__main__":
-    if len(sys.argv) == 1:
+def parse_options(argv):
+    if len(argv) == 0:
         servicemanager.Initialize()
         servicemanager.PrepareToHostSingle(ScalyrAgentService)
         servicemanager.StartServiceCtrlDispatcher()
     else:
-        win32serviceutil.HandleCommandLine(ScalyrAgentService)
+        win32serviceutil.HandleCommandLine(ScalyrAgentService, argv=argv)
+
+
+if __name__ == "__main__":
+    parse_options(sys.argv)

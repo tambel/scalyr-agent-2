@@ -21,6 +21,7 @@ from __future__ import print_function
 
 __author__ = "czerwin@scalyr.com"
 
+import argparse
 import errno
 import fcntl
 import sys
@@ -35,6 +36,7 @@ from io import open
 
 import six
 
+from scalyr_agent import __scalyr__
 from scalyr_agent import scalyr_logging
 from scalyr_agent.platform_controller import (
     PlatformController,
@@ -43,13 +45,6 @@ from scalyr_agent.platform_controller import (
 )
 from scalyr_agent.platform_controller import CannotExecuteAsUser, AgentNotRunning
 import scalyr_agent.util as scalyr_util
-
-from scalyr_agent.__scalyr__ import (
-    get_install_root,
-    TARBALL_INSTALL,
-    DEV_INSTALL,
-    PACKAGE_INSTALL,
-)
 
 # Based on code by Sander Marechal posted at
 # http://web.archive.org/web/20131017130434/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
@@ -98,25 +93,22 @@ class PosixPlatformController(PlatformController):
         @return:  True if this platform instance can handle the current server.
         @rtype: bool
         """
-        # TODO:  For now, we only support POSIX.  Once we get Windows support in, will need to change this to
-        # not return True when we should be using Windows.
-        return True
+        return __scalyr__.PLATFORM_TYPE == __scalyr__.PlatformType.POSIX
 
-    def add_options(self, options_parser):
+    def add_options(self, options_parser: argparse.ArgumentParser):
         """Invoked by the main method to allow the platform to add in platform-specific options to the
         OptionParser used to parse the commandline options.
 
         @param options_parser:
         @type options_parser: optparse.OptionParser
         """
-        options_parser.add_option(
+        options_parser.add_argument(
             "-p",
             "--pid-file",
             dest="pid_file",
             help="The path storing the running agent's process id.  Only used if config cannot be parsed.",
         )
-        options_parser.add_option(
-            "",
+        options_parser.add_argument(
             "--no-change-user",
             action="store_true",
             dest="no_change_user",
@@ -126,7 +118,7 @@ class PosixPlatformController(PlatformController):
             "in changing to the correct user.  Users should not need to set this option.",
         )
 
-    def consume_options(self, options):
+    def consume_options(self, options: argparse.Namespace):
         """Invoked by the main method to allow the platform to consume any command line options previously requested
         in the 'add_options' call.
 
@@ -173,21 +165,21 @@ class PosixPlatformController(PlatformController):
         """
         # TODO: Change this to something that is not Linux-specific.  Maybe we should always just default
         # to the home directory location.
-        if self._install_type == PACKAGE_INSTALL:
+        if self._install_type == __scalyr__.InstallType.PACKAGE_INSTALL:
             return DefaultPaths(
                 "/var/log/scalyr-agent-2",
                 "/etc/scalyr-agent-2/agent.json",
                 "/var/lib/scalyr-agent-2",
             )
-        elif self._install_type == TARBALL_INSTALL:
-            install_location = get_install_root()
+        elif self._install_type == __scalyr__.InstallType.TARBALL_INSTALL:
+            install_location = __scalyr__.get_install_root()
             return DefaultPaths(
                 os.path.join(install_location, "log"),
                 os.path.join(install_location, "config", "agent.json"),
                 os.path.join(install_location, "data"),
             )
         else:
-            assert self._install_type == DEV_INSTALL
+            assert self._install_type == __scalyr__.InstallType.DEV_INSTALL
             # For developers only.  We default to a directory ~/scalyr-agent-dev for storing
             # all log/data information, and then require a log, config, and data subdirectory in each of those.
             base_dir = os.path.join(os.path.expanduser("~"), "scalyr-agent-dev")
@@ -290,6 +282,11 @@ class PosixPlatformController(PlatformController):
         # Do the first fork.
 
         debug_logger("Forking service")
+
+        # Flush standard outputs before the fork. If not flushed, then all output, that is done before fork,
+        # will be duplicated by child process.
+        sys.stdout.flush()
+        sys.stderr.flush()
         try:
             pid = os.fork()
             if pid > 0:
@@ -740,7 +737,7 @@ class PosixPlatformController(PlatformController):
                 return 1
 
         if not quiet:
-            # Warning, do not change this output.  The config_main.py file looks for this message when
+            # Warning, do not change this output.  The agent_config.py file looks for this message when
             # upgrading a tarball install to make sure the agent was running.
             print("Agent has stopped.")
 

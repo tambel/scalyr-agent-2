@@ -57,7 +57,7 @@ def test_centos_test_versions(request):
         runner,
         install_rpm,
         remove_rpm,
-        "config_main.py",
+        "agent_config.py",
         "",
         "2.5.1",
         "3.4.1",
