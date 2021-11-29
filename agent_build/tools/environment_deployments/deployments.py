@@ -871,7 +871,7 @@ class InstallTestRequirementsDeploymentStep(ShellScriptDeploymentStep):
     SCRIPT_PATH = _SCRIPTS_DIR_PATH / "deploy-dev-environment.sh"
     USED_FILES = [
         *_HELPER_DEPLOYMENT_SCRIPTS_AND_LIBS,
-        _AGENT_REQUIREMENT_FILES_PATH, _SOURCE_ROOT / "dev-requirements.txt"
+        _AGENT_REQUIREMENT_FILES_PATH, _SOURCE_ROOT / "dev-requirements-new.txt"
     ]
 
 

@@ -28,7 +28,7 @@ pip_cache_dir="$(python3 -m pip cache dir)"
 # Reuse cached pip cache if exists.
 restore_from_cache pip "$pip_cache_dir"
 
-python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements.txt"
+python3 -m pip install -r "${SOURCE_ROOT}/dev-requirements-new.txt"
 
 # Save pipe cache to reuse it in future.
 save_to_cache pip "$pip_cache_dir"

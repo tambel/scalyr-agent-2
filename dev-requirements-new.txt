@@ -1,0 +1,37 @@
+# This is only meant for Scalyr's internal development and dev environment.
+# These dependencies are not needed to run the Scalyr Agent, but mainly used for
+# running test suites, and mocking Python Objects for the Scalyr Agent.
+
+-r agent_build/requirement-files/main-requirements.txt
+-r agent_build/requirement-files/monitors-requirements.txt
+-r agent_build/requirement-files/compression-requirements.txt
+-r agent_build/requirement-files/frozen-binaries-requirements.txt
+-r agent_build/requirement-files/docker-and-k8s-requirements.txt
+
+# Testing tools and libraries
+mock==3.0.5
+psutil==5.7.0
+pytest==5.4.3;
+pytest-coverage
+pytest-timeout==1.3.4
+pytest-benchmark==3.2.3
+pytest-xdist==1.31.0
+coverage==4.5.4
+codecov==2.1.9
+decorator==4.4.1
+PyYAML==5.4.1;
+six==1.14.0
+ujson==1.35
+# Needed by MockHTTPServer class and related tests
+flask==1.1.1
+
+# Used for performance optimized versions of rfc3339_to_* functions
+# NOTE: Not supported on windows
+udatetime==0.0.16; platform_system != "Windows"
+
+# Used in package AMI tests.
+# NOTE: We rely on change in Libcloud which allows us to specify a custom wait_period which makes
+# it less likely for us to hit EC2 rate limits when spinning up and deploying many instances
+# concurrently
+git+https://github.com/apache/libcloud.git@trunk#egg=apache-libcloud; platform_system != "Windows"
+paramiko==2.7.2; platform_system != "Windows"
