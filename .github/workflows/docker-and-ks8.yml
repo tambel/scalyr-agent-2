@@ -91,6 +91,11 @@ jobs:
       - name: Push image from master branch.
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
+          echo "REF"
+          echo ${{ github.ref }}
+          echo TAG
+          echo ${{ github.ref_type }}
+
           python3 build_package_new.py ${{ matrix.image-type }} \
             --push \
             --registry \
@@ -103,7 +108,7 @@ jobs:
 
           if [[ "${{ github.ref_name }}" == "v$(cat VERSION)" ]]; then
             # if the this is a "release" tag with format "v*.*.*", then use version as tag
-            # also add latest tag.
+            # also add the 'latest' tag.
             tags="--tag $(cat VERSION) --tag latest"
           else
             # Just use GitHub tag as image tag.
