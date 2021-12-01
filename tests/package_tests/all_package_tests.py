@@ -23,7 +23,7 @@ from typing import Dict, List, Type
 
 from agent_build.tools import constants
 from agent_build import package_builders
-from tests.package_tests.internals import docker_test
+from tests.package_tests.internals import docker_test, k8s_test
 from agent_build.tools.environment_deployments import deployments
 
 _PARENT_DIR = pl.Path(__file__).parent
@@ -197,53 +197,64 @@ class DockerImagePackageTest(Test):
             # Test that all tags has been pushed to the registry.
             for tag in ["latest", "test", "debug"]:
                 logging.info(f"Test that the tag '{tag}' is pushed to the registry '{registry_host}'")
-                full_image_name = f"{registry_host}/{self.package_builder.RESULT_IMAGE_NAME}:{tag}"
 
-                # Remove the local image first, if exists.
-                logging.info("    Remove existing image.")
-                subprocess.check_call([
-                    "docker", "image", "rm", "-f", full_image_name
-                ])
+                for image_name in self.package_builder.RESULT_IMAGE_NAMES:
+                    full_image_name = f"{registry_host}/{image_name}:{tag}"
 
-                logging.info("    Log in to the local registry.")
-                # Login to the local registry.
-                subprocess.check_call([
-                    "docker",
-                    "login",
-                    "--password",
-                    "nopass",
-                    "--username",
-                    "nouser",
-                    registry_host
-                ])
-
-                # Pull the image
-                logging.info("    Pull the image.")
-                try:
+                    # Remove the local image first, if exists.
+                    logging.info("    Remove existing image.")
                     subprocess.check_call([
-                        "docker", "pull", full_image_name
+                        "docker", "image", "rm", "-f", full_image_name
                     ])
-                except subprocess.CalledProcessError as e:
-                    logging.exception("    Can not pull the result image from local registry.")
 
-                # Remove the image once more.
-                logging.info("    Remove existing image.")
-                subprocess.check_call([
-                    "docker", "image", "rm", "-f", full_image_name
-                ])
+                    logging.info("    Log in to the local registry.")
+                    # Login to the local registry.
+                    subprocess.check_call([
+                        "docker",
+                        "login",
+                        "--password",
+                        "nopass",
+                        "--username",
+                        "nouser",
+                        registry_host
+                    ])
 
-            local_registry_image_name = f"{registry_host}/{self.package_builder.RESULT_IMAGE_NAME}"
+                    # Pull the image
+                    logging.info("    Pull the image.")
+                    try:
+                        subprocess.check_call([
+                            "docker", "pull", full_image_name
+                        ])
+                    except subprocess.CalledProcessError as e:
+                        logging.exception("    Can not pull the result image from local registry.")
+
+                    # Remove the image once more.
+                    logging.info("    Remove existing image.")
+                    subprocess.check_call([
+                        "docker", "image", "rm", "-f", full_image_name
+                    ])
+
+            # Use any of variants of the image name to test it.
+            local_registry_image_name = f"{registry_host}/{self.package_builder.RESULT_IMAGE_NAMES[0]}"
 
             # Start the tests for each architecture.
+            # TODO: Make tests run in parallel.
             for arch in self.target_image_architecture:
                 logging.info(f"Start testing image '{local_registry_image_name}' with architecture "
                              f"'{arch.as_docker_platform.value}'")
 
-                docker_test.run(
-                    image_name=local_registry_image_name,
-                    architecture=arch,
-                    scalyr_api_key=scalyr_api_key
-                )
+                if isinstance(self.package_builder, package_builders.K8sPackageBuilder):
+                    k8s_test.run(
+                        image_name=local_registry_image_name,
+                        architecture=arch,
+                        scalyr_api_key=scalyr_api_key
+                    )
+                else:
+                    docker_test.run(
+                        image_name=local_registry_image_name,
+                        architecture=arch,
+                        scalyr_api_key=scalyr_api_key
+                    )
 
         finally:
             # Cleanup.
@@ -260,7 +271,7 @@ class DockerImagePackageTest(Test):
             ])
 
 
-# Create tests for the all docker images (json/syslog/ api) and for k8s image.
+# Create tests for the all docker images (json/syslog/api) and for k8s image.
 _docker_image_tests = []
 for builder in [
     package_builders.DOCKER_JSON_CONTAINER_BUILDER,
@@ -281,9 +292,3 @@ for builder in [
     _docker_image_tests.append(test)
 
 DOCKER_JSON_TEST, DOCKER_SYSLOG_TEST, DOCKER_API_TEST, K8S_TEST = _docker_image_tests
-
-
-
-
-
-
