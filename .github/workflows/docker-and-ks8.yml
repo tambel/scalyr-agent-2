@@ -44,8 +44,7 @@ jobs:
         env:
             SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          python3 tests/package_tests/run_package_test.py run-package-test ${{ matrix.image-type}}_x86_64
-          python3 tests/package_tests/run_package_test.py run-package-test ${{ matrix.image-type}}_arm64
+          python3 tests/package_tests/run_package_test.py run-package-test ${{ matrix.image-type}}_test
 
 # TODO need to add READ_API_KEY secret from circleci
 #      - name: Run docker smoke tests
