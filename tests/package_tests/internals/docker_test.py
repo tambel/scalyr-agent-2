@@ -111,7 +111,7 @@ def run(
     :param scalyr_api_key: Scalyr API key.
     """
 
-    container_name = f"{image_name}-test_{architecture.value}"
+    container_name = f"{image_name}-test_{architecture.value}".replace(":", "_")
 
     def _delete_agent_container():
 
