@@ -58,6 +58,7 @@ jobs:
 
 
   publish:
+    name: Publish image.
     if: ${{ github.ref == 'refs/heads/master' }} || ${{ github.ref_type == 'tag' }}
     needs: ["test"]
     runs-on: ubuntu-latest
@@ -88,13 +89,15 @@ jobs:
         with:
           driver-opts: network=host
 
-      - name: Push image from master branch.
-        if: ${{ github.ref == 'refs/heads/master' }}
-        run: |
+      - run: |
           echo "REF"
           echo ${{ github.ref }}
           echo TAG
           echo ${{ github.ref_type }}
+
+      - name: Push image from master branch.
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
 
           python3 build_package_new.py ${{ matrix.image-type }} \
             --push \
