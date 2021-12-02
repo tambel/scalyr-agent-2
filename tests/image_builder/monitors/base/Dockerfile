@@ -18,7 +18,7 @@ RUN apt install -y python3-pip python3-dev
 
 RUN apt install -y nginx
 
-ADD agent_build/requirement-files /scalyr-agent-2/agent_build/requirement-files
+ADD requirement-files /scalyr-agent-2/agent_build/requirement-files
 
 COPY dev-requirements.txt /scalyr-agent-2/dev-requirements.txt
 
