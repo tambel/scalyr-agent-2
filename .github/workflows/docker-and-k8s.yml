@@ -78,9 +78,9 @@ jobs:
 
         run: |
           if [[ "${{ inputs.image-type}}" == "k8s" ]]; then
-            source ./.circleci/smoketest_k8s.sh scalyr/scalyr-agent-ci-unittest:4 150 no_delete_existing_k8s_objs
+            source ./.circleci/smoketest_k8s.sh scalyr/scalyr-agent-ci-unittest:4 200 no_delete_existing_k8s_objs
           else
-            source ./.circleci/smoketest_docker.sh scalyr/scalyr-agent-ci-unittest:4 ${{ inputs.image-type}} 150
+            source ./.circleci/smoketest_docker.sh scalyr/scalyr-agent-ci-unittest:4 ${{ inputs.image-type}} 200
           fi
 
 
