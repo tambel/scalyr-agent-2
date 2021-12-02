@@ -63,11 +63,11 @@ jobs:
         run: |
           minikube start
 
-      - name: Run image test.
-        env:
-            SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-        run: |
-          python3 tests/package_tests/run_package_test.py run-package-test ${{ inputs.image-type}}_test
+#      - name: Run image test.
+#        env:
+#            SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+#        run: |
+#          python3 tests/package_tests/run_package_test.py run-package-test ${{ inputs.image-type}}_test
 
       - name: Run docker smoke tests
         env:

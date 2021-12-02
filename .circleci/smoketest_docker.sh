@@ -137,6 +137,8 @@ uploader_hostname=$(docker ps --format "{{.ID}}" --filter "name=$contname_upload
 echo "Uploader container ID == ${uploader_hostname}"
 echo "Using smoketest.py script from ${SMOKE_TESTS_SCRIPT_BRANCH} branch and URL ${SMOKE_TESTS_SCRIPT_URL}"
 
+echo "11111"
+
 function print_debugging_info_on_exit() {
     echo ""
     echo "Docker logs for ${contname_agent} container"
@@ -168,6 +170,8 @@ function print_debugging_info_on_exit() {
 # We want to run some commands on exit which may help with troubleshooting on
 # test failures
 trap print_debugging_info_on_exit EXIT
+
+echo "22222"
 
 # Launch synchronous Verifier image (writes to stdout and also queries Scalyr)
 # Like the Uploader, the Verifier also waits for agent to be alive before uploading data
