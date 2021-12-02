@@ -106,15 +106,10 @@ fakeversion=`cat VERSION`
 fakeversion="${fakeversion}.ci"
 echo $fakeversion > ./VERSION
 echo "Building docker image"
-agent_image="agent-ci/scalyr-agent-docker-${log_mode}:${fakeversion}"
+agent_image="agent-ci/scalyr-agent-${log_mode}:${fakeversion}"
 
 # Build image by specifying image type through build args.
 docker build -t "$agent_image" -f Dockerfile  --build-arg "BUILD_TYPE=$log_mode" --build-arg MODE=with-coverage .
-
-## Extract and build agent docker image
-#./scalyr-docker-agent-${log_mode}-${fakeversion} --extract-packages
-#agent_image="agent-ci/scalyr-agent-docker-${log_mode}:${fakeversion}"
-#docker build -t ${agent_image} .
 
 # Launch Agent container (which begins gathering stdout logs)
 docker run -d --name ${contname_agent} \
