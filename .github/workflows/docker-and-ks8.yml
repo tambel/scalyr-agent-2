@@ -1,6 +1,26 @@
 name: Build agent packages.
 
-on: [push]
+on:
+  workflow_call:
+    inputs:
+      image-type:
+        description: "Name of the image build type."
+        required: true
+        type: string
+      python-version:
+        required: false
+        type: string
+        default: 3.8.10
+      publish:
+        description: "If true then the result image will be published on master branch or tag."
+        type: boolean
+        required: false
+        default: true
+
+    secrets:
+      SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN:
+        required: true
+      SCALYR_CLOUDTECH_TESTING_DEV_SCALYR_READ_API_KEY:
 
 env:
   DOCKER_BUILDKIT: 1
@@ -10,10 +30,6 @@ jobs:
   # TODO move here tests from the CicleCi.
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image-type: [docker-json, docker-syslog, docker-api, k8s]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -21,7 +37,7 @@ jobs:
       - name: Install python.
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.10
+          python-version: ${{ inputs.python-version }}
 
       - name: Perform the deployment of the test environment.
         uses: ./.github/actions/perform-deployment
@@ -41,7 +57,7 @@ jobs:
           driver-opts: network=host
 
       - name: Start minikube for the test of the kubernetes build.
-        if: matrix.image-type == 'k8s'
+        if: inputs.image-type == 'k8s'
         shell: bash
         run: |
           minikube start
@@ -50,31 +66,27 @@ jobs:
         env:
             SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          python3 tests/package_tests/run_package_test.py run-package-test ${{ matrix.image-type}}_test
+          python3 tests/package_tests/run_package_test.py run-package-test ${{ inputs.image-type}}_test
 
       - name: Run docker smoke tests
-        if: startsWith( matrix.image-type, 'docker-')
         env:
           SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
           READ_API_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_SCALYR_READ_API_KEY }}
           CIRCLE_BUILD_NUM: ${{ github.run_number }}_${{ github.run_attempt }}
 
         run: |
-          if [[ "${{ matrix.image-type}}" == "k8s" ]]; then
+          if [[ "${{ inputs.image-type}}" == "k8s" ]]; then
             source ./.circleci/smoketest_k8s.sh scalyr/scalyr-agent-ci-unittest:4 150 no_delete_existing_k8s_objs
           else
-            source ./.circleci/smoketest_docker.sh scalyr/scalyr-agent-ci-unittest:4 ${{ matrix.image-type}} 150
+            source ./.circleci/smoketest_docker.sh scalyr/scalyr-agent-ci-unittest:4 ${{ inputs.image-type}} 150
           fi
 
 
   publish:
     needs: [test]
     name: Publish image.
-    if: ${{ github.ref == 'refs/heads/master' || github.ref_type == 'tag' }}
+    if: ${{ inputs.publish == true &&  (github.ref == 'refs/heads/master' || github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image-type: [docker-json, docker-syslog k8s]
 
 
     services:
@@ -103,7 +115,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
 
-          python3 build_package_new.py ${{ matrix.image-type }} \
+          python3 build_package_new.py ${{ inputs.image-type }} \
             --push \
             --registry \
             localhost:5000 \
@@ -122,7 +134,7 @@ jobs:
             tags="--tag ${{ github.ref_name }}"
           fi
 
-          python3 build_package_new.py ${{ matrix.image-type }} \
+          python3 build_package_new.py ${{ inputs.image-type }} \
             --push \
             --registry \
             localhost:5000 \
