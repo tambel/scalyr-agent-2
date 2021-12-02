@@ -57,12 +57,12 @@ smoketest_script="source ~/.bashrc && pyenv shell 3.7.3 && python3 /tmp/smoketes
 syslog_driver_option=""
 syslog_driver_portmap=""
 jsonlog_containers_mount=""
-if [[ $log_mode == "syslog" ]]; then
+if [[ $log_mode == "docker-syslog" ]]; then
     syslog_driver_option="--log-driver=syslog --log-opt syslog-address=tcp://127.0.0.1:601"
     syslog_driver_portmap="-p 601:601"
-elif [[ $log_mode == "json" ]]; then
+elif [[ $log_mode == "docker-json" ]]; then
     jsonlog_containers_mount="-v /var/lib/docker/containers:/var/lib/docker/containers"
-elif [[ $log_mode == "api" ]]; then
+elif [[ $log_mode == "docker-api" ]]; then
     # Using Docker API mode aka docker_raw_logs: false
     echo ""
 else
@@ -109,7 +109,7 @@ echo "Building docker image"
 agent_image="agent-ci/scalyr-agent-docker-${log_mode}:${fakeversion}"
 
 # Build image by specifying image type through build args.
-docker build -t "$agent_image" -f docker/Dockerfile.unified  --build-arg "BUILD_TYPE=docker-$log_mode" --build-arg MODE=with-coverage .
+docker build -t "$agent_image" -f docker/Dockerfile.unified  --build-arg "BUILD_TYPE=$log_mode" --build-arg MODE=with-coverage .
 
 ## Extract and build agent docker image
 #./scalyr-docker-agent-${log_mode}-${fakeversion} --extract-packages

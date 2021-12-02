@@ -52,15 +52,19 @@ jobs:
         run: |
           python3 tests/package_tests/run_package_test.py run-package-test ${{ matrix.image-type}}_test
 
-# TODO need to add READ_API_KEY secret from circleci
-#      - name: Run docker smoke tests
-#        if: startsWith( matrix.image-type, 'docker-')
-#        env:
-#          SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
-#          READ_API_KEY: # Need to add to github
-#
-#        run: |
-#          source ./.circleci/smoketest_docker.sh scalyr/scalyr-agent-ci-unittest:4 json 150
+      - name: Run docker smoke tests
+        if: startsWith( matrix.image-type, 'docker-')
+        env:
+          SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
+          READ_API_KEY: ${{ secrets.SCALYR_CLOUDTECH_TESTING_DEV_SCALYR_READ_API_KEY }}
+          CIRCLE_BUILD_NUM: ${{ github.run_number }}_${{ github.run_attempt }}
+
+        run: |
+          if [[ "${{ matrix.image-type}}" == "k8s" ]]; then
+            source ./.circleci/smoketest_k8s.sh scalyr/scalyr-agent-ci-unittest:4 150 no_delete_existing_k8s_objs
+          else
+            source ./.circleci/smoketest_docker.sh scalyr/scalyr-agent-ci-unittest:4 ${{ matrix.image-type}} 150
+          fi
 
 
   publish:
