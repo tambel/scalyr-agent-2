@@ -170,6 +170,7 @@ function print_debugging_info_on_exit() {
 # test failures
 trap print_debugging_info_on_exit EXIT
 
+echo "111"
 # Launch synchronous Verifier image (writes to stdout and also queries Scalyr)
 # Like the Uploader, the Verifier also waits for agent to be alive before uploading data
 docker run ${syslog_driver_option} -it --name ${contname_verifier} ${smoketest_image} \
@@ -180,6 +181,8 @@ bash -c "${DOWNLOAD_SMOKE_TESTS_SCRIPT_COMMAND} ; ${smoketest_script} ${contname
 --agent_hostname ${agent_hostname} \
 --uploader_hostname ${uploader_hostname} \
 --debug true"
+
+echo "2222"
 
 echo ""
 echo "Stopping agent."

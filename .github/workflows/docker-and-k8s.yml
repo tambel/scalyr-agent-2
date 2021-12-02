@@ -49,7 +49,7 @@ jobs:
         id: qemu
         uses: docker/setup-qemu-action@v1
         with:
-          image: tonistiigi/binfmt:latest
+          image: tonistiigi/binfmt:qemu-v6.1.0
           platforms: all
 
       - name: Set up Docker Buildx
