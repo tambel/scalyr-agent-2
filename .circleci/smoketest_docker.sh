@@ -72,9 +72,9 @@ fi
 
 # container names for all test containers
 # The suffixes MUST be one of (agent, uploader, verifier) to match verify_upload::DOCKER_CONTNAME_SUFFIXES
-contname_agent="ci-agent-docker-${log_mode}-${CIRCLE_BUILD_NUM}-agent"
-contname_uploader="ci-agent-docker-${log_mode}-${CIRCLE_BUILD_NUM}-uploader"
-contname_verifier="ci-agent-docker-${log_mode}-${CIRCLE_BUILD_NUM}-verifier"
+contname_agent="ci-agent-${log_mode}-${CIRCLE_BUILD_NUM}-agent"
+contname_uploader="ci-agent-${log_mode}-${CIRCLE_BUILD_NUM}-uploader"
+contname_verifier="ci-agent-${log_mode}-${CIRCLE_BUILD_NUM}-verifier"
 
 
 # Kill leftover containers
