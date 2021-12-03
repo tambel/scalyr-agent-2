@@ -894,6 +894,7 @@ class DockerAPIActor(DockerSmokeTestActor):
         log_path = self._get_uploader_override_logfilename_regex(
             stream_name=stream_name, process_name=process_name
         )
+        raise
 
         if "Docker API (docker_raw_logs: false)" in message:
             self._seen_matching_lines.add(message)

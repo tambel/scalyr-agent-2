@@ -174,7 +174,7 @@ echo "111"
 # Launch synchronous Verifier image (writes to stdout and also queries Scalyr)
 # Like the Uploader, the Verifier also waits for agent to be alive before uploading data
 docker run ${syslog_driver_option} --name ${contname_verifier} ${smoketest_image} \
-bash -c "${DOWNLOAD_SMOKE_TESTS_SCRIPT_COMMAND} ; cat /tmp/smoketest.py ; /tmp/smoketest.py ${contname_verifier} ${max_wait} \
+bash -c "${DOWNLOAD_SMOKE_TESTS_SCRIPT_COMMAND} ; cat /tmp/smoketest.py ; ${smoketest_script} ${contname_verifier} ${max_wait} \
 --mode verifier \
 --scalyr_server ${SCALYR_SERVER} \
 --read_api_key ${READ_API_KEY} \
