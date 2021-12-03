@@ -896,7 +896,9 @@ class DockerAPIActor(DockerSmokeTestActor):
         )
 
         if not hasattr(self, "counter"):
-            setattr(self, "counter", 0)
+            setattr(self, "counter", -1)
+
+        self.counter+=1
 
         print(f"BIGIN_COUNT: {self.counter}")
 
