@@ -883,6 +883,8 @@ class DockerAPIActor(DockerSmokeTestActor):
                 process_name=process_name,
             )
 
+        print("SEEN")
+        print(self._seen_matching_lines)
         success = len(self._seen_matching_lines) == 1 + 2 + 2
         if success:
             print(
