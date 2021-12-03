@@ -803,6 +803,7 @@ class DockerAPIActor(DockerSmokeTestActor):
                         message=None,
                     )
                 )
+                raise RuntimeError("!!!!!")
 
                 if resp.ok:
                     data = json.loads(resp.content)
