@@ -63,21 +63,24 @@ def _test(
         ]
     )
 
-    # Wait a little.
-    logging.info("Wait for the docker agent to start...")
-    if architecture is not constants.Architecture.X86_64:
-        # Wait more if the platform is not native because emulation is pretty slow.
-        time.sleep(10)
-    else:
-        time.sleep(3)
+    docker_exec_command = [
+        "docker",
+        "exec",
+        "-i",
+        container_name,
+    ]
+
+    # Pre-create the agent log file so the tail command wont fail before the agent starts.
+    subprocess.check_call([
+        *docker_exec_command,
+        "touch",
+        "/var/log/scalyr-agent-2/agent.log"
+    ])
 
     # Execute tail -f command on the agent.log inside the container to read its content.
     agent_log_tail_process = subprocess.Popen(
         [
-            "docker",
-            "exec",
-            "-i",
-            container_name,
+            *docker_exec_command,
             "tail",
             "-f",
             "-n+1",
