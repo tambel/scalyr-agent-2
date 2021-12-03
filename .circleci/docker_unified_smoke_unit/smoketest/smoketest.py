@@ -901,6 +901,7 @@ class DockerAPIActor(DockerSmokeTestActor):
 
         if "Docker API (docker_raw_logs: false)" in message:
             self._seen_matching_lines.add(message)
+            print(f"API_DOCKER:{message}")
             return
 
         log_path = self._get_uploader_override_logfilename_regex(
@@ -916,6 +917,7 @@ class DockerAPIActor(DockerSmokeTestActor):
             and log_path in message
             and "-stdout.log" in message
         ):
+            print(f"ADD-STDOUT:{message}")
             self._seen_matching_lines.add(message)
             return
 
@@ -924,6 +926,7 @@ class DockerAPIActor(DockerSmokeTestActor):
             and log_path in message
             and "-stderr.log" in message
         ):
+            print(f"ADD_STDERR: {message}")
             self._seen_matching_lines.add(message)
             return
 
@@ -937,6 +940,7 @@ class DockerAPIActor(DockerSmokeTestActor):
             "-stdout.log doesn't exist on disk. This likely means a new container has been started"
             in message
         ):
+            print(f"NO_FILE_STDOUT: {message}")
             self._seen_matching_lines.add(message)
             return
 
@@ -944,6 +948,7 @@ class DockerAPIActor(DockerSmokeTestActor):
             "-stderr.log doesn't exist on disk. This likely means a new container has been started"
             in message
         ):
+            print(f"NO_FILE_STDERR: {message}")
             self._seen_matching_lines.add(message)
             return
 
