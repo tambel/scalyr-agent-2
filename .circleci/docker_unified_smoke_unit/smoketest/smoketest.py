@@ -881,8 +881,6 @@ class DockerAPIActor(DockerSmokeTestActor):
                 process_name=process_name,
             )
 
-        raise RuntimeError("33333")
-
         success = len(self._seen_matching_lines) == 1 + 2 + 2
         if success:
             print(
