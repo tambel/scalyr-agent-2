@@ -136,12 +136,14 @@ class DockerImagePackageTest(Test):
     def run_test(
             self,
             scalyr_api_key: str,
+            name_suffix: str = None
     ):
         """
         Run test for the agent docker image.
         First of all it builds an image, then pushes it to the local registry and does full test.
 
         :param scalyr_api_key:  Scalyr API key.
+        :param name_suffix: Additional suffix to the agent instance name.
         """
 
         registry_host = "localhost:5000"
@@ -253,7 +255,8 @@ class DockerImagePackageTest(Test):
                     docker_test.run(
                         image_name=local_registry_image_name,
                         architecture=arch,
-                        scalyr_api_key=scalyr_api_key
+                        scalyr_api_key=scalyr_api_key,
+                        name_suffix=name_suffix
                     )
 
         finally:

@@ -37,7 +37,7 @@ def _test(
         scalyr_api_key: str,
 ):
 
-    logging.info(f"Start agent in docker from the image {image_name}")
+    logging.info(f"Start agent in docker from the image {image_name} in the container {container_name}")
 
     # Run agent inside the container.
     subprocess.check_call(
@@ -103,15 +103,21 @@ def _test(
 def run(
     image_name: str,
     architecture: constants.Architecture,
-    scalyr_api_key: str
+    scalyr_api_key: str,
+    name_suffix: str
 ):
     """
     :param image_name: Full name of the image to test.
     :param architecture: Architecture of the image to test.
     :param scalyr_api_key: Scalyr API key.
+    :param name_suffix: Additional suffix to the agent instance name.
     """
 
-    container_name = f"{image_name}-test_{architecture.value}".replace(":", "_").replace("/", "__")
+    container_name = f"{image_name}_{architecture.value}_test"
+
+    container_name = f"{container_name}{name_suffix}"
+
+    container_name = container_name.replace(":", "_").replace("/", "_")
 
     def _delete_agent_container():
 
