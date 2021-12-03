@@ -601,7 +601,7 @@ class InstallTestRequirementsDeploymentStep(ShellScriptDeploymentStep):
 COMMON_TEST_ENVIRONMENT = Deployment(
     # Name of the deployment.
     # Call the local './.github/actions/perform-deployment' action with this name.
-    "test_environment",
+    "dev_environment",
     step_classes=[InstallTestRequirementsDeploymentStep],
     architecture=constants.Architecture.UNKNOWN
 )

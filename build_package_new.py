@@ -102,6 +102,14 @@ if __name__ == "__main__":
             )
 
             package_parser.add_argument(
+                "--image-names",
+                dest="image_names",
+                action="append",
+                help="Name of the result image. The name that is specified in the builder is used by default. "
+                     "Can be used multiple times."
+            )
+
+            package_parser.add_argument(
                 "--push",
                 action="store_true",
                 help="Push the result docker image."
@@ -133,6 +141,7 @@ if __name__ == "__main__":
 
         package_builder.build_image(
             push=args.push,
+            image_names=args.image_names or [],
             registries=args.registry or [],
             tags=args.tag or []
         )

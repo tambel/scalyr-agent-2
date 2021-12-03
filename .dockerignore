@@ -6,6 +6,7 @@ build
 tests
 .git
 .dockerignore
+.circleci/
 
 __pycache__
 **/__pycache__

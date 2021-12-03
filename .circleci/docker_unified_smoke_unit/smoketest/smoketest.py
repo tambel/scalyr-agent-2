@@ -874,6 +874,8 @@ class DockerAPIActor(DockerSmokeTestActor):
             attributes = item["attributes"]
             message = item.get("message", "") or ""
 
+            print(f"ITEM: {item}")
+
             self._verify_queried_attributes(
                 att=attributes,
                 message=message,
@@ -942,6 +944,8 @@ class DockerAPIActor(DockerSmokeTestActor):
         ):
             self._seen_matching_lines.add(message)
             return
+
+        print("PASSS")
 
 
 class DockerSyslogActor(DockerSmokeTestActor):
