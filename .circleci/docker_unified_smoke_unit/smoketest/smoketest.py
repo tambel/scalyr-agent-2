@@ -897,7 +897,6 @@ class DockerAPIActor(DockerSmokeTestActor):
 
         if "Docker API (docker_raw_logs: false)" in message:
             self._seen_matching_lines.add(message)
-            print(f"ATTR_MESSAGE: {message}")
             return
 
         log_path = self._get_uploader_override_logfilename_regex(
@@ -914,7 +913,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             and "-stdout.log" in message
         ):
             self._seen_matching_lines.add(message)
-            print(f"ATTR_MESSAGE: {message}")
             return
 
         if (
@@ -923,7 +921,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             and "-stderr.log" in message
         ):
             self._seen_matching_lines.add(message)
-            print(f"ATTR_MESSAGE: {message}")
             return
 
         # Message should look something like this:
@@ -937,7 +934,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             in message
         ):
             self._seen_matching_lines.add(message)
-            print(f"ATTR_MESSAGE: {message}")
             return
 
         if (
@@ -945,7 +941,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             in message
         ):
             self._seen_matching_lines.add(message)
-            print(f"ATTR_MESSAGE: {message}")
             return
 
 

@@ -20,7 +20,11 @@ import logging
 import os
 
 from agent_build.tools import constants
-from tests.package_tests.internals.common import AgentLogRequestStatsLineCheck, AssertAgentLogLineIsNotAnErrorCheck, LogVerifier
+from tests.package_tests.internals.common import (
+    AgentLogRequestStatsLineCheck,
+    AssertAgentLogLineIsNotAnErrorCheck,
+    LogVerifier,
+)
 
 
 def build_agent_image(builder_path: pl.Path):
@@ -31,13 +35,15 @@ def build_agent_image(builder_path: pl.Path):
 
 
 def _test(
-        image_name: str,
-        container_name: str,
-        architecture: constants.Architecture,
-        scalyr_api_key: str,
+    image_name: str,
+    container_name: str,
+    architecture: constants.Architecture,
+    scalyr_api_key: str,
 ):
 
-    logging.info(f"Start agent in docker from the image {image_name} in the container {container_name}")
+    logging.info(
+        f"Start agent in docker from the image {image_name} in the container {container_name}"
+    )
 
     # Run agent inside the container.
     subprocess.check_call(
@@ -53,7 +59,7 @@ def _test(
             "/var/run/docker.sock:/var/scalyr/docker.sock",
             "--platform",
             architecture.as_docker_platform.value,
-            image_name
+            image_name,
         ]
     )
 
@@ -67,8 +73,17 @@ def _test(
 
     # Execute tail -f command on the agent.log inside the container to read its content.
     agent_log_tail_process = subprocess.Popen(
-        ["docker", "exec", "-i", container_name, "tail", "-f", "-n+1", "/var/log/scalyr-agent-2/agent.log"],
-        stdout=subprocess.PIPE
+        [
+            "docker",
+            "exec",
+            "-i",
+            container_name,
+            "tail",
+            "-f",
+            "-n+1",
+            "/var/log/scalyr-agent-2/agent.log",
+        ],
+        stdout=subprocess.PIPE,
     )
 
     # Read lines from agent.log. Create pipe reader to read lines from the previously created tail process.
@@ -88,7 +103,9 @@ def _test(
         # Add check for any ERROR messages to the verifier.
         agent_log_tester.add_line_check(AssertAgentLogLineIsNotAnErrorCheck())
         # Add check for the request stats message.
-        agent_log_tester.add_line_check(AgentLogRequestStatsLineCheck(), required_to_pass=True)
+        agent_log_tester.add_line_check(
+            AgentLogRequestStatsLineCheck(), required_to_pass=True
+        )
 
         # Start agent.log file verification.
         agent_log_tester.verify(timeout=300)
@@ -104,7 +121,7 @@ def run(
     image_name: str,
     architecture: constants.Architecture,
     scalyr_api_key: str,
-    name_suffix: str
+    name_suffix: str,
 ):
     """
     :param image_name: Full name of the image to test.
@@ -122,9 +139,7 @@ def run(
     def _delete_agent_container():
 
         # Kill and remove the previous container, if exists.
-        subprocess.check_call(
-            ["docker", "rm", "-f", container_name]
-        )
+        subprocess.check_call(["docker", "rm", "-f", container_name])
 
     # Cleanup previous test run, if exists.
     _delete_agent_container()
@@ -135,7 +150,6 @@ def run(
             container_name=container_name,
             architecture=architecture,
             scalyr_api_key=scalyr_api_key,
-
         )
     finally:
         _delete_agent_container()
