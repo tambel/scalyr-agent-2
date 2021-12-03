@@ -71,11 +71,9 @@ def _test(
     ]
 
     # Pre-create the agent log file so the tail command wont fail before the agent starts.
-    subprocess.check_call([
-        *docker_exec_command,
-        "touch",
-        "/var/log/scalyr-agent-2/agent.log"
-    ])
+    subprocess.check_call(
+        [*docker_exec_command, "touch", "/var/log/scalyr-agent-2/agent.log"]
+    )
 
     # Execute tail -f command on the agent.log inside the container to read its content.
     agent_log_tail_process = subprocess.Popen(
