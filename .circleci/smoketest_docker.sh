@@ -138,7 +138,6 @@ echo "Uploader container ID == ${uploader_hostname}"
 echo "Using smoketest.py script from ${SMOKE_TESTS_SCRIPT_BRANCH} branch and URL ${SMOKE_TESTS_SCRIPT_URL}"
 
 function print_debugging_info_on_exit() {
-    docker ps -a
     echo ""
     echo "Docker logs for ${contname_agent} container"
     echo ""
@@ -170,19 +169,16 @@ function print_debugging_info_on_exit() {
 # test failures
 trap print_debugging_info_on_exit EXIT
 
-echo "111"
 # Launch synchronous Verifier image (writes to stdout and also queries Scalyr)
 # Like the Uploader, the Verifier also waits for agent to be alive before uploading data
-docker run ${syslog_driver_option} --name ${contname_verifier} ${smoketest_image} \
-bash -c "${DOWNLOAD_SMOKE_TESTS_SCRIPT_COMMAND} ; cat /tmp/smoketest.py ; ${smoketest_script} ${contname_verifier} ${max_wait} \
+docker run ${syslog_driver_option} -i --name ${contname_verifier} ${smoketest_image} \
+bash -c "${DOWNLOAD_SMOKE_TESTS_SCRIPT_COMMAND} ; ${smoketest_script} ${contname_verifier} ${max_wait} \
 --mode verifier \
 --scalyr_server ${SCALYR_SERVER} \
 --read_api_key ${READ_API_KEY} \
 --agent_hostname ${agent_hostname} \
 --uploader_hostname ${uploader_hostname} \
 --debug true"
-
-echo "2222"
 
 echo ""
 echo "Stopping agent."

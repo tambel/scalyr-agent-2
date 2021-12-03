@@ -895,13 +895,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             stream_name=stream_name, process_name=process_name
         )
 
-        if not hasattr(self, "counter"):
-            setattr(self, "counter", -1)
-
-        self.counter+=1
-
-        print(f"BIGIN_COUNT: {self.counter}")
-
         if "Docker API (docker_raw_logs: false)" in message:
             self._seen_matching_lines.add(message)
             print(f"ATTR_MESSAGE: {message}")
@@ -954,8 +947,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             self._seen_matching_lines.add(message)
             print(f"ATTR_MESSAGE: {message}")
             return
-
-        print(f"END_COUNT: {self.counter}")
 
 
 class DockerSyslogActor(DockerSmokeTestActor):
