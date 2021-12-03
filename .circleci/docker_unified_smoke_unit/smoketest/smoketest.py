@@ -881,6 +881,8 @@ class DockerAPIActor(DockerSmokeTestActor):
                 process_name=process_name,
             )
 
+        raise RuntimeError("33333")
+
         success = len(self._seen_matching_lines) == 1 + 2 + 2
         if success:
             print(
@@ -894,7 +896,8 @@ class DockerAPIActor(DockerSmokeTestActor):
         log_path = self._get_uploader_override_logfilename_regex(
             stream_name=stream_name, process_name=process_name
         )
-        raise
+
+        raise RuntimeError("22222")
 
         if not hasattr(self, "counter"):
             setattr(self, "counter", -1)
