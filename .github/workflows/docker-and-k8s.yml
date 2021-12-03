@@ -78,13 +78,6 @@ jobs:
     if: ${{ inputs.publish == true &&  (github.ref == 'refs/heads/master' || github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
 
-
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -93,7 +86,7 @@ jobs:
         id: qemu
         uses: docker/setup-qemu-action@v1
         with:
-          image: tonistiigi/binfmt:latest
+          image: tonistiigi/binfmt:qemu-v6.1.0
           platforms: all
 
       - name: Set up Docker Buildx
@@ -101,34 +94,13 @@ jobs:
         with:
           driver-opts: network=host
 
-      - name: Push image from master branch.
+      - name: Push image useing the master branch commit SHA.
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
 
           python3 build_package_new.py ${{ inputs.image-type }} \
             --push \
-            --registry \
-            localhost:5000 \
             --tag ${{ github.sha }}
-
-      - name: Push image using master branch commit hash.
-        if: ${{ github.ref_type == 'tag' }}
-        run: |
-
-          if [[ "${{ github.ref_name }}" == "v$(cat VERSION)" ]]; then
-            # if the this is a "release" tag with format "v*.*.*", then use version as tag
-            # also add the 'latest' tag.
-            tags="--tag $(cat VERSION) --tag latest"
-          else
-            # Just use GitHub tag as image tag.
-            tags="--tag ${{ github.ref_name }}"
-          fi
-
-          python3 build_package_new.py ${{ inputs.image-type }} \
-            --push \
-            --registry \
-            localhost:5000 \
-            $tags
 
 
 
