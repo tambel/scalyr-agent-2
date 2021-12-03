@@ -898,8 +898,6 @@ class DockerAPIActor(DockerSmokeTestActor):
             stream_name=stream_name, process_name=process_name
         )
 
-        raise RuntimeError("22222")
-
         if not hasattr(self, "counter"):
             setattr(self, "counter", -1)
 
