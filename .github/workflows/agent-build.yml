@@ -23,7 +23,7 @@ jobs:
               core.setFailed("The current branch is '${{ github.ref_name }}' but it has to be 'arthur/images_check'")
 
   docker-json:
-    uses: scalyr/scalyr-agent-2/.github/workflows/docker-and-k8s.yml@arthur/images_check
+    uses: .github/workflows/docker-and-k8s.yml
     with:
       image-type: docker-json
     secrets:
