@@ -24,8 +24,8 @@ pip_cache_dir="$(python3 -m pip cache dir)"
 restore_from_cache pip "$pip_cache_dir"
 
 EXAMPLE_STEP_DIR="$SOURCE_ROOT/agent_build/tools/tests/fixtures/example_steps"
-sh_c python3 -m pip install -r "${EXAMPLE_STEP_DIR}/requirements-1.txt"
-sh_c python3 -m pip install -r "${EXAMPLE_STEP_DIR}/requirements-2.txt"
+sh_cs python3 -m pip install -r "${EXAMPLE_STEP_DIR}/requirements-1.txt"
+sh_cs python3 -m pip install -r "${EXAMPLE_STEP_DIR}/requirements-2.txt"
 
 
 tmp_dir=$(sh_cs mktemp -d)

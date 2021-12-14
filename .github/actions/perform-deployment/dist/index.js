@@ -57955,6 +57955,14 @@ async function checkAndSaveCache(
         return
     }
 
+    console.log("RRRRRRRRR")
+    fs.readdir(fullPath, (err, files) => {
+      files.forEach(file => {
+        console.log(file);
+      });
+    });
+
+
     // If there's no cache hit, then save directory to the cache now.
     if (isHit) {
         console.log(`Cache for the deployment step with key ${cacheKey} has been hit. Skip saving.`)
