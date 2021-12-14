@@ -376,7 +376,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
         if type(self).SCRIPT_PATH.suffix == ".ps1":
             command_args = ["powershell", str(type(self).SCRIPT_PATH)]
         else:
-            shell = shutil.which("bash")
+            shell = "/bin/sh"
 
             # For the bash scripts, there is a special 'step_runner.sh' bash file that runs the given shell script
             # and also provides some helper functions such as caching.
