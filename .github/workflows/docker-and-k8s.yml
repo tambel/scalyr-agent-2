@@ -67,13 +67,31 @@ jobs:
         run: |
           minikube start
 
+      - name: Get checksum of the image.
+        run: |
+          python3 build_package_new.py ${{ inputs.image-type }} --files-checksum > image_files_checksum.txt
+
+
+      - name: Cache docker buildx cache.
+        uses: actions/cache@v2
+        with:
+          path: ~/docker-test-image-build-cache
+          key: agent-docker-image-buildx-cache-${{ hashFiles('image_files_checksum.txt') }}
+
       - name: Run image test.
         env:
             SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
-          python3 tests/package_tests/run_package_test.py run-package-test \
+
+          mv ~/docker-test-image-build-cache ~/docker-test-image-build-cache-in
+          mkdir -p ~/docker-test-image-build-cache
+
+          python3 tests/package_tests/run_package_test.py package-test \
             ${{ inputs.image-type}}_test \
-            --name-suffix "_${{ github.run_number }}${{ github.run_attempt }}"
+            --name-suffix "_${{ github.run_number }}${{ github.run_attempt }}" \
+            --cache-from-dir ~/docker-test-image-build-cache-in \
+            --cache-to-dir ~/docker-test-image-build-cache
+
 
 
   publish:
