@@ -16,8 +16,6 @@
 import abc
 import pathlib as pl
 import shlex
-import shutil
-import hashlib
 import re
 import subprocess
 import logging
@@ -408,7 +406,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
         try:
             output = common.run_command(
                 command_args,
-                debug=common.DEBUG,
+                debug=True,
             ).decode()
         except subprocess.CalledProcessError as e:
             raise DeploymentStepError(
