@@ -866,11 +866,11 @@ class ContainerPackageBuilder(
         # Add caching options if specified.
         if cache_from_path:
             command_options.append(
-                f"--cache-from=type=local,src={cache_from_path}",
+                f"--cache-from=type=local,mode=max,src={cache_from_path}",
             )
         if cache_to_path:
             command_options.append(
-                f"--cache-to=type=local,dest={cache_to_path}",
+                f"--cache-to=type=local,mode=max,dest={cache_to_path}",
             )
 
         if common.DEBUG:
