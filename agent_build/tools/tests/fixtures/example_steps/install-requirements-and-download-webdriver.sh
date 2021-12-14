@@ -23,7 +23,7 @@ pip_cache_dir="$(python3 -m pip cache dir)"
 # Reuse cached pip cache if exists.
 restore_from_cache pip "$pip_cache_dir"
 
-EXAMPLE_STEP_DIR="$SOURCE_ROOT/agent_build/tools/environment_deployments/steps/example"
+EXAMPLE_STEP_DIR="$SOURCE_ROOT/agent_build/tools/tests/fixtures/example_steps"
 sh_c python3 -m pip install -r "${EXAMPLE_STEP_DIR}/requirements-1.txt"
 sh_c python3 -m pip install -r "${EXAMPLE_STEP_DIR}/requirements-2.txt"
 
@@ -36,7 +36,6 @@ if [[ ! -d "$tmp_dir/webdriver" ]]; then
   log "Download webdriver."
   sh_c mkdir "$tmp_dir/webdriver"
   sh_cs curl -L https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz > "$tmp_dir/webdriver.tar.gz"
-  ls -al "$tmp_dir/webdriver.tar.gz"
   sh_c tar -xf "$tmp_dir/webdriver.tar.gz" -C "$tmp_dir/webdriver"
 fi
 
