@@ -76,7 +76,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/docker-test-image-build-cache
-          key: agent-docker-image-buildx-cache-${{ hashFiles('image_files_checksum.txt') }}
+          key: agent-docker-image-buildx-cache-${{ inputs.image-type }}-${{ hashFiles('image_files_checksum.txt') }}
 
       - name: Run image test.
         env:
