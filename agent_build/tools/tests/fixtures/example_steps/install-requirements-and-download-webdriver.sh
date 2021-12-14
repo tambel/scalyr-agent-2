@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2014-2021 Scalyr Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ tmp_dir=$(sh_cs mktemp -d)
 restore_from_cache webdriver "$tmp_dir/webdriver"
 
 # Download the webdriver if it doesn't exist.
-if [[ ! -d "$tmp_dir/webdriver" ]]; then
+if [ ! -d "$tmp_dir/webdriver" ]; then
   log "Download webdriver."
   sh_c mkdir "$tmp_dir/webdriver"
   sh_cs curl -L https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz > "$tmp_dir/webdriver.tar.gz"
