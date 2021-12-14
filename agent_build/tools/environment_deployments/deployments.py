@@ -575,6 +575,8 @@ class Deployment:
             # the Github Actions cache. See more in ".github/actions/perform-deployment"
             if cache_dir:
                 step_cache_path = cache_dir / step.cache_key
+                if not step_cache_path.is_dir():
+                    step_cache_path.mkdir(parents=True)
             else:
                 step_cache_path = None
 
