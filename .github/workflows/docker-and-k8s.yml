@@ -83,6 +83,7 @@ jobs:
             SCALYR_API_KEY: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}
         run: |
 
+          mkdir -p ~/docker-test-image-build-cache
           mv ~/docker-test-image-build-cache ~/docker-test-image-build-cache-in
           mkdir -p ~/docker-test-image-build-cache
 
