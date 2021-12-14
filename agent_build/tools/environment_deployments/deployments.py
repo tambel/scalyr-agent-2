@@ -586,14 +586,14 @@ class Deployment:
             # NOTE: Those sub-folders are used by our special Github-Actions action that caches all such sub-folders to
             # the Github Actions cache. See more in ".github/actions/perform-deployment"
             if cache_dir:
-                step_cache_path = cache_dir / step.cache_key
+                step_cache_path = cache_dir.absolute() / step.cache_key
                 if not step_cache_path.is_dir():
                     step_cache_path.mkdir(parents=True)
             else:
                 step_cache_path = None
 
             step.run(
-                cache_dir=step_cache_path.absolute(),
+                cache_dir=step_cache_path,
             )
 
 
