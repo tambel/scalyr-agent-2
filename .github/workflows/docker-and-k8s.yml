@@ -45,6 +45,9 @@ jobs:
         with:
           deployment-name: "test_environment"
 
+      - run: |
+          ls deployment_caches
+
       - name: Sanity check deployments logic by running internal tests.
         run: |
           python3 -m pytest agent_build/tools/tests
