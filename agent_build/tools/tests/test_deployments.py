@@ -3,6 +3,7 @@ import sys
 import subprocess
 import pathlib as pl
 
+import mock.mock
 import pytest
 
 from agent_build.tools import constants
@@ -88,7 +89,12 @@ def test_example_deployment(
             example_deployment.result_image_name
         ])
 
-    example_deployment.deploy(cache_dir=cache_path)
+    # mock real save docker image function to skip real image saving and to save time.
+    def step_save_image_mock(image_name: str, output_path: pl.Path):
+        output_path.touch()
+
+    with mock.patch.object(deployments, "save_docker_image", step_save_image_mock):
+        example_deployment.deploy(cache_dir=cache_path)
 
     # Check if the deployment created all needed cache directories.
     deployment_step_cache_path = cache_path / example_deployment_step.cache_key

@@ -37,6 +37,19 @@ _REL_AGENT_REQUIREMENT_FILES_PATH = _REL_AGENT_BUILD_PATH / "requirement-files"
 _REL_DEPLOYMENT_STEPS_PATH = pl.Path("agent_build/tools/environment_deployments/steps")
 
 
+def save_docker_image(image_name: str, output_path: pl.Path):
+    """
+    Serialize docker image into file by using 'docker save' command.
+    This is made as a separate function only for testing purposes.
+    :param image_name: Name of the image to save.
+    :param output_path: Result output file.
+    """
+    with output_path.open("wb") as f:
+        common.check_call_with_log(
+            ["docker", "save", image_name], stdout=f
+        )
+
+
 class DeploymentStepError(Exception):
     """
     Special exception class for the deployment step error.
@@ -255,10 +268,11 @@ class DeploymentStep(files_checksum_tracker.FilesChecksumTracker):
             logging.info(
                 f"Saving image '{self.result_image_name}' file for the deployment step {self.name} into cache."
             )
-            with cached_image_path.open("wb") as f:
-                common.check_call_with_log(
-                    ["docker", "save", self.result_image_name], stdout=f
-                )
+            save_docker_image(
+                image_name=self.result_image_name,
+                output_path=cached_image_path
+            )
+
 
     @abc.abstractmethod
     def _run_locally(
