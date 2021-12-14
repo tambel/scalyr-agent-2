@@ -593,7 +593,7 @@ class Deployment:
                 step_cache_path = None
 
             step.run(
-                cache_dir=step_cache_path,
+                cache_dir=step_cache_path.absolute(),
             )
 
 
