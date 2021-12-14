@@ -64,7 +64,7 @@ def example_deployment(request):
 
 @pytest.mark.parametrize(
     ["example_deployment"],
-    [[""], ["in_docker"]],
+    [["locally"], ["in_docker"]],
     indirect=True
 )
 def test_example_deployment(
