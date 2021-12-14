@@ -479,7 +479,7 @@ class ShellScriptDeploymentStep(DeploymentStep):
                     image_name=self.result_image_name,
                     work_dir=container_source_root,
                     base_image_name=intermediate_image_name,
-                    debug=common.DEBUG
+                    debug=True
                 )
             except build_in_docker.RunDockerBuildError as e:
                 raise DeploymentStepError(stdout=e.stdout)
