@@ -16,6 +16,8 @@ jobs:
         # Because of the issue https://github.community/t/ref-head-in-reusable-workflows/203690
         # there's no way to specify local re-usable workflow. The branch of the workflow has to be specified manually and statically
         # To avoid confusion, run this check that will fail if the current branch does not match the branch of the workflow.
+        # TODO: Create pre-commit hook that verifies branch name and changes it if needed. That may be a good workaround
+        # until Github add needed feature.
         if: ${{ github.ref_type == 'branch' && github.ref_name != 'check-image-caching' }}
         uses: actions/github-script@v3
         with:
