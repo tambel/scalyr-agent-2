@@ -130,9 +130,8 @@ def test_deployment_step_with_untracked_file(caplog, capsys):
 
         captured_output = capsys.readouterr()
 
-        raise RuntimeError(captured_output.err)
-
-        assert "VERSION: No such file or directory" in captured_output.err
+        assert "No such file or directory" in captured_output.err
+        assert "VERSION" in captured_output.err
         assert "HINT: Make sure that you have specified all files." in caplog.text
     finally:
         deployments.ALL_DEPLOYMENTS.pop("example_environment_untracked")
