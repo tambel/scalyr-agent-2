@@ -17,9 +17,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import shutil
-import docker
 import argparse
 import hashlib
+from abc import ABCMeta
 
 if False:  # NOSONAR
     from typing import Optional
@@ -28,8 +28,8 @@ if False:  # NOSONAR
     from typing import Dict
     from typing import Callable
 
-from abc import ABCMeta
-
+import docker
+import docker.errors
 import six
 
 from scalyr_agent.__scalyr__ import get_package_root
@@ -184,12 +184,19 @@ class AgentImageBuilder(object):
         dockerfile_path.write_text(self.get_dockerfile_content())
         self._copy_to_build_context(build_context_path)
 
-        _, output_gen = self._docker_client.images.build(
-            tag=self.image_tag,
-            path=six.text_type(build_context_path),
-            dockerfile=six.text_type(dockerfile_path),
-            rm=True,
-        )
+        try:
+            _, output_gen = self._docker_client.images.build(
+                tag=self.image_tag,
+                path=six.text_type(build_context_path),
+                dockerfile=six.text_type(dockerfile_path),
+                rm=True,
+            )
+        except docker.errors.BuildError as e:
+            for log_chunk in e.build_log:
+                stream = log_chunk.get("stream")
+                if stream:
+                    print(stream)
+            raise
 
         shutil.rmtree(six.text_type(build_context_path), ignore_errors=True)
 
