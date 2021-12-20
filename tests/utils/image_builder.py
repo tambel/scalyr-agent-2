@@ -184,19 +184,12 @@ class AgentImageBuilder(object):
         dockerfile_path.write_text(self.get_dockerfile_content())
         self._copy_to_build_context(build_context_path)
 
-        try:
-            _, output_gen = self._docker_client.images.build(
-                tag=self.image_tag,
-                path=six.text_type(build_context_path),
-                dockerfile=six.text_type(dockerfile_path),
-                rm=True,
-            )
-        except docker.errors.BuildError as e:
-            for log_chunk in e.build_log:
-                stream = log_chunk.get("stream")
-                if stream:
-                    print(stream)
-            raise
+        _, output_gen = self._docker_client.images.build(
+            tag=self.image_tag,
+            path=six.text_type(build_context_path),
+            dockerfile=six.text_type(dockerfile_path),
+            rm=True,
+        )
 
         shutil.rmtree(six.text_type(build_context_path), ignore_errors=True)
 
