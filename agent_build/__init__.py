@@ -13,4 +13,4 @@
 # limitations under the License.
 
 # Import compat library to fix Python compatibility issues.
-import tools.compat
+import agent_build.tools.compat
