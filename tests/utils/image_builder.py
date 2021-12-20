@@ -29,7 +29,6 @@ if False:  # NOSONAR
     from typing import Callable
 
 import docker
-import docker.errors
 import six
 
 from scalyr_agent.__scalyr__ import get_package_root
