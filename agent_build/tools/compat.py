@@ -24,6 +24,7 @@ if sys.version_info < (3, 8):
     shlex.join = shlex_join
 
     import logging
+
     original_logger_log = logging.Logger._log
 
     # monkey patch logger's _log method so it ignores 'stacklevel' argument.
