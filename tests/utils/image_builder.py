@@ -29,13 +29,12 @@ if False:  # NOSONAR
     from typing import Callable
 
 import docker
+import docker.errors
 import six
 
 from scalyr_agent.__scalyr__ import get_package_root
 from tests.utils.common import create_tmp_directory
 from tests.utils.compat import Path
-
-import docker.errors
 
 
 def _copy_agent_source(src_path, dest_path):
