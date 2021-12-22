@@ -113,6 +113,7 @@ def _test(
         # TODO: add more checks.
     finally:
         agent_log_tail_process.terminate()
+        print(agent_log_tester._content)
 
     logging.info("Test passed!")
 
