@@ -105,7 +105,7 @@ async function performDeployment() {
 
     const deploymentName = core.getInput("deployment-name")
     const cacheVersionSuffix = core.getInput("cache-version-suffix")
-    const cacheDir = path.resolve(path.join("agent_build_output", "deployment_cache"))
+    const cacheDir = path.resolve(path.join("agent_build_output", "deployment_cache", deploymentName))
 
     if (!fs.existsSync(cacheDir)) {
         fs.mkdirSync(cacheDir,{recursive: true})

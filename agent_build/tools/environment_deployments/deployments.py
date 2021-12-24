@@ -14,12 +14,14 @@
 
 
 import abc
+import os
 import pathlib as pl
 import shlex
 import re
 import shutil
 import subprocess
 import logging
+import sys
 from typing import Union, Optional, List, Dict, Type
 
 from agent_build.tools import common
@@ -73,10 +75,6 @@ class DeploymentStep(files_checksum_tracker.FilesChecksumTracker):
         CI/CD such as Github Actions.
     """
 
-    # Set of files that are somehow used during the step. Needed to calculate the checksum of the whole step, so it can
-    # be used as cache key.
-    USED_FILES: List[pl.Path] = []
-
     def __init__(
         self,
         deployment: 'Deployment',
@@ -112,14 +110,15 @@ class DeploymentStep(files_checksum_tracker.FilesChecksumTracker):
             self.previous_step = None
 
         # personal cache directory of the step.
-        self.cache_directory = constants.DEPLOYMENT_CACHE_DIR / self.cache_key
+        self.cache_directory = self.deployment.cache_directory / self.cache_key
+        self.output_directory = self.deployment.output_directory / self.unique_name
 
     @property
     def _tracked_file_globs(self) -> List[pl.Path]:
         """
         Get filed that has to be tracked by the step in order to calculate checksum, for caching.
         """
-        return type(self).USED_FILES[:]
+        return []
 
     @property
     def name(self) -> str:
@@ -365,9 +364,6 @@ class ShellScriptDeploymentStep(DeploymentStep):
     The deployment step class which is a wrapper around some shell script.
     """
 
-    # Path to  the script file that has to be executed during the step.
-    SCRIPT_PATH: pl.Path
-
     def __init__(
         self,
         deployment: 'Deployment',
@@ -381,10 +377,19 @@ class ShellScriptDeploymentStep(DeploymentStep):
         )
 
     @property
+    @abc.abstractmethod
+    def script_path(self) -> pl.Path:
+        """
+        Path to  the script file that has to be executed during the step.
+        """
+        pass
+
+
+    @property
     def _tracked_file_globs(self) -> List[pl.Path]:
         # Also add script to the used file collection, so it is included to the checksum calculation.
         script_files = [
-            type(self).SCRIPT_PATH,
+            self.script_path,
             _REL_DEPLOYMENT_STEPS_PATH / "step_runner.sh",
         ]
         return super(ShellScriptDeploymentStep, self)._tracked_file_globs + script_files
@@ -397,8 +402,8 @@ class ShellScriptDeploymentStep(DeploymentStep):
         """
 
         # Determine needed shell interpreter.
-        if type(self).SCRIPT_PATH.suffix == ".ps1":
-            command_args = ["powershell", str(type(self).SCRIPT_PATH)]
+        if self.script_path.suffix == ".ps1":
+            command_args = ["powershell", self.script_path]
         else:
             shell = "/bin/sh"
 
@@ -410,13 +415,14 @@ class ShellScriptDeploymentStep(DeploymentStep):
             command_args = [
                 shell,
                 str(step_runner_script_path),
-                str(type(self).SCRIPT_PATH),
+                str(self.script_path),
             ]
 
-        # If in CI/CD, then we pass cache directory as an additional argument to the
+        # Pass cache directory as an additional argument to the
         # script, so it can use the cache too.
-        if common.IN_CICD:
-            command_args.append(str(pl.Path(self.cache_directory)))
+        command_args.append(str(pl.Path(self.cache_directory)))
+
+        command_args.append(str(self.deployment.output_directory))
 
         return command_args
 
@@ -426,9 +432,16 @@ class ShellScriptDeploymentStep(DeploymentStep):
         """
         command_args = self._get_command_line_args()
 
+        # Copy current environment.
+        env = os.environ.copy()
+
+        if common.IN_CICD:
+            env["IN_CICD"] = "1"
+
         try:
             output = common.run_command(
                 command_args,
+                env=env,
                 debug=True,
             ).decode()
         except subprocess.CalledProcessError as e:
@@ -534,6 +547,8 @@ class Deployment:
         self.name = name
         self.architecture = architecture
         self.base_docker_image = base_docker_image
+        self.cache_directory = constants.DEPLOYMENT_CACHE_DIR / self.name
+        self.output_directory = constants.DEPLOYMENT_OUTPUT / self.name
 
         # List with instantiated steps.
         self.steps = []
@@ -603,17 +618,22 @@ def get_deployment_by_name(name: str) -> Deployment:
 
 # Step that runs small script which installs requirements for the test/dev environment.
 class InstallTestRequirementsDeploymentStep(ShellScriptDeploymentStep):
-    SCRIPT_PATH = _REL_DEPLOYMENT_STEPS_PATH / "deploy-test-environment.sh"
-    USED_FILES = [
-        _REL_AGENT_REQUIREMENT_FILES_PATH / "*.txt",
-    ]
+    @property
+    def script_path(self) -> pl.Path:
+        return _REL_DEPLOYMENT_STEPS_PATH / "deploy-test-environment.sh"
+
+    @property
+    def _tracked_file_globs(self) -> List[pl.Path]:
+        globs = super(InstallTestRequirementsDeploymentStep, self)._tracked_file_globs
+        globs.append(_REL_AGENT_REQUIREMENT_FILES_PATH / "*.txt")
+        return globs
 
 
 _REL_DOCKER_BASE_IMAGE_STEP_PATH = _REL_DEPLOYMENT_STEPS_PATH / "docker-base-images"
 _REL_AGENT_BUILD_DOCKER_PATH = _REL_AGENT_BUILD_PATH / "docker"
 
 
-class BuildDockerBaseImageStep(DeploymentStep):
+class BuildDockerBaseImageStep2(DeploymentStep):
     """
     This deployment step (not this, but it's subclasses) builds base image for the agent docker images.
 
@@ -732,18 +752,43 @@ class BuildDockerBaseImageStep(DeploymentStep):
             self._save_to_cache("output_registry", step_output_dir_path)
 
 
+_REL_DEPLOYMENT_BUILD_BASE_IMAGE_STEP = _REL_DEPLOYMENT_STEPS_PATH / "build_base_docker_image"
+
+
+class BuildDockerBaseImageStep(ShellScriptDeploymentStep):
+    BASE_DOCKER_IMAGE_TAG_SUFFIX: str
+
+    @property
+    def script_path(self) -> pl.Path:
+        return _REL_DEPLOYMENT_BUILD_BASE_IMAGE_STEP / f"{type(self).BASE_DOCKER_IMAGE_TAG_SUFFIX}.sh"
+
+    @property
+    def _tracked_file_globs(self) -> List[pl.Path]:
+        globs = super(BuildDockerBaseImageStep, self)._tracked_file_globs
+        # Track the dockerfile...
+        globs.append(_REL_AGENT_BUILD_DOCKER_PATH / "Dockerfile.base")
+        # .. and requirement files.
+        globs.append(
+            _REL_DEPLOYMENT_BUILD_BASE_IMAGE_STEP / "build_base_images_common_lib.sh"
+        )
+        globs.append(_REL_AGENT_REQUIREMENT_FILES_PATH / "docker-image-requirements.txt")
+        globs.append(_REL_AGENT_REQUIREMENT_FILES_PATH / "compression-requirements.txt")
+        globs.append(_REL_AGENT_REQUIREMENT_FILES_PATH / "main-requirements.txt")
+        return globs
+
+
 class BuildBusterDockerBaseImageStep(BuildDockerBaseImageStep):
     """
     Subclass that builds agent's base docker image based on debian buster (slim)
     """
-    BASE_IMAGE_NAME_SUFFIX = "slim"
+    BASE_DOCKER_IMAGE_TAG_SUFFIX = "slim"
 
 
 class BuildAlpineDockerBaseImageStep(BuildDockerBaseImageStep):
     """
     Subclass that builds agent's base docker image based on alpine.
     """
-    BASE_IMAGE_NAME_SUFFIX = "alpine"
+    BASE_DOCKER_IMAGE_TAG_SUFFIX = "alpine"
 
 
 # Create common test environment that will be used by GitHub Actions CI

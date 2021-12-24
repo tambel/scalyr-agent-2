@@ -726,6 +726,8 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
             deployment_step_classes=[base_image_deployment_step_cls]
         )
 
+        self.base_image_deployment_step_cls = base_image_deployment_step_cls
+
         self.config_path = config_path
 
     @property
@@ -866,12 +868,13 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
 
         logging.info("Build base image.")
 
-        base_image_name = deployments.BuildDockerBaseImageStep.BASE_IMAGE_NAME
+        base_image_tag_suffix = self.base_image_deployment_step_cls.BASE_DOCKER_IMAGE_TAG_SUFFIX
 
         if use_test_version:
             logging.info("Build testing image version.")
-            # Use another base image if testing is enabled.
-            base_image_name = f"{base_image_name}_testing"
+            base_image_tag_suffix = f"{base_image_tag_suffix}-testing"
+
+        base_image_name = f"agent_base_image:{base_image_tag_suffix}"
 
         registries = registries or [""]
         tags = tags or ["latest"]

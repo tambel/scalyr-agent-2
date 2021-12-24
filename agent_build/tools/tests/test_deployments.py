@@ -14,6 +14,7 @@
 import shutil
 import subprocess
 import pathlib as pl
+from typing import List
 
 import mock
 import pytest
@@ -30,12 +31,15 @@ _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH = _PARENT_REL_DIR / "fixtures/example_steps"
 
 # This is just an example of the deployment step. It is used only in tests.
 class ExampleStep(deployments.ShellScriptDeploymentStep):
-    SCRIPT_PATH = (
-        _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH
-        / "install-requirements-and-download-webdriver.sh"
-    )
-    USED_FILES = [
-        _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH / "requirements-*.txt",
+    @property
+    def script_path(self) -> pl.Path:
+        return _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH / "install-requirements-and-download-webdriver.sh"
+
+    @property
+    def _tracked_file_globs(self) -> List[pl.Path]:
+        return [
+            *super(ExampleStep, self)._tracked_file_globs,
+            _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH / "requirements-*.txt",
     ]
 
 
@@ -125,9 +129,9 @@ def test_deployment_step_with_untracked_file(caplog, capsys):
     """
 
     class ExampleInvalidStepWithUntrackedFiles(deployments.ShellScriptDeploymentStep):
-        SCRIPT_PATH = (
-            _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH / "install-with-untracked-file.sh"
-        )
+        @property
+        def script_path(self) -> pl.Path:
+            return _REL_EXAMPLE_DEPLOYMENT_STEPS_PATH / "install-with-untracked-file.sh"
 
     deployment = deployments.Deployment(
         name="example_environment_untracked",
