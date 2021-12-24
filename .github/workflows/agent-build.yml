@@ -9,7 +9,7 @@ env:
 
 # Agent Docker image tests
 jobs:
-  build-docker-images:
+  build-images:
     uses: scalyr/scalyr-agent-2/.github/workflows/docker-and-k8s.yml@refactor-deployment-caching
     secrets:
       SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN: ${{ secrets.SCALYR_PROD_CLOUDTECH_TESTING_WRITE_TOKEN }}

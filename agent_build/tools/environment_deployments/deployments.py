@@ -605,8 +605,7 @@ def get_deployment_by_name(name: str) -> Deployment:
 class InstallTestRequirementsDeploymentStep(ShellScriptDeploymentStep):
     SCRIPT_PATH = _REL_DEPLOYMENT_STEPS_PATH / "deploy-test-environment.sh"
     USED_FILES = [
-        _REL_AGENT_REQUIREMENT_FILES_PATH / "testing-requirements.txt",
-        _REL_AGENT_REQUIREMENT_FILES_PATH / "compression-requirements.txt",
+        _REL_AGENT_REQUIREMENT_FILES_PATH / "*.txt",
     ]
 
 
