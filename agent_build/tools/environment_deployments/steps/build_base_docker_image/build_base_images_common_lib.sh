@@ -37,11 +37,10 @@ registry_output_path="$STEP_OUTPUT_PATH/output_registry"
 # Check if registry data root already exists in cache.
 restore_from_cache output_registry "$registry_output_path"
 
-if [ -d registry_output_path ]; then
+if [ -d "$registry_output_path" ]; then
   log "Registry data root is found in cache. Skip building of the base image and reuse it from found registry."
   exit 0
 fi
-
 
 log "Registry data root is not found in cache, build image from scratch"
 sh_cs mkdir -p "$registry_output_path"

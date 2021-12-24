@@ -55,7 +55,7 @@ jobs:
         run: |
           python3 -m pytest agent_build/tools/tests
 
-      - name: Perform the build if the base docker image in the deployment.
+      - name: Perform the build of the base docker image in the deployment.
         uses: ./.github/actions/perform-deployment
         with:
           deployment-name: ${{ matrix.image-type }}-${{ matrix.image-distro-name }}

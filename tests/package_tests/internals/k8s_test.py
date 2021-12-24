@@ -149,8 +149,31 @@ def _test(image_name: str, architecture: constants.Architecture, scalyr_api_key:
         .strip()
     )
 
-    # Wait a little.
-    time.sleep(3)
+    agent_log_pool_retry_delay = 3
+    # try to poll the agent.log file while the agent is starting inside its container.
+    for _ in range(10):
+        time.sleep(agent_log_pool_retry_delay)
+        try:
+            subprocess.check_call([
+                "kubectl",
+                "exec",
+                pod_name,
+                "--container",
+                "scalyr-agent",
+                "--",
+                "ls",
+                "/var/log/scalyr-agent-2/agent.log",
+            ])
+            break
+        except subprocess.CalledProcessError:
+            logging.info(
+                "The agent has to be started, but the agent.log file has not been found yet. "
+                f"Retry in {agent_log_pool_retry_delay} sec."
+            )
+            continue
+
+    else:
+        raise TimeoutError("Can not read the agent.log file before the timeout.")
 
     # Execute tail -f command on the agent.log inside the pod to read its content.
     agent_log_tail_process = subprocess.Popen(
