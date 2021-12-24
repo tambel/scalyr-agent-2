@@ -105,7 +105,7 @@ async function performDeployment() {
 
     const deploymentName = core.getInput("deployment-name")
     const cacheVersionSuffix = core.getInput("cache-version-suffix")
-    const cacheDir = path.join("agent_build_output", "deployment_cache")
+    const cacheDir = path.resolve(path.join("agent_build_output", "deployment_cache"))
 
     // Get json list with names of all deployments which are needed for this deployment.
     const deployment_helper_script_path = path.join("agent_build", "scripts", "run_deployment.py")
