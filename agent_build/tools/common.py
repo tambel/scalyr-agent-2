@@ -115,6 +115,9 @@ def run_command(*args, debug: bool = False, **kwargs):
 
     stdout = b"\n".join(lines)
     if process.returncode != 0:
+        if not debug:
+            # Even if it's not debug print output on error.
+            print(stdout.decode(), file=sys.stderr)
         raise subprocess.CalledProcessError(
             returncode=process.returncode, cmd=cmd_args, output=stdout
         )

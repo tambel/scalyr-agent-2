@@ -3,10 +3,6 @@ name: Docker Images Build
 
 on: [push]
 
-env:
-  # Set this variable to tell the agent build code that it runs in CI/CD and it needs to use caching.
-  IN_CICD: "1"
-
 # Agent Docker image tests
 jobs:
   build-images:
