@@ -57999,6 +57999,10 @@ async function performDeployment() {
     const cacheVersionSuffix = core.getInput("cache-version-suffix")
     const cacheDir = path.resolve(path.join("agent_build_output", "deployment_cache"))
 
+    if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir,{recursive: true})
+    }
+
     // Get json list with names of all deployments which are needed for this deployment.
     const deployment_helper_script_path = path.join("agent_build", "scripts", "run_deployment.py")
     // Run special github-related helper command which returns names for all deployments, which are used in the current
