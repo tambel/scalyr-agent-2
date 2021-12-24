@@ -661,9 +661,6 @@ class LinuxFhsBasedPackageBuilder(LinuxPackageBuilder):
         original_install_root = super(LinuxFhsBasedPackageBuilder, self)._agent_install_root_path
         return original_install_root / "usr/share/scalyr-agent-2"
 
-    def _build_agent_install_root(self):
-        super(LinuxFhsBasedPackageBuilder, self)._build_agent_install_root()
-
     def _build_package_files(self):
 
         super(LinuxFhsBasedPackageBuilder, self)._build_package_files()
@@ -828,7 +825,7 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
             # If there's not a CI/CD then the deployment has to be done explicitly.
             # If there is an CI/CD, then the deployment has to be already done.
 
-            # The ready deployment is required because if builds the base image of out result image.
+            # The ready deployment is required because it builds the base image of out result image.
             self.deployment.deploy()
 
         # Create docker buildx builder instance. # Without it the result image won't be pushed correctly
@@ -956,19 +953,21 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
 
         registry_data_path = self.deployment.output_path / "output_registry"
 
+        # Create container with local image registry. And mount existing registry root with base images.
         registry_container = build_in_docker.LocalRegistryContainer(
             name="output_registry_path",
             registry_port=5000,
             registry_data_path=registry_data_path
         )
 
+        # Start registry and run build of the final docker image. Build process will refer the the
+        # base image in the local registry.
         with registry_container:
             common.run_command(
                 command_options,
                 # This command runs partially runs the same code, so it would be nice to see the output.
                 debug=True,
             )
-
 
 
 class K8sPackageBuilder(ContainerPackageBuilder):
