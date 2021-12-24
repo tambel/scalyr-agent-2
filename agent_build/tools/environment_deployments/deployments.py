@@ -119,7 +119,7 @@ class DeploymentStep(files_checksum_tracker.FilesChecksumTracker):
         """
         Get filed that has to be tracked by the step in order to calculate checksum, for caching.
         """
-        return type(self).USED_FILES
+        return type(self).USED_FILES[:]
 
     @property
     def name(self) -> str:
