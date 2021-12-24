@@ -54,7 +54,7 @@ jobs:
       - name: Perform the build if the base docker image in the deployment.
         uses: ./.github/actions/perform-deployment
         with:
-          deployment-name: ${{ matrix.image-type }}-${{ image-distro-name }}
+          deployment-name: ${{ matrix.image-type }}-${{ matrix.image-distro-name }}
 
       - name: Set up QEMU
         id: qemu
