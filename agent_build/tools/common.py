@@ -26,6 +26,9 @@ IN_DOCKER = bool(os.environ.get("AGENT_BUILD_IN_DOCKER"))
 # If this env. variable is set, than the code runs in CI/CD (e.g. Github actions)
 IN_CICD = bool(os.environ.get("AGENT_BUILD_IN_CICD"))
 
+if not IN_CICD:
+    raise RuntimeError("FEFEEEFE")
+
 # A counter for all commands that have been executed since start of the program.
 # Just for more informative logging.
 _COMMAND_COUNTER = 0
