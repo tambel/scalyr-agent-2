@@ -33,6 +33,10 @@ jobs:
         image-type: ["docker-json", "docker-syslog", "docker-api", "k8s"]
         image-distro-name: ["buster", "alpine"]
 
+    env:
+      # Set this variable to tell the agent build code that it runs in CI/CD and it needs to use caching.
+      AGENT_BUILD_IN_CICD: "1"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
