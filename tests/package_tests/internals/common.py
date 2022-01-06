@@ -281,20 +281,44 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
 
         error_line_pattern = re.compile(rf"{AGENT_LOG_LINE_TIMESTAMP} ERROR .*")
 
-        for i, line in enumerate(new_lines):
+        def get_stack_trace_lines():
+            nonlocal i
+
+            result = []
+
+            i += 1
+            while i < len(new_lines):
+                _line = new_lines[i]
+                if not re.match(rf"{AGENT_LOG_LINE_TIMESTAMP} .*", _line):
+                    result.append(_line)
+                    i += 1
+
+            return result
+
+        i = 0
+        while i < len(new_lines):
+            line = new_lines[i]
             if error_line_pattern.match(line):
-                lines_to_show = [line]
 
-                # for i2 in range(i + 1, len(new_lines)):
-                #     additional_line = new_lines[i2]
-                #     if not error_line_pattern.match(additional_line):
-                #         break
-                #
-                #     lines_to_show.append(additional_line)
+                connection_error_mgs = '[error="client/connectionFailed"] Failed to connect to "https://agent.scalyr.com" due to errno=-3.  ' \
+                                       'Exception was "[Errno -3] Try again".  Closing connection, will re-attempt :stack_trace:'
 
-                return (
-                    LogVerifierCheckResult.FAIL,
-                    f"Agent log contains error lines : {whole_log_text}",
-                )
+                to_fail = True
+                stack_trace = ""
+
+                if connection_error_mgs in line:
+                    stack_trace_lines = get_stack_trace_lines()
+                    stack_trace = "\n".join(stack_trace_lines)
+                    print("------")
+                    print(stack_trace)
+                    print("-------")
+                    if "socket.gaierror: [Errno -3] Try again" in stack_trace_lines[-1]:
+                        to_fail = False
+
+                if to_fail:
+                    return (
+                        LogVerifierCheckResult.FAIL,
+                        f"Agent log contains error line : {line}, traceback: {stack_trace}",
+                    )
 
         return LogVerifierCheckResult.SUCCESS
