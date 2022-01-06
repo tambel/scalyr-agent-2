@@ -350,7 +350,7 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
         if ignored_errors:
             message = "The next error lines have been ignored:\n"
 
-            for error in ignored_errors:
-                message = f"{message}1:\n{error}\n"
+            for i, error in enumerate(ignored_errors):
+                message = f"{message}{i}:\n{error}\n"
 
         return LogVerifierCheckResult.SUCCESS, message
