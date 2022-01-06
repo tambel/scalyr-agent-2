@@ -313,8 +313,7 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
             if error_line_pattern.match(line):
 
                 # There is an issue with dns resolution on GitHub actions side, so we skip some of the error messages.
-                connection_error_mgs = '[error="client/connectionFailed"] Failed to connect to "https://agent.scalyr.com" due to errno=-3.  ' \
-                                       'Exception was "[Errno -3] Try again".  Closing connection, will re-attempt :stack_trace:'
+                connection_error_mgs = '[error="client/connectionFailed"] Failed to connect to "https://agent.scalyr.com" due to errno=-3.'
 
                 to_fail = True
                 stack_trace = ""
@@ -331,7 +330,6 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
                     ]
                     for error_to_ignore in errors_to_ignore:
                         if error_to_ignore in stack_trace_lines[-1]:
-                            print("-------we3223432423423423")
                             to_fail = False
                             whole_error = "".join([line, stack_trace])
                             ignored_errors.append(whole_error)
