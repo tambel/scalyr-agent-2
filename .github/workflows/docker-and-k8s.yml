@@ -20,6 +20,8 @@ on:
 
 env:
   DOCKER_BUILDKIT: 1
+  # Set this variable to tell the agent build code that it runs in CI/CD and it needs to use caching.
+  AGENT_BUILD_IN_CICD: "1"
 
 concurrency: publish-release
 

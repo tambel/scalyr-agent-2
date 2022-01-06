@@ -226,7 +226,12 @@ def run(
     subprocess.check_call(["minikube", "image", "load", image_name])
 
     try:
-        _test(image_name, architecture, scalyr_api_key)
+        _test(
+            image_name,
+            architecture,
+            scalyr_api_key,
+            name_suffix=name_suffix
+        )
     finally:
         logging.info("Clean up. Removing all kubernetes objects...")
         _delete_k8s_objects()
