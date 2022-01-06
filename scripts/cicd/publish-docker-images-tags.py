@@ -133,6 +133,7 @@ if __name__ == '__main__':
     parser.add_argument("--git-ref-type")
     parser.add_argument("--git-commit-sha", required=False)
     parser.add_argument("--registry", required=False)
+    parser.add_argument("--user", required=False)
 
     args = parser.parse_args()
     main(
@@ -140,4 +141,5 @@ if __name__ == '__main__':
         git_ref_type=args.git_ref_type,
         git_commit_sha=args.git_commit_sha,
         registry=args.registry,
+        registry_user=args.user,
     )
