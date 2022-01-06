@@ -160,5 +160,5 @@ jobs:
             --git-ref-name ${{ github.ref_name }} \
             --git-ref-type ${{ github.ref_type }} \
             --git-commit-sha ${{ github.sha }} \
-            --registry-user ${{ secrets.DOCKER_HUB_USERNAME }}
+            --user ${{ secrets.DOCKER_HUB_USERNAME }}
 
