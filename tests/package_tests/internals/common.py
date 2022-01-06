@@ -276,11 +276,25 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
     def perform(
         self, new_text, whole_log_text
     ) -> Union[LogVerifierCheckResult, Tuple[LogVerifierCheckResult, str]]:
-        for line in io.StringIO(new_text):
-            if re.match(rf"{AGENT_LOG_LINE_TIMESTAMP} ERROR .*", line):
+
+        new_lines = io.StringIO(new_text).readlines()
+
+        error_line_pattern = re.compile(rf"{AGENT_LOG_LINE_TIMESTAMP} ERROR .*")
+
+        for i, line in enumerate(new_lines):
+            if error_line_pattern.match(line):
+                lines_to_show = [line]
+
+                # for i2 in range(i + 1, len(new_lines)):
+                #     additional_line = new_lines[i2]
+                #     if not error_line_pattern.match(additional_line):
+                #         break
+                #
+                #     lines_to_show.append(additional_line)
+
                 return (
                     LogVerifierCheckResult.FAIL,
-                    f"Agent log contains error line : {line}",
+                    f"Agent log contains error lines : {whole_log_text}",
                 )
 
         return LogVerifierCheckResult.SUCCESS
