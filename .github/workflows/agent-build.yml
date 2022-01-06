@@ -65,7 +65,7 @@ jobs:
       - name: Perform the build of the base docker image in the deployment.
         uses: ./.github/actions/perform-deployment
         with:
-          deployment-name: ${{ matrix.image-type }}-${{ matrix.image-distro-name }}_test
+          deployment-name: ${{ matrix.image-type }}-${{ matrix.image-distro-name }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
