@@ -282,6 +282,9 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
         error_line_pattern = re.compile(rf"{AGENT_LOG_LINE_TIMESTAMP} ERROR .*")
 
         def get_stack_trace_lines():
+            """
+            Closure that keeps iterating through lines in order to get lines of the expected traceback.
+            """
             nonlocal i
 
             result = []
@@ -289,9 +292,13 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
             i += 1
             while i < len(new_lines):
                 _line = new_lines[i]
-                if not re.match(rf"{AGENT_LOG_LINE_TIMESTAMP} .*", _line):
-                    result.append(_line)
-                    i += 1
+
+                # We know that this is a traceback line because it does not start with regular log message preamble.
+                if re.match(rf"{AGENT_LOG_LINE_TIMESTAMP} .*", _line):
+                    break
+
+                result.append(_line)
+                i += 1
 
             return result
 
@@ -300,6 +307,7 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
             line = new_lines[i]
             if error_line_pattern.match(line):
 
+                # There is an issue with dns resolution on GitHub actions side, so we skip some of the error messages.
                 connection_error_mgs = '[error="client/connectionFailed"] Failed to connect to "https://agent.scalyr.com" due to errno=-3.  ' \
                                        'Exception was "[Errno -3] Try again".  Closing connection, will re-attempt :stack_trace:'
 
@@ -308,10 +316,10 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
 
                 if connection_error_mgs in line:
                     stack_trace_lines = get_stack_trace_lines()
-                    stack_trace = "\n".join(stack_trace_lines)
-                    print("------")
-                    print(stack_trace)
-                    print("-------")
+                    stack_trace = "".join(stack_trace_lines)
+
+                    # It the traceback that follows after error message contains paricular error message,
+                    # then we are ok with that.
                     if "socket.gaierror: [Errno -3] Try again" in stack_trace_lines[-1]:
                         to_fail = False
 
@@ -320,5 +328,7 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
                         LogVerifierCheckResult.FAIL,
                         f"Agent log contains error line : {line}, traceback: {stack_trace}",
                     )
+
+            i += 1
 
         return LogVerifierCheckResult.SUCCESS
