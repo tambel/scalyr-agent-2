@@ -330,13 +330,12 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
                         "socket.gaierror: [Errno -3] Temporary failure in name resolution"
                     ]
                     for error_to_ignore in errors_to_ignore:
-                        if error_to_ignore not in stack_trace_lines[-1]:
-                            continue
-
-                        print("-------we3223432423423423")
-                        to_fail = False
-                        whole_error = "".join([line, stack_trace])
-                        ignored_errors.append(whole_error)
+                        if error_to_ignore in stack_trace_lines[-1]:
+                            print("-------we3223432423423423")
+                            to_fail = False
+                            whole_error = "".join([line, stack_trace])
+                            ignored_errors.append(whole_error)
+                            break
 
                 if to_fail:
                     return (
