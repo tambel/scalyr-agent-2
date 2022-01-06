@@ -194,6 +194,8 @@ class LogVerifier:
                     error_message = f"The check '{line_check.description}' has failed."
                     if message:
                         error_message = message
+
+                    error_message = f"{error_message}. Whole log: {self._content}"
                     raise TestFail(error_message)
 
                 # Leave the check for the next iteration to retry it once more.
