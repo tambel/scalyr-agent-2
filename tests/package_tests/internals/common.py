@@ -333,6 +333,7 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
                         if error_to_ignore not in stack_trace_lines[-1]:
                             continue
 
+                        print("-------we3223432423423423")
                         to_fail = False
                         whole_error = "".join([line, stack_trace])
                         ignored_errors.append(whole_error)
