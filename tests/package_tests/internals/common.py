@@ -305,6 +305,9 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
             return result
 
         i = 0
+
+        ignored_errors = []
+
         while i < len(new_lines):
             line = new_lines[i]
             if error_line_pattern.match(line):
@@ -325,6 +328,9 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
                     if "socket.gaierror: [Errno -3] Try again" in stack_trace_lines[-1]:
                         to_fail = False
 
+                        whole_error = "".join([line, stack_trace])
+                        ignored_errors.append(whole_error)
+
                 if to_fail:
                     return (
                         LogVerifierCheckResult.FAIL,
@@ -333,4 +339,12 @@ class AssertAgentLogLineIsNotAnErrorCheck(LogVerifierCheck):
 
             i += 1
 
-        return LogVerifierCheckResult.SUCCESS
+        message = None
+        # Add additional message with ignored errors.
+        if ignored_errors:
+            message = "The next error lines have been skipped:\n"
+
+            for error in ignored_errors:
+                message = f"{message}1:\n{error}\n"
+
+        return LogVerifierCheckResult.SUCCESS, message
