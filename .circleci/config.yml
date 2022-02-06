@@ -2070,11 +2070,11 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore Python installer Cache
-          key: windows-python-installer-cache-{{ .Branch }}
+          key: windows-python-installer-cache-{{ .Branch }}-v1
 
       - restore_cache:
           name: Restore Wix cache
-          key: windows-wix-cache-{{ .Branch }}
+          key: windows-wix-cache-{{ .Branch }}-v1
 
       - run:
           name: Extract Wix.
@@ -2098,19 +2098,19 @@ jobs:
 
       - save_cache:
           name: Save Wix Cache
-          key: windows-wix-cache-{{ .Branch }}
+          key: windows-wix-cache-{{ .Branch }}-v1
           paths:
             - "wix311_binaries"
 
       - save_cache:
           name: Save Python Installer Cache
-          key: windows-python-installer-cache-{{ .Branch }}
+          key: windows-python-installer-cache-{{ .Branch }}-v1
           paths:
             - "python_installer"
 
       - restore_cache:
           name: Restore Python Dependencies Cache
-          key: windows_python_installer-python-3.8.7-{{ .Branch }}-py-deps-cache
+          key: windows_python_installer-python-3.8.7-{{ .Branch }}-py-deps-cache-v1
 
       - when:
           condition: << pipeline.parameters.agent_version >>
@@ -2164,7 +2164,7 @@ jobs:
 
       - save_cache:
           name: Save Python Dependencies Cache
-          key: windows_python_installer-python-3.8.7-{{ .Branch }}-py-deps-cache
+          key: windows_python_installer-python-3.8.7-{{ .Branch }}-py-deps-cache-v1
           paths:
             - C:\Users\circleci\AppData\Local\pip\Cache
 
