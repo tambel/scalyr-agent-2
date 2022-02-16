@@ -24,9 +24,6 @@ from __future__ import absolute_import
 if False:  # NOSONAR
     from typing import Dict
 
-import os
-from io import open
-
 import six
 
 from scalyr_agent import __scalyr__
@@ -37,9 +34,7 @@ GIT_GET_HEAD_REVISION_CMD = "git rev-parse HEAD"
 
 def get_build_info():
     # type: () -> Dict[str, str]
-    """
-
-    """
+    """Get build info dict from install info."""
 
     return __scalyr__.__install_info__.get("build_info", {})
 
