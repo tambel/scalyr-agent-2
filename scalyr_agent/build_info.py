@@ -34,38 +34,28 @@ from scalyr_agent.compat import subprocess_check_output
 
 GIT_GET_HEAD_REVISION_CMD = "git rev-parse HEAD"
 
+
 def get_build_info():
     # type: () -> Dict[str, str]
     """
-    Return sanitized dictionary populated with data from build_info file.
+
     """
 
-    build_info_str = __scalyr__.__install_info__.get("build_info")
-
-    if not build_info_str:
-        return {}
-
-    return _parse_build_info_content(build_info_str)
+    return __scalyr__.__install_info__.get("build_info", {})
 
 
-def _parse_build_info_content(content):
-    # type: (six.text_type) -> Dict[str, str]
-    result = {}
-    for line in content.strip().split("\n"):
-        line = line.strip()
-
-        split = line.split(":", 1)
-
-        if len(split) != 2:
-            continue
-
-        key, value = split
-        key = key.strip().lower().replace(" ", "_")
-        value = value.strip()
-
-        result[key] = value
-
-    return result
+# def get_build_info_str():
+#
+#     build_info_str = """Packaged by: {}
+#     Latest commit: {}
+#     From branch: {}
+#     Build time: {}
+#     """.format(
+#         build_info_str["packaged_by"],
+#         build_info_str["latest_commit"],
+#         build_info_str["from_branch"],
+#         build_info_str["build_time"],
+#     )
 
 
 def get_build_revision_from_git():

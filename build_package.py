@@ -1804,13 +1804,16 @@ __build_info__ = None
 
 
 def get_build_info():
-    """Returns a string containing the build info."""
+    """Returns a dictionary containing the build info."""
+
     global __build_info__
-    if __build_info__ is not None:
+
+    if __build_info__:
         return __build_info__
 
-    build_info_buffer = StringIO()
     original_dir = os.getcwd()
+
+    __build_info__ = {}
 
     try:
         # We need to execute the git command in the source root.
@@ -1822,7 +1825,7 @@ def get_build_info():
         if rc != 0:
             packager_email = "unknown"
 
-        print("Packaged by: %s" % packager_email.strip(), file=build_info_buffer)
+        __build_info__["packaged_by"] = packager_email
 
         # Determine the last commit from the log.
         (_, commit_id) = run_command(
@@ -1830,28 +1833,22 @@ def get_build_info():
             exit_on_fail=True,
             command_name="git",
         )
-        print("Latest commit: %s" % commit_id.strip(), file=build_info_buffer)
+
+        __build_info__["latest_commit"] = commit_id
 
         # Include the branch just for safety sake.
         (_, branch) = run_command(
             "git branch | cut -d ' ' -f 2", exit_on_fail=True, command_name="git"
         )
-        print("From branch: %s" % branch.strip(), file=build_info_buffer)
+        __build_info__["from_branch"] = branch
 
         # Add a timestamp.
-        print(
-            "Build time: %s"
-            % six.text_type(strftime("%Y-%m-%d %H:%M:%S UTC", gmtime())),
-            file=build_info_buffer,
-        )
 
-        __build_info__ = build_info_buffer.getvalue()
+        __build_info__["build_time"] = six.text_type(strftime("%Y-%m-%d %H:%M:%S UTC", gmtime()))
+
         return __build_info__
     finally:
         os.chdir(original_dir)
-
-        if build_info_buffer is not None:
-            build_info_buffer.close()
 
 
 def get_install_info(install_type):
