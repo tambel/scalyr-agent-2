@@ -333,7 +333,7 @@ class PackageBuilder(abc.ABC):
         """
         Get json serialized string with installation info.
         """
-        return {"build_info": self._build_info, "install_type": type(self.INSTALL_TYPE)}
+        return {"build_info": self._build_info, "install_type": type(self).INSTALL_TYPE}
 
     @property
     def _install_info_str(self) -> str:
