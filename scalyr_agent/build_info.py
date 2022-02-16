@@ -39,20 +39,6 @@ def get_build_info():
     return __scalyr__.__install_info__.get("build_info", {})
 
 
-# def get_build_info_str():
-#
-#     build_info_str = """Packaged by: {}
-#     Latest commit: {}
-#     From branch: {}
-#     Build time: {}
-#     """.format(
-#         build_info_str["packaged_by"],
-#         build_info_str["latest_commit"],
-#         build_info_str["from_branch"],
-#         build_info_str["build_time"],
-#     )
-
-
 def get_build_revision_from_git():
     # type: () -> str
     """

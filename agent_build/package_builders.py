@@ -279,7 +279,7 @@ class PackageBuilder(abc.ABC):
 
     @property
     def _build_info(self) -> Dict:
-        """Returns a string containing the package build info."""
+        """Returns a dict containing the package build info."""
 
         build_info = {}
 
@@ -331,7 +331,7 @@ class PackageBuilder(abc.ABC):
     @property
     def _install_info(self) -> Dict:
         """
-        Get json serialized string with installation info.
+        Get dict with installation info.
         """
         return {"build_info": self._build_info, "install_type": type(self).INSTALL_TYPE}
 
