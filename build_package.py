@@ -1834,6 +1834,15 @@ def get_build_info():
         os.chdir(original_dir)
 
 
+def get_build_info_json():
+    """Return json serialized build info."""
+    return json.dumps(
+        get_build_info(),
+        indent=4,
+        sort_keys=True,
+    )
+
+
 def get_install_info(install_type):
     """
     Get json serialized string with installation info.
@@ -1926,7 +1935,7 @@ if __name__ == "__main__":
     # If we are just suppose to create the build_info, then do it and exit.  We do not bother to check to see
     # if they specified a package.
     if options.build_info_only:
-        write_to_file(get_build_info(), "build_info")
+        write_to_file(get_build_info_json(), "build_info")
         print("Built build_info")
         sys.exit(0)
 
