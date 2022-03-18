@@ -1,4 +1,4 @@
-# Copyright 2014-2020 Scalyr Inc.
+﻿# Copyright 2014-2020 Scalyr Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -192,7 +192,7 @@ Copy-Item ".\agent.json_event_log_monitor" -Destination "C:\Program Files (x86)\
 # Write mock entry to event log and ensure Scalyr picks it up
 New-EventLog –LogName Application –Source “ScalyrAgentTest”
 [system.diagnostics.EventLog]::CreateEventSource("ScalyrAgentTest", "Application")
-Write-EventLog -LogName "Application" -Source "ScalyrAgentTest" -EventID 30001 -EntryType Information -Message "Scalyr automated tests event." -Category 1 -RawData 10,20
+Write-EventLog -LogName "Application" -Source "ScalyrAgentTest" -EventID 30001 -EntryType Information -Message "Scalyr automated tests event 要讲话要讲话要讲话." -Category 1 -RawData 10,20
 
 Start-Sleep 10
 
@@ -212,7 +212,7 @@ if ("$event_log_output" -notmatch "Level")   { Throw "Event log monitor didnt em
 
 # Verify that the event we inserted exists
 if ("$event_log_output" -notmatch "ScalyrAgentTest")   { Throw "Matching event not found in event log" };
-if ("$event_log_output" -notmatch "Scalyr automated tests event")   { Throw "Matching event not found in event log" };
+if ("$event_log_output" -notmatch "Scalyr automated tests event 要讲话要讲话要讲话")   { Throw "Matching event not found in event log" };
 
 #
 # Verify agent start up line
