@@ -455,6 +455,7 @@ def main(
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
         max_tries = 3
+        rendered_template = rendered_template.encode("utf_8_sig").decode()
     else:
         deploy_step_timeout = 320
         deploy_overall_timeout = 340
