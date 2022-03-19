@@ -197,6 +197,8 @@ Write-EventLog -LogName "Application" -Source "ScalyrAgentTest" -EventID 30001 -
 Start-Sleep 10
 
 $status_output=scalyr-agent-2 status -v;
+
+cat "C:\Program Files (x86)\Scalyr\log\windows_event_log_monitor.log"
 echo $status_output
 
 if ("$status_output" -notmatch "windows_event_log_monitor\.log")   { Throw "Can not find windows_event_log_monitor." };
