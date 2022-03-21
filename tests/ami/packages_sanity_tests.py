@@ -75,6 +75,9 @@ combination of both.
 from __future__ import absolute_import
 from __future__ import print_function
 
+import logging
+import pathlib
+
 if False:  # NOSONAR
     from typing import List
     from typing import Optional
@@ -107,6 +110,8 @@ from libcloud.compute.deployment import (
     FileDeployment,
     MultiStepDeployment,
 )
+
+logging.basicConfig()
 
 from scalyr_agent import compat
 
@@ -455,7 +460,12 @@ def main(
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
         max_tries = 3
-        rendered_template = rendered_template.encode("utf_8_sig").decode()
+        logging.error(rendered_template)
+        # rendered_template = rendered_template.encode("utf_8_sig").decode()
+        # p = pathlib.Path("/Users/arthur/work/agents/scalyr-agent-2/script.ps1")
+        # p.write_text(rendered_template)
+
+
     else:
         deploy_step_timeout = 320
         deploy_overall_timeout = 340
