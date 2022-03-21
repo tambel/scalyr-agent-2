@@ -460,7 +460,7 @@ def main(
         deploy_overall_timeout = 460  # 320
         cat_step_timeout = 10
         max_tries = 3
-        logging.error(rendered_template)
+        logging.error(rendered_template.encode())
         # rendered_template = rendered_template.encode("utf_8_sig").decode()
         # p = pathlib.Path("/Users/arthur/work/agents/scalyr-agent-2/script.ps1")
         # p.write_text(rendered_template)
