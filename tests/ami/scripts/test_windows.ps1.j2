@@ -217,7 +217,7 @@ if ("$event_log_output" -notmatch "Level")   { Throw "Event log monitor didnt em
 
 # Verify that the event we inserted exists
 if ("$event_log_output" -notmatch "ScalyrAgentTest")   { Throw "Matching event not found in event log" };
-if ("$event_log_output" -notmatch "Scalyr automated tests event 要讲话要讲话要讲话")   { Throw "Matching event not found in event log" };
+if ("$event_log_output" -notmatch "Scalyr automated tests event .*")   { Throw "Matching event not found in event log" };
 
 #
 # Verify agent start up line
