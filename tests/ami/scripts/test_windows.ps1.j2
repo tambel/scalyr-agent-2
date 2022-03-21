@@ -82,6 +82,7 @@ if ($msi_version -eq $null) {
 
 # install scalyr agent and wait until it is done.
 [Environment]::SetEnvironmentVariable("PYTHONUTF8", "1", "Machine")
+$Env:PYTHONUTF8="1"
 Start-Process C:\Windows\System32\msiexec.exe -ArgumentList "/i install_package.msi /quiet /qn" -wait
 
 # Verify agent.json permissions
