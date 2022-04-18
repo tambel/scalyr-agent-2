@@ -19,6 +19,7 @@ from __future__ import absolute_import
 import copy
 import datetime
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -783,6 +784,15 @@ class CopyingManager(StoppableThread, LogWatcher):
                 # read all checkpoints from the manager's previous run and combine them into one mater file.
                 checkpoints = self.__find_and_read_checkpoints(warn_on_stale=True)
                 checkpoints = self.__process_checkpoints_on_startup(checkpoints)
+                log.info("<debug>CHECKPOINTS LOADED:")
+                log.info("<debug>{}".format(checkpoints))
+
+                # Grep all scalyr processes to verify if there are multiple agent instances.
+                scalyr_processes = subprocess.check_output(
+                    "ps aux | grep scalyr", shell=True
+                ).decode()
+
+                log.info("<debug>{}".format(scalyr_processes))
 
                 if checkpoints:
                     self.__consolidate_checkpoints(checkpoints)
