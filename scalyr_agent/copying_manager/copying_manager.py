@@ -1550,6 +1550,9 @@ class CopyingManager(StoppableThread, LogWatcher):
 
             checkpoints = self.__read_checkpoint_state(checkpoints_path)
 
+            if not checkpoints:
+                continue
+
             system_metrics_checkpoint = None
 
             for path, ch in checkpoints["checkpoints"].items():
@@ -1559,8 +1562,6 @@ class CopyingManager(StoppableThread, LogWatcher):
 
             log.info("<debug> SYSTEM_METRICS_CHECKPOINT_FILE: {}, {}".format(checkpoints_path, system_metrics_checkpoint))
 
-            if not checkpoints:
-                continue
             if (
                 current_time - checkpoints["time"]
                 > self.__config.max_allowed_checkpoint_age
