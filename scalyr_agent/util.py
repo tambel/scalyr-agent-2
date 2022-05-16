@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import re
+import socket
 
 if False:  # NOSONAR
     from typing import Union
@@ -2121,7 +2122,7 @@ def get_compress_and_decompress_func(compression_algorithm, compression_level=9)
         compress_func = compressor.compress  # type: ignore
         decompress_func = decompressor.decompress  # type: ignore
     elif compression_algorithm == "lz4":
-        import lz4.frame as lz4
+        import lz4.frame as lz4  # pylint: disable=no-name-in-module
 
         # NOTE: Java implementation which we currently use on the server side doesn't support
         # dependent block stream.
@@ -2203,13 +2204,14 @@ def get_agent_start_up_message():
         date_parsing_library = "native python"
 
     msg = (
-        "Starting scalyr agent... (version=%s) (revision=%s) %s (Python version: %s) "
-        "(OpenSSL version: %s) (default fs encoding: %s) (locale: %s) (LANG env variable: %s) "
-        "(date parsing library: %s)"
+        "Starting scalyr agent... (version=%s revision=%s) %s (hostname=%s) (Python version=%s) "
+        "(OpenSSL version=%s) (default fs encoding=%s) (locale=%s) (LANG env variable=%s) "
+        "(date parsing library=%s)"
         % (
             SCALYR_VERSION,
             build_revision,
             get_pid_tid(),
+            socket.gethostname(),
             python_version_str,
             openssl_version,
             sys.getfilesystemencoding(),
@@ -2747,7 +2749,7 @@ class ParentProcessAwareSyncManager(multiprocessing.managers.SyncManager):
         :return:
         """
         try:
-            return self._process  # type: ignore
+            return self._process  # type: ignore  # pylint: disable=no-member
         except:
             return None
 
@@ -2758,6 +2760,6 @@ class ParentProcessAwareSyncManager(multiprocessing.managers.SyncManager):
         Return the PID of the manager's process.
         """
         try:
-            return self._process.pid  # type: ignore
+            return self._process.pid  # type: ignore  # pylint: disable=no-member
         except:
             return None
