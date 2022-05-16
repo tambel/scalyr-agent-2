@@ -1506,9 +1506,11 @@ class CopyingManager(StoppableThread, LogWatcher):
         :return: Checkpoint state stored in dict.
         """
 
-        found_checkpoints = []
+        found_checkpoints_collections = []
 
         current_time = time.time()
+
+        checkpoints_files_paths = []
 
         # search for all worker session checkpoint files.
         worker_checkpoints_glob = os.path.join(
@@ -1516,18 +1518,45 @@ class CopyingManager(StoppableThread, LogWatcher):
             WORKER_SESSION_CHECKPOINT_FILENAME_GLOB,
         )
 
-        checkpoints_paths = scalyr_util.match_glob(worker_checkpoints_glob)
+        all_workers_checkpoints_paths = set(scalyr_util.match_glob(worker_checkpoints_glob))
+
+        active_worker_checkpoints_glob = os.path.join(
+            self.__config.agent_data_path,
+            "active-{}".format(WORKER_SESSION_CHECKPOINT_FILENAME_GLOB),
+        )
+
+        all_active_workers_checkpoints_paths = scalyr_util.match_glob(active_worker_checkpoints_glob)
+
+        for active_workers_checkpoints_path in all_active_workers_checkpoints_paths:
+            active_workers_checkpoints_file_name = os.path.basename(active_workers_checkpoints_path)
+            worker_checkpoint_path = os.path.join(
+                os.path.dirname(active_workers_checkpoints_path),
+                active_workers_checkpoints_file_name[7:]
+            )
+            all_workers_checkpoints_paths.add(worker_checkpoint_path)
+
+
 
         # also get the previously consolidated file.
         consolidated_checkpoint_path = os.path.join(
             self.__config.agent_data_path, "checkpoints.json"
         )
 
-        checkpoints_paths.append(consolidated_checkpoint_path)
+        checkpoints_files_paths.extend(all_workers_checkpoints_paths)
+        checkpoints_files_paths.append(consolidated_checkpoint_path)
 
-        for checkpoints_path in checkpoints_paths:
+        for checkpoints_path in checkpoints_files_paths:
 
             checkpoints = self.__read_checkpoint_state(checkpoints_path)
+
+            system_metrics_checkpoint = None
+
+            for path, ch in checkpoints["checkpoints"].items():
+                if path.endswith("linux_system_metrics.log"):
+                    system_metrics_checkpoint = ch
+                    break
+
+            log.info("<debug> SYSTEM_METRICS_CHECKPOINT_FILE: {}, {}".format(checkpoints_path, system_metrics_checkpoint))
 
             if not checkpoints:
                 continue
@@ -1546,17 +1575,32 @@ class CopyingManager(StoppableThread, LogWatcher):
                     )
                 continue
 
-            found_checkpoints.append(checkpoints)
+            found_checkpoints_collections.append(checkpoints)
 
         result = {}  # type: ignore
         # merge checkpoints from  all worker sessions to one checkpoint.
 
         # checkpoints from different worker sessions may contain checkpoint for the same file,
         # so we sort checkpoints by time and update resulting collection with the same order.
-        found_checkpoints.sort(key=operator.itemgetter("time"))
+        found_checkpoints_collections.sort(key=operator.itemgetter("time"))
 
-        for wc in found_checkpoints:
-            result.update(wc["checkpoints"])
+        for checkpoints_collection in found_checkpoints_collections:
+
+            for file_path, file_checkpoint in checkpoints_collection["checkpoints"].items():
+
+                result_checkpoint = result.get(file_path)
+
+                if result_checkpoint is None:
+                    result[file_path] = file_checkpoint
+                    continue
+
+                result_checkpoint = max(
+                    result_checkpoint,
+                    file_checkpoint,
+                    key=operator.itemgetter("time")
+                )
+
+                result[file_path] = result_checkpoint
 
         return result
 
