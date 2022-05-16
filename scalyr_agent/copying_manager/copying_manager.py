@@ -788,13 +788,6 @@ class CopyingManager(StoppableThread, LogWatcher):
                 log.info("<debug>CHECKPOINTS LOADED:")
                 log.info("<debug>{}".format(checkpoints))
 
-                # Grep all scalyr processes to verify if there are multiple agent instances.
-                scalyr_processes = subprocess.check_output(
-                    "ps aux | grep scalyr", shell=True
-                ).decode()
-
-                log.info("<debug>{}".format(scalyr_processes))
-
                 if checkpoints:
                     self.__consolidate_checkpoints(checkpoints)
                 else:
