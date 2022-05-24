@@ -255,6 +255,21 @@ class ImageBuilder(Builder):
             str(agent_build.tools.common.SOURCE_ROOT)
         ]
 
+        if self._testing:
+            common.check_call_with_log(
+                "docker",
+                "buildx",
+                "build",
+                "-t",
+                tag_options[0],
+                "-f",
+                str(agent_build.tools.common.SOURCE_ROOT / "agent_build/docker/Dockerfile.final-testing"),
+                f"BASE_IMAGE={base_image_full_name}",
+                *platforms_options,
+                str(agent_build.tools.common.SOURCE_ROOT)
+            )
+
+
         if self.push:
             command_options.append("--push")
         else:
