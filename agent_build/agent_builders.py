@@ -317,3 +317,9 @@ for distro_type in DockerBaseImageDistroType:
             RESULT_IMAGE_NAMES = _DOCKER_IMAGE_TYPES_TO_IMAGE_RESULT_NAMES[docker_image_type]
 
         IMAGE_BUILDS[build_name] = FinalImageBuilder
+
+
+
+
+class TestEnvironment(Builder):
+    CACHEABLE_STEPS =

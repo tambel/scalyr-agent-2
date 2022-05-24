@@ -43,11 +43,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Perform the deployment of the test environment
-        uses: ./.github/actions/cache-step
-        with:
-          deployment-name: "test_environment"
-
       - name: Sanity check deployments logic by running internal tests
         run: |
           python3 -m pytest agent_build/tools/tests
