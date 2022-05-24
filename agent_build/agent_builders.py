@@ -280,6 +280,7 @@ class ImageBuilder(Builder):
                     *tag_options,
                     "-f",
                     str(agent_build.tools.common.SOURCE_ROOT / "agent_build/docker/Dockerfile.final-testing"),
+                    "--build-arg",
                     f"BASE_IMAGE={tag_options[1]}",
                     *platforms_options,
                     str(agent_build.tools.common.SOURCE_ROOT)
