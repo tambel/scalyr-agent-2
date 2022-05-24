@@ -256,7 +256,7 @@ class ImageBuilder(Builder):
         ]
 
         if self._testing:
-            common.check_call_with_log(
+            common.check_call_with_log([
                 "docker",
                 "buildx",
                 "build",
@@ -267,7 +267,7 @@ class ImageBuilder(Builder):
                 f"BASE_IMAGE={base_image_full_name}",
                 *platforms_options,
                 str(agent_build.tools.common.SOURCE_ROOT)
-            )
+            ])
 
 
         if self.push:

@@ -99,25 +99,25 @@ class DockerImagePackageTest(Builder):
 
             for full_image_name in all_image_names_to_test:
 
-                full_testing_image_name = f"{full_image_name}"
-                subprocess.check_call([
-                    "docker",
-                    "buildx",
-                    "build",
-                    "-t",
-                    full_testing_image_name,
-                    "-f",
-                    str(agent_build.tools.common.SOURCE_ROOT / "agent_build" / "docker" / "Dockerfile.final-testing"),
-                    "--build-arg",
-                    f"BASE_IMAGE={full_testing_image_name}",
-                    "--push",
-                    str(agent_build.tools.common.SOURCE_ROOT)
-                ])
+                # full_testing_image_name = f"{full_image_name}"
+                # subprocess.check_call([
+                #     "docker",
+                #     "buildx",
+                #     "build",
+                #     "-t",
+                #     full_testing_image_name,
+                #     "-f",
+                #     str(agent_build.tools.common.SOURCE_ROOT / "agent_build" / "docker" / "Dockerfile.final-testing"),
+                #     "--build-arg",
+                #     f"BASE_IMAGE={full_testing_image_name}",
+                #     "--push",
+                #     str(agent_build.tools.common.SOURCE_ROOT)
+                # ])
 
                 # Remove the local image first, if exists.
                 logging.info("    Remove existing image.")
                 subprocess.check_call(
-                    ["docker", "image", "rm", "-f", full_testing_image_name]
+                    ["docker", "image", "rm", "-f", full_image_name]
                 )
 
                 logging.info("    Log in to the local registry.")
@@ -137,7 +137,7 @@ class DockerImagePackageTest(Builder):
                 # Pull the image
                 logging.info("    Pull the image.")
                 try:
-                    subprocess.check_call(["docker", "pull", full_testing_image_name])
+                    subprocess.check_call(["docker", "pull", full_image_name])
                 except subprocess.CalledProcessError:
                     logging.exception(
                         "    Can not pull the result image from local registry."
@@ -161,7 +161,7 @@ class DockerImagePackageTest(Builder):
                             "run",
                             "-i",
                             "--rm",
-                            str(full_testing_image_name),
+                            str(full_image_name),
                             "/bin/cat",
                             "/etc/os-release",
                         ]
@@ -177,7 +177,7 @@ class DockerImagePackageTest(Builder):
                 # Remove the image once more.
                 logging.info("    Remove existing image.")
                 subprocess.check_call(
-                    ["docker", "image", "rm", "-f", full_testing_image_name]
+                    ["docker", "image", "rm", "-f", full_image_name]
                 )
 
             # Use any of variants of the image name to test it.
