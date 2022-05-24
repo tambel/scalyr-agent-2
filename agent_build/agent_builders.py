@@ -255,19 +255,6 @@ class ImageBuilder(Builder):
             str(agent_build.tools.common.SOURCE_ROOT)
         ]
 
-        if self._testing:
-            common.check_call_with_log([
-                "docker",
-                "buildx",
-                "build",
-                *tag_options,
-                "-f",
-                str(agent_build.tools.common.SOURCE_ROOT / "agent_build/docker/Dockerfile.final-testing"),
-                f"BASE_IMAGE={tag_options[1]}",
-                *platforms_options,
-                str(agent_build.tools.common.SOURCE_ROOT)
-            ])
-
 
         if self.push:
             command_options.append("--push")
@@ -284,6 +271,19 @@ class ImageBuilder(Builder):
             subprocess.check_call([
                 *command_options
             ])
+
+            if self._testing:
+                common.check_call_with_log([
+                    "docker",
+                    "buildx",
+                    "build",
+                    *tag_options,
+                    "-f",
+                    str(agent_build.tools.common.SOURCE_ROOT / "agent_build/docker/Dockerfile.final-testing"),
+                    f"BASE_IMAGE={tag_options[1]}",
+                    *platforms_options,
+                    str(agent_build.tools.common.SOURCE_ROOT)
+                ])
 
 
 # Set of docker platforms that are supported by prod image.
