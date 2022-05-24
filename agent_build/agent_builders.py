@@ -214,6 +214,7 @@ class ImageBuilder(Builder):
         if self._testing:
             base_image_full_name = f"{base_image_full_name}-testing"
 
+        test_tag_options = []
         tag_options = []
         for image_name in type(self).RESULT_IMAGE_NAMES:
 
@@ -226,10 +227,16 @@ class ImageBuilder(Builder):
                 full_name = f"{self.registry}/{full_name}"
 
             for tag in self.tags:
+                image_and_tag = f"{full_name}:{tag}"
                 tag_options.extend([
                     "-t",
-                    f"{full_name}:{tag}"
+                    image_and_tag
                 ])
+                if self._testing:
+                    test_tag_options.extend([
+                        "-t",
+                        f"{image_and_tag}-testing"
+                    ])
 
         platforms_options = []
         for p in self.platforms_to_build:
@@ -255,7 +262,6 @@ class ImageBuilder(Builder):
             str(agent_build.tools.common.SOURCE_ROOT)
         ]
 
-
         if self.push:
             command_options.append("--push")
         else:
@@ -271,13 +277,12 @@ class ImageBuilder(Builder):
             subprocess.check_call([
                 *command_options
             ])
-
             if self._testing:
                 common.check_call_with_log([
                     "docker",
                     "buildx",
                     "build",
-                    *tag_options,
+                    *test_tag_options,
                     "-f",
                     str(agent_build.tools.common.SOURCE_ROOT / "agent_build/docker/Dockerfile.final-testing"),
                     "--build-arg",
