@@ -257,6 +257,8 @@ class ImageBuilder(Builder):
 
         if self.push:
             command_options.append("--push")
+        else:
+            command_options.append("--load")
 
         base_image_registry = common.LocalRegistryContainer(
             name="agent_base_registry",

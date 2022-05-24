@@ -117,6 +117,9 @@ if __name__ == "__main__":
             package_parser.add_argument(
                 "--push", action="store_true", help="Push the result docker image."
             )
+            package_parser.add_argument(
+                "--load", action="store_true", help="Load result image to a local docker."
+            )
 
             package_parser.add_argument(
                 "--platforms",
