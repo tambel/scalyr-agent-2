@@ -354,7 +354,7 @@ deploy_test_environment_step = EnvironmentBuilderStep(
     script_path=_AGENT_BUILD_PATH / "deploy_test_environment.sh",
     cacheable=True,
     tracked_file_globs=[
-        _AGENT_REQUIREMENTS_PATH / "testing-requirements.txt"
+        _AGENT_REQUIREMENTS_PATH / "*.txt"
     ],
     global_steps_collection=ALL_CACHEABLE_STEPS
 )
@@ -364,5 +364,9 @@ class TestEnvironmentBuilder(Builder):
     CACHEABLE_STEPS = [deploy_test_environment_step]
     NAME = "test-environment-posix"
 
+
+b = TestEnvironmentBuilder()
+
+b.run(build_root=pl.Path("/Users/arthur/work/agents/scalyr-agent-2/build_test"))
 
 ALL_BUILDERS[TestEnvironmentBuilder.NAME] = TestEnvironmentBuilder
