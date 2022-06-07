@@ -28,6 +28,8 @@ set -e
 
 REQUIREMENTS_PATH="$SOURCE_ROOT/agent_build/requirement-files"
 
+ls $REQUIREMENTS_PATH
+
 which python3
 pip_cache_dir="$(python3 -m pip cache dir)"
 
