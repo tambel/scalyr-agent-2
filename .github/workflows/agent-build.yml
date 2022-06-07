@@ -65,6 +65,12 @@ jobs:
       - name: Run build step.
         uses: ./.github/actions/execute-builder
         with:
+          builder-name: "test-environment-posix"
+          build-root-dir: ./cache
+
+      - name: Run build step.
+        uses: ./.github/actions/execute-builder
+        with:
           builder-name: ${{ matrix.image-type }}-${{ matrix.image-distro-name }}-test
           build-root-dir: ./cache
 

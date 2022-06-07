@@ -17,36 +17,22 @@
 #   If there are any dependencies, imports or files which are used by this script, then also add them
 #   to the `TRACKED_FILE_GLOBS` attribute of the step class.
 
+import pathlib as pl
+import os
+import shutil
+
 # Here are some environment variables, which are pre-defined for all steps:
-#   SOURCE_ROOT - path to the source root of the project.
-#   STEP_OUTPUT_PATH - path where the step has to save its results.
+# Path to the source root of the project.
+SOURCE_ROOT = pl.Path(os.environ["SOURCE_ROOT"])
+# Path where the step has to save its results.
+STEP_OUTPUT_PATH = pl.Path(os.environ["STEP_OUTPUT_PATH"])
 
-# If step has another steps that it depends on, then it can access their output directories from command line arguments.
-# The order matches the order which is defined in the step class.
+cached_result_path = STEP_OUTPUT_PATH / "result.txt"
+input_value = os.environ["INPUT"]
 
-set -e
+result_content = f"{input_value}\npython\n"
 
-REQUIREMENTS_PATH="$SOURCE_ROOT/agent_build/requirement-files"
-
-which python3
-pip_cache_dir="$(python3 -m pip cache dir)"
-
-function install_dependencies() {
-  python3 -m pip install -r "${REQUIREMENTS_PATH}/testing-requirements.txt"
-  python3 -m pip install -r "${REQUIREMENTS_PATH}/compression-requirements.txt"
-}
-
-if [ ! -d "$STEP_OUTPUT_PATH/pip" ]; then
-  install_dependencies
-  cp -R "$pip_cache_dir" "$STEP_OUTPUT_PATH/pip"
-else
-  cp -R "$STEP_OUTPUT_PATH/pip" "$pip_cache_dir"
-  install_dependencies
-
-fi
-
-
-
-
-
-
+in_docker_file_path = pl.Path("/docker")
+if in_docker_file_path.is_file():
+    result_content += "docker\n"
+cached_result_path.write_text(result_content)

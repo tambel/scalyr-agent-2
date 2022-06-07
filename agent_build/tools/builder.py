@@ -80,33 +80,18 @@ class DockerImageSpec:
             common.check_call_with_log(["docker", "save", self.name], stdout=f)
 
 
-class BuilderStep:
-
-    """
-    Base abstraction that represents some action that has to be done before the Builder.
-    """
-
+class ArtifactBuilderStep:
     def __init__(
         self,
         name: str,
         script_path: pl.Path,
-        is_environment_setup_step: bool = False,
-        base_step: Union['BuilderStep', DockerImageSpec] = None,
-        dependency_steps: List['BuilderStep'] = None,
+        base_step: Union['EnvironmentBuilderStep', DockerImageSpec] = None,
+        dependency_steps: List['ArtifactBuilderStep'] = None,
         additional_settings: Dict[str, str] = None,
         cacheable: bool = False,
         tracked_file_globs: List[pl.Path] = None,
         global_steps_collection: List['BuilderStep'] = None
     ):
-        """
-        :param name: name of the step.
-        :param script_path: Path to the script which has to be executed during the step.
-        :param dependency_steps: List of steps which outputs are required by the current step, so those steps
-            has to be run before.
-        :param additional_settings: Dictionary with string keys and values for an additional setup of the step.
-        :param cacheable: If True, Ci/CD will try to find its cache during the builder run.
-
-        """
 
         self.name = name
 
@@ -120,9 +105,6 @@ class BuilderStep:
 
         self._cacheable = cacheable
 
-        # # The root path where the step has to operate and create/locate needed files.
-        # self._build_root = build_root
-
         # Dict with all information about a step. All things whose change may affect work of this step, has to be
         # reflected here.
         self._overall_info: Optional[Dict] = None
@@ -131,8 +113,6 @@ class BuilderStep:
         self._tracked_file_paths = None
 
         self._script_path = script_path
-
-        self.is_environment_setup_step = is_environment_setup_step
 
         if base_step is None:
             # If there's no a base step, then this step starts from scratch on the current system.
@@ -149,7 +129,7 @@ class BuilderStep:
                 self._base_step = base_step
 
                 # Also use result docker image of the base step as base docker image if presented.
-                if isinstance(base_step, BuilderStep):
+                if isinstance(base_step, ArtifactBuilderStep):
                     self.base_docker_image = base_step.result_image
                 else:
                     self.base_docker_image = None
@@ -160,7 +140,6 @@ class BuilderStep:
 
         if global_steps_collection is not None and self._cacheable:
             global_steps_collection.append(self)
-
 
     @property
     def output_directory(self) -> pl.Path:
@@ -250,11 +229,10 @@ class BuilderStep:
             "used_files": [str(p) for p in self.tracked_file_paths],
             # Checksum of the content of that files, to catch any change in that files.
             "files_checksum": calculate_files_checksum(self.tracked_file_paths),
-            # Similar overall info's but from steps that are required by the current step.
-            # If something changes in that dependency steps, then this step will also reflect that change.
-            "dependency_steps": [s.overall_info for s in self._dependency_steps],
-            # Same overall info but for the base step.
-            "base_step": self._base_step.overall_info if self._base_step else None,
+            # Add ids of all dependency steps. if anything significant changes in some of them, then
+            # the current overall info also has to reflect that.
+            "dependency_steps_ids": [s.id for s in self._dependency_steps],
+            "base_step_id": self._base_step.id if self._base_step else None,
             # Add additional setting of the step.
             "additional_settings": self._additional_settings,
         }
@@ -324,16 +302,8 @@ class BuilderStep:
     def all_used_cacheable_steps_ids(self) -> List[str]:
         return [s.id for s in self.all_used_cacheable_steps]
 
-    def _check_for_cached_result(self) -> bool:
-        if not self.output_directory.exists():
-            return False
-
-        # If step runs in docker, it's not a environment setup step and its result image is already
-        # been found in cache, then load that existing image.
-        if self.runs_in_docker and self.is_environment_setup_step:
-            self.result_image.load_image()
-
-        return True
+    # def _check_for_cached_result(self) -> bool:
+    #     return self.output_directory.exists()
 
     def set_build_root(self, build_root: pl.Path):
 
@@ -347,6 +317,18 @@ class BuilderStep:
         if self._base_step:
             self._base_step.set_build_root(build_root=self._build_root)
 
+    def _run_previous_steps(self):
+        # Run all dependency steps first.
+        for step in self._dependency_steps:
+            step.run(build_root=self._build_root)
+
+        # Then also run the base step.
+        if self._base_step:
+            self._base_step.run(build_root=self._build_root)
+
+    def reuse_cache_if_exists(self) -> bool:
+        return self.output_directory.is_dir()
+
     def run(self, build_root: pl.Path):
         """
         Run the build step.
@@ -358,12 +340,31 @@ class BuilderStep:
             build_root=build_root.absolute()
         )
 
-        if self._check_for_cached_result():
+        if self.output_directory.is_dir():
             logging.info(
                 f"The cache of the builder step {self.id} is found, reuse it and skip it."
             )
-        else:
+            return
 
+        # Create a temporary directory for the output of the current step.
+        if self._temp_output_directory.is_dir():
+            shutil.rmtree(self._temp_output_directory)
+
+        self._temp_output_directory.mkdir(parents=True)
+
+        self._run(
+            run_previous_steps=True
+        )
+
+        # Rename temp output directory to a final.
+        self._temp_output_directory.rename(self.output_directory)
+
+    def _run(
+            self,
+            run_previous_steps: bool
+    ):
+
+        if run_previous_steps:
             # Run all dependency steps first.
             for step in self._dependency_steps:
                 step.run(build_root=self._build_root)
@@ -372,78 +373,20 @@ class BuilderStep:
             if self._base_step:
                 self._base_step.run(build_root=self._build_root)
 
-            # Create a temporary directory for the output of the current step.
-            if self._temp_output_directory.is_dir():
-                shutil.rmtree(self._temp_output_directory)
+        # Write step's info to a file in its output, for easier troubleshooting.
+        info_file_path = self._temp_output_directory / "step_info.txt"
+        info_file_path.write_text(self.overall_info_str)
 
-            self._temp_output_directory.mkdir(parents=True)
-
-            # Write step's info to a file in its output, for easier troubleshooting.
-            info_file_path = self._temp_output_directory / "step_info.txt"
-            info_file_path.write_text(self.overall_info_str)
-
-            self._run()
-
-            # Rename temp output directory to a final.
-            self._temp_output_directory.rename(self.output_directory)
-
-    @property
-    def _source_root(self):
-        return self._build_root / "step_isolated_source_roots" / self.id
-
-    @property
-    def result_image(self) -> Optional[DockerImageSpec]:
-        """
-        The name of the result docker image, just the same as cache key.
-        """
-        if self.runs_in_docker:
-            return DockerImageSpec(
-                name=self.id,
-                architecture=self.base_docker_image.architecture
-            )
-        else:
-            return None
-
-    @property
-    def runs_in_docker(self) -> bool:
-        """
-        Whether this step has to be performed in docker or not.
-        """
-        return self.base_docker_image is not None
-
-    def _save_step_docker_container_as_image_if_needed(
-            self,
-            container_name: str
-    ):
-        """
-        Save container with the result of the step execution as docker image.
-        :param container_name: Name of the container to save.
-        """
-
-        # If this is not a environment setup step, then we don't need to save it's image.
-        if not self.is_environment_setup_step:
-            return
-
-        common.check_call_with_log([
-            "docker", "commit", container_name, self.result_image.name
-        ])
-
-        image_file_path = self._temp_output_directory / f"{self.id}.tar"
-
-        self.result_image.save_image(
-            output_path=image_file_path
-        )
-
-    @property
-    def result_image_path(self):
-        return self._temp_output_directory / f"{self.id}.tar"
-
-    def _run(self):
         self._prepare_working_source_root()
 
         try:
             if self.runs_in_docker:
-                self._run_in_docker()
+                container_name = "agent-build-builder-step"
+                self._run_in_docker(container_name)
+
+                common.check_call_with_log([
+                    "docker", "rm", "-f", container_name
+                ])
             else:
                 self._run_locally()
         except Exception:
@@ -456,8 +399,84 @@ class BuilderStep:
             raise
 
     @property
-    def _in_docker_dependency_outputs_path(self):
-        return pl.Path("/tmp/step/dependencies")
+    def _source_root(self):
+        return self._build_root / "step_isolated_source_roots" / self.id
+
+    @property
+    def runs_in_docker(self) -> bool:
+        """
+        Whether this step has to be performed in docker or not.
+        """
+        return self.base_docker_image is not None
+
+    def _run_in_docker(
+            self,
+            container_name: str,
+    ):
+        """
+        Run step in docker. It uses a special logic, which is implemented in 'agent_build/tools/tools.build_in_docker'
+        module,that allows to execute custom command inside docker by using 'docker build' command. It differs from
+        running just in the container because we can benefit from the docker caching mechanism.
+        """
+
+        cmd_args = self._get_command_line_args()
+
+        common.check_call_with_log([
+            "docker", "rm", "-f", container_name
+        ])
+
+        in_docker_output_path = "/tmp/step/output"
+
+        env_variables_options = []
+
+        # Set additional settings as environment variables.
+        for name, value in self._additional_settings.items():
+            env_variables_options.append("-e")
+            env_variables_options.append(f"{name}={value}")
+
+        env_variables_options.extend([
+            "-e",
+            f"STEP_OUTPUT_PATH={in_docker_output_path}",
+            "-e",
+            f"SOURCE_ROOT={self._in_docker_source_root_path}",
+            "-e",
+            "AGENT_BUILD_IN_DOCKER=1"
+        ])
+
+        if self._base_step:
+            base_image = self._base_step.result_image
+        else:
+            base_image = self.base_docker_image
+
+        volumes_mapping = [
+            "-v",
+            f"{self._source_root}:{self._in_docker_source_root_path}",
+            "-v",
+            f"{self._temp_output_directory}:{in_docker_output_path}",
+        ]
+
+        for dependency_step in self._dependency_steps:
+            in_docker_dependency_output = self._in_docker_dependency_outputs_path / dependency_step.output_directory.name
+            volumes_mapping.extend([
+                "-v",
+                f"{dependency_step.output_directory}:{in_docker_dependency_output}"
+            ])
+
+        common.check_call_with_log([
+            "docker",
+            "run",
+            "-i",
+            "--name",
+            container_name,
+            *volumes_mapping,
+            "--platform",
+            base_image.architecture.as_docker_platform,
+            *env_variables_options,
+            "--workdir",
+            str(self._in_docker_source_root_path),
+            base_image.name,
+            *cmd_args
+        ])
 
     def _get_command_line_args(self) -> List[str]:
         """
@@ -500,6 +519,10 @@ class BuilderStep:
         return full_command_args
 
     @property
+    def _in_docker_dependency_outputs_path(self):
+        return pl.Path("/tmp/step/dependencies")
+
+    @property
     def _in_docker_source_root_path(self):
         return pl.Path(f"/tmp/agent_source")
 
@@ -522,7 +545,6 @@ class BuilderStep:
             env[name] = value
 
         env["SOURCE_ROOT"] = str(self._source_root)
-
 
         common.check_call_with_log(
             command_args,
@@ -549,100 +571,178 @@ class BuilderStep:
             dest_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source_path, dest_path)
 
-    def _run_in_docker(
-            self
+
+class EnvironmentBuilderStep(ArtifactBuilderStep):
+    def __init__(
+        self,
+        name: str,
+        script_path: pl.Path,
+        base_step: Union['BuilderStep', DockerImageSpec] = None,
+        dependency_steps: List['ArtifactBuilderStep'] = None,
+        additional_settings: Dict[str, str] = None,
+        cacheable: bool = False,
+        tracked_file_globs: List[pl.Path] = None,
+        global_steps_collection: List['BuilderStep'] = None
     ):
-        """
-        Run step in docker. It uses a special logic, which is implemented in 'agent_build/tools/tools.build_in_docker'
-        module,that allows to execute custom command inside docker by using 'docker build' command. It differs from
-        running just in the container because we can benefit from the docker caching mechanism.
-        """
 
-        container_name = "agent-build-builder-step"
+        # cache_step_additional_settings = additional_settings.copy()
+        # cache_step_additional_settings["ENVIRONMENT_STEP_PHASE"] = "cache"
+        #
+        # cache_step = ArtifactBuilderStep(
+        #     name=f"{name}_cache",
+        #     script_path=script_path,
+        #     base_step=base_step,
+        #     dependency_steps=dependency_steps,
+        #     additional_settings=cache_step_additional_settings,
+        #     cacheable=cacheable,
+        #     tracked_file_globs=tracked_file_globs,
+        #     global_steps_collection=global_steps_collection
+        # )
 
-        cmd_args = self._get_command_line_args()
+        # final_dependency_steps = [cache_step]
+        # if dependency_steps:
+        #     final_dependency_steps.extend(dependency_steps)
+
+        super(EnvironmentBuilderStep, self).__init__(
+            name=name,
+            script_path=script_path,
+            base_step=base_step,
+            dependency_steps=dependency_steps,
+            additional_settings=additional_settings,
+            cacheable=cacheable,
+            tracked_file_globs=tracked_file_globs,
+            global_steps_collection=global_steps_collection
+        )
+
+    def reuse_cache_if_exists(self) -> bool:
+        exists = super(EnvironmentBuilderStep, self).reuse_cache_if_exists()
+
+        if exists and self.runs_in_docker:
+            self.result_image.load_image()
+
+        return exists
+
+    def run(self, build_root: pl.Path):
+        self.set_build_root(build_root)
+
+        cache_exists = self.output_directory.is_dir()
+
+        if cache_exists and self.runs_in_docker:
+            self.result_image.load_image()
+            return
+
+        if self._temp_output_directory.is_dir():
+            shutil.rmtree(self._temp_output_directory)
+
+        if cache_exists:
+            shutil.copytree(self.output_directory, self._temp_output_directory)
+
+            run_previous_steps = False
+        else:
+            self._temp_output_directory.mkdir(parents=True)
+            run_previous_steps = True
+
+        self._run(run_previous_steps=run_previous_steps)
+
+        if not cache_exists:
+            self._temp_output_directory.rename(self.output_directory)
+        else:
+            shutil.rmtree(self._temp_output_directory)
+
+
+
+
+
+    def _run_in_docker(
+            self,
+            container_name: str
+    ):
+
+        super(EnvironmentBuilderStep, self)._run_in_docker(
+            container_name=container_name
+        )
 
         common.check_call_with_log([
-            "docker", "rm", "-f", container_name
+            "docker", "commit", container_name, self.result_image.name
         ])
 
-        in_docker_output_path = "/tmp/step/output"
+        image_file_path = self._temp_output_directory / f"{self.id}.tar"
 
-        env_variables_options = []
+        self.result_image.save_image(
+            output_path=image_file_path
+        )
 
-        # Set additional settings ass environment variables.
-        for name, value in self._additional_settings.items():
-            env_variables_options.append("-e")
-            env_variables_options.append(f"{name}={value}")
-
-        env_variables_options.extend([
-            "-e",
-            f"STEP_OUTPUT_PATH={in_docker_output_path}",
-            "-e",
-            f"SOURCE_ROOT={self._in_docker_source_root_path}",
-            "-e",
-            "AGENT_BUILD_IN_DOCKER=1"
-        ])
-
-        if self._base_step:
-            base_image = self._base_step.result_image
-        else:
-            base_image = self.base_docker_image
-
-        volumes_mapping = [
-            "-v",
-            f"{self._source_root}:{self._in_docker_source_root_path}",
-            "-v",
-            f"{self._temp_output_directory}:{in_docker_output_path}",
-        ]
-
-        for dependency_step in self._dependency_steps:
-            in_docker_dependency_output = self._in_docker_dependency_outputs_path / dependency_step.output_directory.name
-            volumes_mapping.extend([
-                "-v",
-                f"{dependency_step.output_directory}:{in_docker_dependency_output}"
-            ])
-
-        try:
-            common.check_call_with_log([
-                "docker",
-                "run",
-                "-i",
-                "--name",
-                container_name,
-                *volumes_mapping,
-                "--platform",
-                base_image.architecture.as_docker_platform,
-                *env_variables_options,
-                "--workdir",
-                str(self._in_docker_source_root_path),
-                base_image.name,
-                *cmd_args
-            ])
-
-            self._save_step_docker_container_as_image_if_needed(
-                container_name=container_name
+    @property
+    def result_image(self) -> Optional[DockerImageSpec]:
+        """
+        The name of the result docker image, just the same as cache key.
+        """
+        if self.runs_in_docker:
+            return DockerImageSpec(
+                name=self.id,
+                architecture=self.base_docker_image.architecture
             )
-        finally:
-            common.check_call_with_log([
-                "docker", "rm", "-f", container_name
-            ])
+        else:
+            return None
+
+    # @property
+    # def result_image_path(self):
+    #     return self.output_directory / f"{self.id}.tar"
+
+
+# class ArtifactBuilderStep(BuilderStep):
+#
+#     """
+#     Base abstraction that represents some action that has to be done before the Builder.
+#     """
+#
+#     def __init__(
+#         self,
+#         name: str,
+#         script_path: pl.Path,
+#         base_step: Union['BuilderStep', DockerImageSpec] = None,
+#         dependency_steps: List['BuilderStep'] = None,
+#         additional_settings: Dict[str, str] = None,
+#         cacheable: bool = False,
+#         tracked_file_globs: List[pl.Path] = None,
+#         global_steps_collection: List['BuilderStep'] = None
+#     ):
+#         """
+#         :param name: name of the step.
+#         :param script_path: Path to the script which has to be executed during the step.
+#         :param dependency_steps: List of steps which outputs are required by the current step, so those steps
+#             has to be run before.
+#         :param additional_settings: Dictionary with string keys and values for an additional setup of the step.
+#         :param cacheable: If True, Ci/CD will try to find its cache during the builder run.
+#
+#         """
+#
+#         super(ArtifactBuilderStep, self).__init__(
+#             name=name,
+#             script_path=script_path,
+#             base_step=base_step,
+#             dependency_steps=dependency_steps,
+#             additional_settings=additional_settings,
+#             cacheable=cacheable,
+#             tracked_file_globs=tracked_file_globs,
+#             global_steps_collection=global_steps_collection
+#         )
 
 
 class Builder:
 
-    CACHEABLE_STEPS: List['BuilderStep'] = []
+    CACHEABLE_STEPS: List['ArtifactBuilderStep'] = []
     NAME: str
 
     def __init__(
             self,
-            used_steps: List[BuilderStep] = None
+            used_steps: List[ArtifactBuilderStep] = None
     ):
         self._used_steps = used_steps or []
         self._build_root: Optional[pl.Path] = None
 
     @classmethod
-    def all_used_cacheable_steps(cls) -> List[BuilderStep]:
+    def all_used_cacheable_steps(cls) -> List[ArtifactBuilderStep]:
         result_steps = []
         for s in cls.CACHEABLE_STEPS:
             result_steps.extend(s.all_used_cacheable_steps)
@@ -653,16 +753,12 @@ class Builder:
     def all_used_cacheable_steps_ids(cls) -> List[str]:
         return [s.id for s in cls.all_used_cacheable_steps()]
 
-    @abc.abstractmethod
-    def _run(self):
-        pass
-
     def run(self, build_root: pl.Path):
 
         self._build_root = build_root
 
+        for cs in type(self).CACHEABLE_STEPS:
+            cs.run(build_root=build_root)
+
         for s in self._used_steps:
             s.run(build_root=build_root)
-
-        self._run()
-

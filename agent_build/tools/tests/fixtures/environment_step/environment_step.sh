@@ -21,32 +21,14 @@
 #   SOURCE_ROOT - path to the source root of the project.
 #   STEP_OUTPUT_PATH - path where the step has to save its results.
 
-# If step has another steps that it depends on, then it can access their output directories from command line arguments.
-# The order matches the order which is defined in the step class.
+cached_result_output_path="$STEP_OUTPUT_PATH/result.txt"
 
-set -e
-
-REQUIREMENTS_PATH="$SOURCE_ROOT/agent_build/requirement-files"
-
-which python3
-pip_cache_dir="$(python3 -m pip cache dir)"
-
-function install_dependencies() {
-  python3 -m pip install -r "${REQUIREMENTS_PATH}/testing-requirements.txt"
-  python3 -m pip install -r "${REQUIREMENTS_PATH}/compression-requirements.txt"
-}
-
-if [ ! -d "$STEP_OUTPUT_PATH/pip" ]; then
-  install_dependencies
-  cp -R "$pip_cache_dir" "$STEP_OUTPUT_PATH/pip"
-else
-  cp -R "$STEP_OUTPUT_PATH/pip" "$pip_cache_dir"
-  install_dependencies
-
+if [ ! -d "$cached_result_output_path" ]; then
+  echo "${INPUT}" > "$cached_result_output_path"
+  echo "shell" >> "$cached_result_output_path"
+  if [ -n "$AGENT_BUILD_IN_DOCKER" ]; then
+    echo "docker" >> "$cached_result_output_path"
+  fi
 fi
 
-
-
-
-
-
+cp "$cached_result_output_path" "$RESULT_FILE_PATH"

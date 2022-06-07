@@ -29,13 +29,13 @@ _SOURCE_ROOT = pl.Path(__file__).parent.parent.parent.parent
 sys.path.append(str(_SOURCE_ROOT))
 
 from agent_build.tools.builder import Builder
-from agent_build.agent_builders import IMAGE_BUILDS
+from agent_build.agent_builders import IMAGE_BUILDS, ALL_BUILDERS
 from tests.package_tests.all_package_tests import DOCKER_IMAGE_TESTS
 
 if __name__ == '__main__':
 
     all_runners: Dict[str, Type[Builder]] = {
-        **IMAGE_BUILDS,
+        **ALL_BUILDERS,
         **DOCKER_IMAGE_TESTS
     }
 

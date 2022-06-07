@@ -18,35 +18,23 @@
 #   to the `TRACKED_FILE_GLOBS` attribute of the step class.
 
 # Here are some environment variables, which are pre-defined for all steps:
-#   SOURCE_ROOT - path to the source root of the project.
-#   STEP_OUTPUT_PATH - path where the step has to save its results.
-
-# If step has another steps that it depends on, then it can access their output directories from command line arguments.
-# The order matches the order which is defined in the step class.
 
 set -e
 
-REQUIREMENTS_PATH="$SOURCE_ROOT/agent_build/requirement-files"
+DEP_STEP1_OUTPUT="$1"
+cached_result_path="$STEP_OUTPUT_PATH/result.txt"
 
-which python3
-pip_cache_dir="$(python3 -m pip cache dir)"
+cat "${BASE_RESULT_FILE_PATH}" >> "$cached_result_path"
+#echo "" >> "$STEP_OUTPUT_PATH/result.txt"
 
-function install_dependencies() {
-  python3 -m pip install -r "${REQUIREMENTS_PATH}/testing-requirements.txt"
-  python3 -m pip install -r "${REQUIREMENTS_PATH}/compression-requirements.txt"
-}
+cat "${DEP_STEP1_OUTPUT}/result.txt" >> "$cached_result_path"
+#echo "" >> "$STEP_OUTPUT_PATH/result.txt"
 
-if [ ! -d "$STEP_OUTPUT_PATH/pip" ]; then
-  install_dependencies
-  cp -R "$pip_cache_dir" "$STEP_OUTPUT_PATH/pip"
-else
-  cp -R "$STEP_OUTPUT_PATH/pip" "$pip_cache_dir"
-  install_dependencies
 
+
+echo "${INPUT}" >> "$cached_result_path"
+echo "shell" >> "$cached_result_path"
+
+if [ -f "/docker" ]; then
+  echo "docker" >> "$cached_result_path"
 fi
-
-
-
-
-
-

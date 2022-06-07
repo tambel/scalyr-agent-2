@@ -13,21 +13,25 @@ import enum
 import subprocess
 import json
 import logging
+import pathlib as pl
+
 from typing import List, Dict, Type, ClassVar
 
 import agent_build.tools.common
 
 logging.basicConfig(level=logging.DEBUG)
 
-from agent_build.tools import builder
 from agent_build.tools import common
 from agent_build.tools.builder import Builder
+from agent_build.tools.builder import EnvironmentBuilderStep, ArtifactBuilderStep
 from agent_build.tools.common import Architecture
 
 
 # Final collection of the docker image builders, where key - unique name of the build
 # and value - build class.
 IMAGE_BUILDS: Dict[str, Type['ImageBuilder']] = {}
+
+ALL_BUILDERS:  Dict[str, Type[Builder]] = {}
 
 # This is a global collection of all builder steps that are supposed to be cached by ci/cd.
 ALL_CACHEABLE_STEPS = []
@@ -68,7 +72,7 @@ _DOCKER_IMAGE_DISTRO_TO_IMAGE_NAME = {
 }
 
 
-class DockerContainerBaseBuildStep(builder.BuilderStep):
+class DockerContainerBaseBuildStep(ArtifactBuilderStep):
     """
 
     """
@@ -199,10 +203,12 @@ class ImageBuilder(Builder):
             _BUILDX_BUILDER_NAME
         ])
 
-    def _run(self):
+    def run(self, build_root: pl.Path):
         """
         Build final agent docker image by using base image which has to be built in the base image step.
         """
+
+        self._build_root = build_root
 
         self._prepare_docker_buildx_builder()
 
@@ -339,3 +345,24 @@ for distro_type in DockerBaseImageDistroType:
             RESULT_IMAGE_NAMES = _DOCKER_IMAGE_TYPES_TO_IMAGE_RESULT_NAMES[docker_image_type]
 
         IMAGE_BUILDS[build_name] = FinalImageBuilder
+        ALL_BUILDERS[build_name] = FinalImageBuilder
+
+
+# Step that installs all dependencies for testing
+deploy_test_environment_step = EnvironmentBuilderStep(
+    name="deploy_test_environment",
+    script_path=_AGENT_BUILD_PATH / "deploy_test_environment.sh",
+    cacheable=True,
+    tracked_file_globs=[
+        _AGENT_REQUIREMENTS_PATH / "*.txt"
+    ],
+    global_steps_collection=ALL_CACHEABLE_STEPS
+)
+
+
+class TestEnvironmentBuilder(Builder):
+    CACHEABLE_STEPS = [deploy_test_environment_step]
+    NAME = "test-environment-posix"
+
+
+ALL_BUILDERS[TestEnvironmentBuilder.NAME] = TestEnvironmentBuilder
