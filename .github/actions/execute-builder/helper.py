@@ -78,5 +78,5 @@ if __name__ == '__main__':
     if args.command == "execute":
         for step in runner.all_used_cacheable_steps():
             step.run(
-                build_root=pl.Path(args.build_root_dir)
+                build_root=pl.Path(args.build_root_dir).absolute()
             )
