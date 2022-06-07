@@ -360,8 +360,10 @@ deploy_test_environment_step = EnvironmentBuilderStep(
 )
 
 
+# Builder class which installs all requiremetns to CI/CD in order to perform tests.
 class TestEnvironmentBuilder(Builder):
     CACHEABLE_STEPS = [deploy_test_environment_step]
     NAME = "test-environment-posix"
+
 
 ALL_BUILDERS[TestEnvironmentBuilder.NAME] = TestEnvironmentBuilder

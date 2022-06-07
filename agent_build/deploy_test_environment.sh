@@ -42,6 +42,7 @@ if [ ! -d "$STEP_OUTPUT_PATH/pip" ]; then
   install_dependencies
   cp -R "$pip_cache_dir" "$STEP_OUTPUT_PATH/pip"
 else
+  mkdir -p "$(dirname "$pip_cache_dir")"
   cp -R "$STEP_OUTPUT_PATH/pip" "$pip_cache_dir"
   install_dependencies
 
