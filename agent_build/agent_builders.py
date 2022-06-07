@@ -354,7 +354,7 @@ deploy_test_environment_step = EnvironmentBuilderStep(
     script_path=_AGENT_BUILD_PATH / "deploy_test_environment.sh",
     cacheable=True,
     tracked_file_globs=[
-        _AGENT_REQUIREMENTS_PATH / "*.txt"
+        _AGENT_REQUIREMENTS_PATH / "testing-requirements.txt"
     ],
     global_steps_collection=ALL_CACHEABLE_STEPS
 )
