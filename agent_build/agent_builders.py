@@ -364,9 +364,4 @@ class TestEnvironmentBuilder(Builder):
     CACHEABLE_STEPS = [deploy_test_environment_step]
     NAME = "test-environment-posix"
 
-
-b = TestEnvironmentBuilder()
-
-b.run(build_root=pl.Path("/Users/arthur/work/agents/scalyr-agent-2/build_test"))
-
 ALL_BUILDERS[TestEnvironmentBuilder.NAME] = TestEnvironmentBuilder
