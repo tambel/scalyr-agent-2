@@ -27,6 +27,7 @@ _SOURCE_ROOT = pl.Path(__file__).parent.parent.parent.parent
 sys.path.append(str(_SOURCE_ROOT))
 
 from agent_build.agent_builders import ALL_BUILDERS, get_builders_all_cacheable_steps
+from tests.package_tests import all_package_tests
 
 if __name__ == '__main__':
 
