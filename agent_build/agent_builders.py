@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 from agent_build.tools import common
 from agent_build.tools.builder import Builder
-from agent_build.tools.builder import EnvironmentBuilderStep, ArtifactBuilderStep
+from agent_build.tools.builder import EnvironmentBuilderStep, ArtifactBuilderStep, BuilderStep
 from agent_build.tools.common import Architecture
 
 
@@ -35,7 +35,7 @@ ALL_BUILDERS:  Dict[str, Type['Builder']] = {}
 
 # Global collection of all cacheable builder steps. It is needed to be able to find and to execute particular step from
 # CI/CD
-ALL_CACHEABLE_STEPS: Dict[str, ArtifactBuilderStep] = {}
+ALL_CACHEABLE_STEPS: Dict[str, BuilderStep] = {}
 
 
 def get_builders_all_cacheable_steps(builder_cls: Type[Builder]):

@@ -127,7 +127,9 @@ if __name__ == "__main__":
             package_parser.add_argument(
                 "--testing",
                 action="store_true",
-                required=False
+                required=False,
+                help="Produce test version of the agent docker image, which includes additional features such "
+                     "coverage measuring tool"
             )
 
         else:
