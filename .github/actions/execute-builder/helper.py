@@ -47,7 +47,7 @@ if __name__ == '__main__':
     )
 
     execute_builder_parser = subparsers.add_parser(
-        "execute",
+        "execute-cacheable-steps",
         help="Runs all cacheable steps that are used by builder."
     )
 
