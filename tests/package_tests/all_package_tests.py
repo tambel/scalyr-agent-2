@@ -23,7 +23,7 @@ from typing import Dict, List, Type
 import agent_build.tools.common
 from tests.package_tests.internals import docker_test, k8s_test
 from agent_build.tools import common
-from agent_build.agent_builders import ImageBuilder, IMAGE_BUILDS, AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES, Builder
+from agent_build.agent_builders import ImageBuilder, AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES, Builder, ALL_BUILDERS
 from agent_build.tools.common import LocalRegistryContainer
 
 _PARENT_DIR = pl.Path(__file__).parent
@@ -230,15 +230,20 @@ class DockerImagePackageTest(Builder):
 
 
 DOCKER_IMAGE_TESTS: [str, Type[Builder]] = {}
-for build_name in IMAGE_BUILDS:
-    build_cls = IMAGE_BUILDS[build_name]
+for build_name in ALL_BUILDERS:
 
-    test_name = f"{build_name}-test"
+    builder_cls = ALL_BUILDERS[build_name]
 
-    class ImageTest(DockerImagePackageTest):
-        NAME = test_name
-        IMAGE_BUILD_CLS = build_cls
-        CACHEABLE_STEPS = [*build_cls.CACHEABLE_STEPS]
+    if issubclass(builder_cls, ImageBuilder):
+
+        test_name = f"{build_name}-test"
+
+        class ImageTest(DockerImagePackageTest):
+            NAME = test_name
+            IMAGE_BUILD_CLS = builder_cls
+            CACHEABLE_STEPS = [*builder_cls.CACHEABLE_STEPS]
+
+        DOCKER_IMAGE_TESTS[test_name] = ImageTest
 
 
-    DOCKER_IMAGE_TESTS[test_name] = ImageTest
+ALL_BUILDERS.update(DOCKER_IMAGE_TESTS)

@@ -29,7 +29,7 @@ from agent_build.tools.common import Architecture
 
 # Final collection of the docker image builders, where key - unique name of the build
 # and value - build class.
-IMAGE_BUILDS: Dict[str, Type['ImageBuilder']] = {}
+#IMAGE_BUILDS: Dict[str, Type['ImageBuilder']] = {}
 
 ALL_BUILDERS:  Dict[str, Type['Builder']] = {}
 
@@ -367,7 +367,7 @@ for distro_type in DockerBaseImageDistroType:
             DOCKER_IMAGE_TYPE = docker_image_type
             RESULT_IMAGE_NAMES = _DOCKER_IMAGE_TYPES_TO_IMAGE_RESULT_NAMES[docker_image_type]
 
-        IMAGE_BUILDS[build_name] = FinalImageBuilder
+        #IMAGE_BUILDS[build_name] = FinalImageBuilder
         ALL_BUILDERS[build_name] = FinalImageBuilder
 
 

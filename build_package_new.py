@@ -32,7 +32,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_build.tools import common
-from agent_build.agent_builders import IMAGE_BUILDS
+from agent_build.agent_builders import ALL_BUILDERS, ImageBuilder
 from agent_build.tools.common import AGENT_BUILD_OUTPUT
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
@@ -47,9 +47,7 @@ if __name__ == "__main__":
     # Add subparsers for all packages except docker builders.
     subparsers = parser.add_subparsers(dest="package_name", required=True)
 
-    all_package_builders = IMAGE_BUILDS.copy()
-
-    for builder_name, builder in all_package_builders.items():
+    for builder_name, builder_cls in ALL_BUILDERS.items():
         package_parser = subparsers.add_parser(name=builder_name)
 
         # Define argument for all packages
@@ -98,7 +96,7 @@ if __name__ == "__main__":
         )
 
         # If that's a docker image builder, then add additional commands.
-        if builder_name in IMAGE_BUILDS:
+        if issubclass(builder_cls, ImageBuilder):
             package_parser.add_argument(
                 "--registry",
                 help="Registry (or repository) name where to push the result image.",
@@ -156,19 +154,19 @@ if __name__ == "__main__":
 
     # Find the builder class.
     builder_name = args.package_name
+    builder_cls = ALL_BUILDERS[builder_name]
     if args.build_root_dir:
         build_root_path = pl.Path(args.build_root_dir)
     else:
         build_root_path = AGENT_BUILD_OUTPUT
 
     # If that's a docker image builder handle their arguments too.
-    if builder_name in IMAGE_BUILDS:
-        build_cls = IMAGE_BUILDS[builder_name]
+    if issubclass(builder_cls, ImageBuilder):
         if args.platforms:
             platforms_to_build = args.platforms.split(",")
         else:
             platforms_to_build = []
-        build = build_cls(
+        build = builder_cls(
             registry=args.registry,
             user=args.user,
             tags=args.tag or [],
