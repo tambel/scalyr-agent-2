@@ -23,8 +23,7 @@ from typing import Dict, List, Type
 import agent_build.tools.common
 from tests.package_tests.internals import docker_test, k8s_test
 from agent_build.tools import common
-from agent_build.tools.builder import Builder
-from agent_build.agent_builders import ImageBuilder, IMAGE_BUILDS, AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES
+from agent_build.agent_builders import ImageBuilder, IMAGE_BUILDS, AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES, Builder
 from agent_build.tools.common import LocalRegistryContainer
 
 _PARENT_DIR = pl.Path(__file__).parent
@@ -67,16 +66,17 @@ class DockerImagePackageTest(Builder):
 
         super().__init__()
 
-    def _run(
-        self
+    def run(
+        self,
+        build_root: pl.Path
     ):
         """
         Run test for the agent docker image.
         First of all it builds an image, then pushes it to the local registry and does full test.
-
-        :param scalyr_api_key:  Scalyr API key.
-        :param name_suffix: Additional suffix to the agent instance name.
         """
+        super(DockerImagePackageTest, self).run(
+            build_root=build_root
+        )
 
         # Run container with docker registry.
         logging.info("Run new local docker registry in container.")
@@ -99,25 +99,10 @@ class DockerImagePackageTest(Builder):
 
             for full_image_name in all_image_names_to_test:
 
-                full_testing_image_name = f"{full_image_name}"
-                subprocess.check_call([
-                    "docker",
-                    "buildx",
-                    "build",
-                    "-t",
-                    full_testing_image_name,
-                    "-f",
-                    str(agent_build.tools.common.SOURCE_ROOT / "agent_build" / "docker" / "Dockerfile.final-testing"),
-                    "--build-arg",
-                    f"BASE_IMAGE={full_testing_image_name}",
-                    "--push",
-                    str(agent_build.tools.common.SOURCE_ROOT)
-                ])
-
                 # Remove the local image first, if exists.
                 logging.info("    Remove existing image.")
                 subprocess.check_call(
-                    ["docker", "image", "rm", "-f", full_testing_image_name]
+                    ["docker", "image", "rm", "-f", full_image_name]
                 )
 
                 logging.info("    Log in to the local registry.")
@@ -137,7 +122,7 @@ class DockerImagePackageTest(Builder):
                 # Pull the image
                 logging.info("    Pull the image.")
                 try:
-                    subprocess.check_call(["docker", "pull", full_testing_image_name])
+                    subprocess.check_call(["docker", "pull", full_image_name])
                 except subprocess.CalledProcessError:
                     logging.exception(
                         "    Can not pull the result image from local registry."
@@ -161,7 +146,7 @@ class DockerImagePackageTest(Builder):
                             "run",
                             "-i",
                             "--rm",
-                            str(full_testing_image_name),
+                            str(full_image_name),
                             "/bin/cat",
                             "/etc/os-release",
                         ]
@@ -177,7 +162,7 @@ class DockerImagePackageTest(Builder):
                 # Remove the image once more.
                 logging.info("    Remove existing image.")
                 subprocess.check_call(
-                    ["docker", "image", "rm", "-f", full_testing_image_name]
+                    ["docker", "image", "rm", "-f", full_image_name]
                 )
 
             # Use any of variants of the image name to test it.

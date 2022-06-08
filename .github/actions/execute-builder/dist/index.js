@@ -58063,7 +58063,7 @@ async function executeBuilder() {
     // has to reuse them.
     child_process.execFileSync(
         "python3",
-        [executeStepsRunnerScriptPath, builderName, "execute", "--build-root-dir", buildRootDir],
+        [executeStepsRunnerScriptPath, builderName, "execute-cacheable-steps", "--build-root-dir", buildRootDir],
         {stdio: 'inherit'}
     );
 

@@ -174,11 +174,11 @@ if __name__ == "__main__":
             platforms_to_build=platforms_to_build,
             testing=args.testing
         )
-        if args.show_all_used_steps_ids:
-            print(json.dumps(build.all_used_cacheable_steps_ids))
-            exit(0)
-        else:
-            build.run(
-                build_root=build_root_path
-            )
+        #if args.show_all_used_steps_ids:
+        #     print(json.dumps(build.all_used_cacheable_steps_ids))
+        #     exit(0)
+        # else:
+        build.run(
+            build_root=build_root_path
+        )
         exit(0)
