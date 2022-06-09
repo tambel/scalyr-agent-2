@@ -54,8 +54,8 @@ COVERAGE_VERSION_FOR_TESTING_IMAGE = "4.5.4"
 # CPU architectures or platforms that has to be supported by the Agent docker images,
 AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES = [
     Architecture.X86_64,
-    # Architecture.ARM64,
-    # Architecture.ARMV7,
+    Architecture.ARM64,
+    Architecture.ARMV7,
 ]
 
 
