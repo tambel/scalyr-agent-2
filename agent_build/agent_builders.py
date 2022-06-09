@@ -342,6 +342,7 @@ class ImageBuilder(Builder):
                     "--build-arg",
                     f"BASE_IMAGE={tag_options[1]}",
                     *platforms_options,
+                    "--push" if self.push else "--load",
                     str(agent_build.tools.common.SOURCE_ROOT)
                 ])
 
