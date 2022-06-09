@@ -332,19 +332,28 @@ class ImageBuilder(Builder):
             ])
             # If this is a testing build then build another - test image upon production image using special Dockerfile.
             if self._testing:
-                common.check_call_with_log([
-                    "docker",
-                    "buildx",
+                test_build_command_options = ["docker"]
+                if self.push:
+                    test_build_command_options.append("buildx")
+
+                test_build_command_options.extend([
                     "build",
                     *test_tag_options,
                     "-f",
                     str(agent_build.tools.common.SOURCE_ROOT / "agent_build/docker/Dockerfile.final-testing"),
                     "--build-arg",
-                    f"BASE_IMAGE={tag_options[1]}",
-                    *platforms_options,
-                    "--push" if self.push else "--load",
-                    str(agent_build.tools.common.SOURCE_ROOT)
+                    f"BASE_IMAGE={tag_options[1]}"
                 ])
+
+                if self.push:
+                    test_build_command_options.extend(platforms_options)
+                    test_build_command_options.append("--push")
+
+                test_build_command_options.append(str(agent_build.tools.common.SOURCE_ROOT))
+
+                common.check_call_with_log(
+                    test_build_command_options
+                )
 
 
 # Dynamically enumerate all possible base images and image types to produce
