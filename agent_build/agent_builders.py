@@ -83,6 +83,37 @@ _DOCKER_IMAGE_DISTRO_TO_IMAGE_NAME = {
 }
 
 
+def _create_docker_buildx_builder():
+    """
+    Prepare buildx builder with a special network configuration which is required to build the image.
+    """
+    # First check if buider with that name already exists.
+    builders_list_output = subprocess.check_output([
+        "docker",
+        "buildx",
+        "ls"
+    ]).decode().strip()
+
+    # Builder is not found, create new one.
+    if _BUILDX_BUILDER_NAME not in builders_list_output:
+        subprocess.check_call([
+            "docker",
+            "buildx",
+            "create",
+            "--driver-opt=network=host",
+            "--name",
+            _BUILDX_BUILDER_NAME
+        ])
+
+    # Use needed builder.
+    subprocess.check_call([
+        "docker",
+        "buildx",
+        "use",
+        _BUILDX_BUILDER_NAME
+    ])
+
+
 class DockerContainerBaseBuildStep(ArtifactBuilderStep):
     """
 
@@ -123,6 +154,10 @@ class DockerContainerBaseBuildStep(ArtifactBuilderStep):
             ],
         )
 
+    def run(self, build_root: pl.Path):
+        _create_docker_buildx_builder()
+        super(DockerContainerBaseBuildStep, self).run(build_root=build_root)
+
 
 class DockerImageType(enum.Enum):
     """
@@ -132,16 +167,6 @@ class DockerImageType(enum.Enum):
     DOCKER_SYSLOG = "docker-syslog"
     DOCKER_API = "docker-api"
     K8S = "k8s"
-
-
-class BuilderMeta(type):
-    def __new__(metacls, *args, **kwargs):
-        cls = super().__new__(metacls, *args, **kwargs)
-        for step in cls.CACHEABLE_STEPS:
-            if step.id not in ALL_CACHEABLE_STEPS:
-                ALL_CACHEABLE_STEPS[step.id] = step
-
-        return cls
 
 
 # Set of docker platforms that are supported by prod image.
@@ -222,46 +247,16 @@ class ImageBuilder(Builder):
 
         super(ImageBuilder, self).__init__()
 
-    def _prepare_docker_buildx_builder(self):
-        """
-        Prepare buildx builder with a special network configuration which is required to build the image.
-        """
-        # First check if buider with that name already exists.
-        builders_list_output = subprocess.check_output([
-            "docker",
-            "buildx",
-            "ls"
-        ]).decode().strip()
-
-        # Builder is not found, create new one.
-        if _BUILDX_BUILDER_NAME not in builders_list_output:
-            subprocess.check_call([
-                "docker",
-                "buildx",
-                "create",
-                "--driver-opt=network=host",
-                "--name",
-                _BUILDX_BUILDER_NAME
-            ])
-
-        # Use needed builder.
-        subprocess.check_call([
-            "docker",
-            "buildx",
-            "use",
-            _BUILDX_BUILDER_NAME
-        ])
-
     def run(self, build_root: pl.Path):
         """
         Build final agent docker image by using base image which has to be built in the base image step.
         """
 
-        super(ImageBuilder, self).run(
-            build_root=build_root
-        )
+        self._set_build_root(build_root)
 
-        self._prepare_docker_buildx_builder()
+        _create_docker_buildx_builder()
+
+        self._run_used_step(build_root)
 
         base_image_registry_path = self._base_image_step.output_directory / "output_registry"
         base_image_registry_port = 5003

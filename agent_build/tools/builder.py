@@ -660,16 +660,22 @@ class EnvironmentBuilderStep(BuilderStep):
 
 
 class Builder:
-
-    CACHEABLE_STEPS: List['ArtifactBuilderStep'] = []
+    CACHEABLE_STEPS: List['BuilderStep'] = []
     NAME: str
 
     def __init__(self):
         self._build_root: Optional[pl.Path] = None
 
-    def run(self, build_root: pl.Path):
-
+    def _set_build_root(self, build_root: pl.Path):
         self._build_root = build_root
 
+        for s in type(self).CACHEABLE_STEPS:
+            s.set_build_root(build_root)
+
+    def _run_used_step(self, build_root: pl.Path):
         for cs in type(self).CACHEABLE_STEPS:
             cs.run(build_root=build_root)
+
+    def run(self, build_root: pl.Path):
+        self._set_build_root(build_root)
+        self._run_used_step(build_root)

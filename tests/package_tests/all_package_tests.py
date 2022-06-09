@@ -74,9 +74,10 @@ class DockerImagePackageTest(Builder):
         Run test for the agent docker image.
         First of all it builds an image, then pushes it to the local registry and does full test.
         """
-        super(DockerImagePackageTest, self).run(
-            build_root=build_root
-        )
+
+        self._set_build_root(build_root)
+
+        self._run_used_step(build_root)
 
         # Run container with docker registry.
         logging.info("Run new local docker registry in container.")
