@@ -144,7 +144,6 @@ class DockerContainerBaseBuildStep(ArtifactBuilderStep):
                 "PYTHON_BASE_IMAGE_NAME": _DOCKER_IMAGE_DISTRO_TO_IMAGE_NAME[base_image_distro_type],
                 "COVERAGE_VERSION": COVERAGE_VERSION_FOR_TESTING_IMAGE
             },
-            base_step=PrepareDockerBuildxBuilderStep(),
             tracked_file_globs=[
                 _AGENT_BUILD_DOCKER_PATH / "Dockerfile.base",
                 _AGENT_BUILD_DOCKER_PATH / "install-base-image-build-dependencies.sh",
@@ -260,10 +259,6 @@ class ImageBuilder(Builder):
         """
 
         self._set_build_root(build_root)
-
-        prepare_buildx_builder_step = PrepareDockerBuildxBuilderStep()
-
-        prepare_buildx_builder_step.run(build_root=build_root)
 
         self._base_image_step.run(build_root=build_root)
 
