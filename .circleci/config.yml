@@ -1262,6 +1262,8 @@ jobs:
       image: ubuntu-2004:202111-02
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.11
       - restore_cache:
           key: deps2-{{ .Branch }}-docker-json-{{ checksum "dev-requirements.txt" }}-v2
       - run:
@@ -1313,6 +1315,8 @@ jobs:
       image: ubuntu-2004:202111-02
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.11
       - restore_cache:
           key: deps2-{{ .Branch }}-docker-api-{{ checksum "dev-requirements.txt" }}-v1
       - run:
@@ -1364,6 +1368,8 @@ jobs:
       image: ubuntu-2004:202111-02
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.11
       - restore_cache:
           key: deps2-{{ .Branch }}-docker-json-{{ checksum "dev-requirements.txt" }}-v2
       - run:
@@ -1423,6 +1429,8 @@ jobs:
       CHANGE_MINIKUBE_NONE_USER: true
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.11
       - restore_cache:
           key: deps2-{{ .Branch }}-smoke-k8s-{{ checksum "dev-requirements.txt" }}
       - run:
