@@ -23,7 +23,7 @@ from typing import Dict, List, Type
 import agent_build.tools.common
 from tests.package_tests.internals import docker_test, k8s_test
 from agent_build.tools import common
-from agent_build.agent_builders import ImageBuilder, AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES, Builder, ALL_BUILDERS
+from agent_build.agent_builders import ImageBuilder, AGENT_DOCKER_IMAGE_SUPPORTED_ARCHITECTURES, Builder, ALL_BUILDERS, IMAGE_BUILDERS
 from agent_build.tools.common import LocalRegistryContainer
 
 _PARENT_DIR = pl.Path(__file__).parent
@@ -233,9 +233,8 @@ class DockerImagePackageTest(Builder):
 DOCKER_IMAGE_TESTS: [str, Type[Builder]] = {}
 for build_name in ALL_BUILDERS:
 
-    builder_cls = ALL_BUILDERS[build_name]
-
-    if issubclass(builder_cls, ImageBuilder):
+    if build_name in IMAGE_BUILDERS:
+        builder_cls = IMAGE_BUILDERS[build_name]
 
         test_name = f"{build_name}-test"
 

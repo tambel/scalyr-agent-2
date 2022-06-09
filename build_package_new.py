@@ -32,7 +32,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_build.tools import common
-from agent_build.agent_builders import ALL_BUILDERS, ImageBuilder, IMAGE_BUILDERS
+from agent_build.agent_builders import IMAGE_BUILDERS
 from agent_build.tools.common import AGENT_BUILD_OUTPUT
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"

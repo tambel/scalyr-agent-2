@@ -80,14 +80,6 @@ _DOCKER_IMAGE_DISTRO_TO_IMAGE_NAME = {
     DockerBaseImageDistroType.ALPINE: f"python:{BUILDERS_PYTHON_VERSION}-alpine"
 }
 
-
-class PrepareDockerBuildxBuilderStep(EnvironmentBuilderStep):
-    def __init__(self):
-        super(PrepareDockerBuildxBuilderStep, self).__init__(
-            name="create_agent_docker_buildx_builder",
-            script_path=_AGENT_BUILD_DOCKER_PATH / "create_docker_buildx_builder.py",
-        )
-
 def create_docker_buildx_builder():
     """
     Prepare buildx builder with a special network configuration which is required to build the image.
@@ -167,6 +159,7 @@ class DockerContainerBaseBuildStep(ArtifactBuilderStep):
         )
 
     def run(self, build_root: pl.Path):
+        # Also prepare docker buildx builder.
         create_docker_buildx_builder()
         super(DockerContainerBaseBuildStep, self).run(
             build_root=build_root
