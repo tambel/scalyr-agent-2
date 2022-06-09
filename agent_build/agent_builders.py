@@ -15,7 +15,7 @@ import json
 import logging
 import pathlib as pl
 
-from typing import List, Dict, Type, ClassVar
+from typing import List, Dict, Type, ClassVar, Union
 
 import agent_build.tools.common
 
@@ -29,9 +29,7 @@ from agent_build.tools.common import Architecture
 
 # Final collection of the docker image builders, where key - unique name of the build
 # and value - build class.
-#IMAGE_BUILDS: Dict[str, Type['ImageBuilder']] = {}
-
-ALL_BUILDERS:  Dict[str, Type['Builder']] = {}
+IMAGE_BUILDERS: Dict[str, Type['ImageBuilder']] = {}
 
 # Global collection of all cacheable builder steps. It is needed to be able to find and to execute particular step from
 # CI/CD
@@ -367,8 +365,7 @@ for distro_type in DockerBaseImageDistroType:
             DOCKER_IMAGE_TYPE = docker_image_type
             RESULT_IMAGE_NAMES = _DOCKER_IMAGE_TYPES_TO_IMAGE_RESULT_NAMES[docker_image_type]
 
-        #IMAGE_BUILDS[build_name] = FinalImageBuilder
-        ALL_BUILDERS[build_name] = FinalImageBuilder
+        IMAGE_BUILDERS[build_name] = FinalImageBuilder
 
 
 # Step that installs all dependencies for testing
@@ -388,4 +385,6 @@ class TestEnvironmentBuilder(Builder):
     NAME = "test-environment"
 
 
+ALL_BUILDERS:  Dict[str, Union[Type['Builder'], Type['ImageBuilder']]] = {}
+ALL_BUILDERS.update(IMAGE_BUILDERS)
 ALL_BUILDERS[TestEnvironmentBuilder.NAME] = TestEnvironmentBuilder

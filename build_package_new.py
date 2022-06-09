@@ -32,7 +32,7 @@ __SOURCE_ROOT__ = __PARENT_DIR__
 sys.path.append(str(__SOURCE_ROOT__))
 
 from agent_build.tools import common
-from agent_build.agent_builders import ALL_BUILDERS, ImageBuilder
+from agent_build.agent_builders import ALL_BUILDERS, ImageBuilder, IMAGE_BUILDERS
 from agent_build.tools.common import AGENT_BUILD_OUTPUT
 
 _AGENT_BUILD_PATH = __SOURCE_ROOT__ / "agent_build"
@@ -47,7 +47,11 @@ if __name__ == "__main__":
     # Add subparsers for all packages except docker builders.
     subparsers = parser.add_subparsers(dest="package_name", required=True)
 
-    for builder_name, builder_cls in ALL_BUILDERS.items():
+    all_builders = {
+        **IMAGE_BUILDERS
+    }
+
+    for builder_name, builder_cls in all_builders.items():
         package_parser = subparsers.add_parser(name=builder_name)
 
         # Define argument for all packages
@@ -84,19 +88,13 @@ if __name__ == "__main__":
         )
 
         package_parser.add_argument(
-            "--show-all-used-steps-ids",
-            dest="show_all_used_steps_ids",
-            action="store_true"
-        )
-
-        package_parser.add_argument(
             "--build-root-dir",
             dest="build_root_dir",
             required=False
         )
 
         # If that's a docker image builder, then add additional commands.
-        if issubclass(builder_cls, ImageBuilder):
+        if builder_name in IMAGE_BUILDERS:
             package_parser.add_argument(
                 "--registry",
                 help="Registry (or repository) name where to push the result image.",
@@ -154,14 +152,15 @@ if __name__ == "__main__":
 
     # Find the builder class.
     builder_name = args.package_name
-    builder_cls = ALL_BUILDERS[builder_name]
     if args.build_root_dir:
         build_root_path = pl.Path(args.build_root_dir)
     else:
         build_root_path = AGENT_BUILD_OUTPUT
 
     # If that's a docker image builder handle their arguments too.
-    if issubclass(builder_cls, ImageBuilder):
+    if builder_name in IMAGE_BUILDERS:
+        builder_cls = IMAGE_BUILDERS[builder_name]
+
         if args.platforms:
             platforms_to_build = args.platforms.split(",")
         else:
@@ -174,10 +173,6 @@ if __name__ == "__main__":
             platforms_to_build=platforms_to_build,
             testing=args.testing
         )
-        #if args.show_all_used_steps_ids:
-        #     print(json.dumps(build.all_used_cacheable_steps_ids))
-        #     exit(0)
-        # else:
         build.run(
             build_root=build_root_path
         )

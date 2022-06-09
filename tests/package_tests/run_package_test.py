@@ -128,10 +128,6 @@ if __name__ == "__main__":
                 ),
             )
 
-            # if args.show_all_used_steps_ids:
-            #     print(json.dumps(package_test.all_used_cacheable_steps_ids))
-            #     exit(0)
-
             package_test.run(
                 build_root=build_root_path
             )
