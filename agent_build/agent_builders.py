@@ -63,9 +63,7 @@ _AGENT_BUILD_PATH = agent_build.tools.common.SOURCE_ROOT / "agent_build"
 _AGENT_REQUIREMENTS_PATH = _AGENT_BUILD_PATH / "requirement-files"
 _AGENT_BUILD_DOCKER_PATH = agent_build.tools.common.SOURCE_ROOT / "agent_build" / "docker"
 
-_BASE_IMAGE_NAME_PREFIX = "agent_base_image"
-
-_BUILDX_BUILDER_NAME = "agent_image_buildx_builder"
+#_BASE_IMAGE_NAME_PREFIX = "agent_base_image"
 
 
 class DockerBaseImageDistroType(enum.Enum):
@@ -83,10 +81,20 @@ _DOCKER_IMAGE_DISTRO_TO_IMAGE_NAME = {
 }
 
 
-def _create_docker_buildx_builder():
+class PrepareDockerBuildxBuilderStep(EnvironmentBuilderStep):
+    def __init__(self):
+        super(PrepareDockerBuildxBuilderStep, self).__init__(
+            name="create_agent_docker_buildx_builder",
+            script_path=_AGENT_BUILD_DOCKER_PATH / "create_docker_buildx_builder.py",
+        )
+
+def create_docker_buildx_builder():
     """
     Prepare buildx builder with a special network configuration which is required to build the image.
     """
+
+    buildx_build_name = "agent_image_buildx_builder"
+
     # First check if buider with that name already exists.
     builders_list_output = subprocess.check_output([
         "docker",
@@ -95,14 +103,14 @@ def _create_docker_buildx_builder():
     ]).decode().strip()
 
     # Builder is not found, create new one.
-    if _BUILDX_BUILDER_NAME not in builders_list_output:
+    if buildx_build_name not in builders_list_output:
         subprocess.check_call([
             "docker",
             "buildx",
             "create",
             "--driver-opt=network=host",
             "--name",
-            _BUILDX_BUILDER_NAME
+            buildx_build_name
         ])
 
     # Use needed builder.
@@ -110,14 +118,16 @@ def _create_docker_buildx_builder():
         "docker",
         "buildx",
         "use",
-        _BUILDX_BUILDER_NAME
+        buildx_build_name
     ])
+
 
 
 class DockerContainerBaseBuildStep(ArtifactBuilderStep):
     """
 
     """
+
     def __init__(
             self,
             platforms_to_build: List[str],
@@ -131,16 +141,18 @@ class DockerContainerBaseBuildStep(ArtifactBuilderStep):
 
         self.base_image_distro_type = base_image_distro_type
         self.platforms_to_build = platforms_to_build
+        self.base_image_result_name = f"agent_base_image:{base_image_distro_type.value}"
 
         super(DockerContainerBaseBuildStep, self).__init__(
             name="agent_docker_base_image_build",
             script_path=_AGENT_BUILD_DOCKER_PATH / "build_agent_base_docker_images.py",
             additional_settings={
                 "PLATFORMS_TO_BUILD": json.dumps(platforms_to_build),
-                "RESULT_IMAGE_NAME": f"{_BASE_IMAGE_NAME_PREFIX}:{base_image_distro_type.value}",
+                "RESULT_IMAGE_NAME": self.base_image_result_name,
                 "PYTHON_BASE_IMAGE_NAME": _DOCKER_IMAGE_DISTRO_TO_IMAGE_NAME[base_image_distro_type],
                 "COVERAGE_VERSION": COVERAGE_VERSION_FOR_TESTING_IMAGE
             },
+            base_step=PrepareDockerBuildxBuilderStep(),
             tracked_file_globs=[
                 _AGENT_BUILD_DOCKER_PATH / "Dockerfile.base",
                 _AGENT_BUILD_DOCKER_PATH / "install-base-image-build-dependencies.sh",
@@ -155,8 +167,10 @@ class DockerContainerBaseBuildStep(ArtifactBuilderStep):
         )
 
     def run(self, build_root: pl.Path):
-        _create_docker_buildx_builder()
-        super(DockerContainerBaseBuildStep, self).run(build_root=build_root)
+        create_docker_buildx_builder()
+        super(DockerContainerBaseBuildStep, self).run(
+            build_root=build_root
+        )
 
 
 class DockerImageType(enum.Enum):
@@ -254,13 +268,15 @@ class ImageBuilder(Builder):
 
         self._set_build_root(build_root)
 
-        _create_docker_buildx_builder()
+        prepare_buildx_builder_step = PrepareDockerBuildxBuilderStep()
 
-        self._run_used_step(build_root)
+        prepare_buildx_builder_step.run(build_root=build_root)
+
+        self._base_image_step.run(build_root=build_root)
 
         base_image_registry_path = self._base_image_step.output_directory / "output_registry"
         base_image_registry_port = 5003
-        base_image_name = f"agent_base_image:{self._base_image_step.base_image_distro_type.name.lower()}"
+        base_image_name = self._base_image_step.base_image_result_name
         base_image_full_name = f"localhost:{base_image_registry_port}/{base_image_name}"
 
         if self._testing:
@@ -292,10 +308,7 @@ class ImageBuilder(Builder):
 
         platforms_options = []
         for p in self.platforms_to_build:
-            platforms_options.extend([
-                "--platform",
-                p
-            ])
+            platforms_options.extend(["--platform", p])
 
         command_options = [
             "docker",

@@ -379,7 +379,6 @@ class BuilderStep:
         """
 
         if self._source_root.is_dir():
-            common.check_call_with_log(f"ls -al {self._source_root}/..", shell=True)
             shutil.rmtree(self._source_root)
 
         self._source_root.mkdir(parents=True)
@@ -511,43 +510,48 @@ class BuilderStep:
             build_root=build_root.absolute()
         )
 
+        # Run all dependency steps first.
+        for step in self._dependency_steps:
+            step.run(build_root=self._build_root)
+
+        # Then also run the base step.
+        if self._base_step:
+            self._base_step.run(build_root=self._build_root)
+
+    def post_run(self):
+        pass
+
     def _run(
-            self,
-            run_previous_steps: bool
+            self
     ):
         """
         Run the script in a isolated source directory incide docker or locally.
-        :param run_previous_steps: If True, then all nested steps has to be executed before the current step.
         """
-        if run_previous_steps:
-            # Run all dependency steps first.
-            for step in self._dependency_steps:
-                step.run(build_root=self._build_root)
 
-            # Then also run the base step.
-            if self._base_step:
-                self._base_step.run(build_root=self._build_root)
+        if not self.output_directory.is_dir():
 
-        self._prepare_working_source_root()
+            self._prepare_working_source_root()
 
-        try:
-            if self.runs_in_docker:
-                container_name = "agent-build-builder-step"
-                self._run_in_docker(container_name)
+            try:
+                if self.runs_in_docker:
+                    container_name = "agent-build-builder-step"
+                    self._run_in_docker(container_name)
 
-                common.check_call_with_log([
-                    "docker", "rm", "-f", container_name
-                ])
-            else:
-                self._run_locally()
-        except Exception:
-            globs = [str(g) for g in self._tracked_file_globs]
-            logging.error(
-                f"'{type(self).__name__}' has failed. "
-                "HINT: Make sure that you have specified all files. "
-                f"For now, tracked files are: {globs}"
-            )
-            raise
+                    common.check_call_with_log([
+                        "docker", "rm", "-f", container_name
+                    ])
+                else:
+                    self._run_locally()
+            except Exception:
+                globs = [str(g) for g in self._tracked_file_globs]
+                logging.error(
+                    f"'{type(self).__name__}' has failed. "
+                    "HINT: Make sure that you have specified all files. "
+                    f"For now, tracked files are: {globs}"
+                )
+                raise
+
+        self.post_run()
 
 
 class ArtifactBuilderStep(BuilderStep):
@@ -566,25 +570,21 @@ class ArtifactBuilderStep(BuilderStep):
             build_root=build_root
         )
 
-        # If output directory already exists, then we skip the step's run.
-        if self.output_directory.is_dir():
-            logging.info(
-                f"The cache of the builder step {self.id} is found, reuse it and skip it."
-            )
-            return
+        cache_exists = self.output_directory.is_dir()
 
-        # Create a temporary directory for the output of the current step.
-        if self._script_output_directory.is_dir():
-            shutil.rmtree(self._script_output_directory)
+        if not cache_exists:
+            # Create a temporary directory for the output of the current step.
+            if self._script_output_directory.is_dir():
+                shutil.rmtree(self._script_output_directory)
 
-        self._script_output_directory.mkdir(parents=True)
+            self._script_output_directory.mkdir(parents=True)
 
-        self._run(
-            run_previous_steps=True
-        )
+        self._run()
 
-        # Rename temp output directory to a final.
-        self._script_output_directory.rename(self.output_directory)
+        if not cache_exists:
+
+            # Rename temp output directory to a final.
+            self._script_output_directory.rename(self.output_directory)
 
 
 class EnvironmentBuilderStep(BuilderStep):
@@ -605,26 +605,17 @@ class EnvironmentBuilderStep(BuilderStep):
             self.result_image.load_image()
             return
 
-        # Step does not run in docker
-
         if self._script_output_directory.is_dir():
             shutil.rmtree(self._script_output_directory)
 
-        # If output directory with cached results exists, then we copy it to a script output path
         if cache_exists:
-            shutil.copytree(self.output_directory, self._script_output_directory)
-
-            run_previous_steps = False
+            self.output_directory.rename(self._script_output_directory)
         else:
             self._script_output_directory.mkdir(parents=True)
-            run_previous_steps = True
 
-        self._run(run_previous_steps=run_previous_steps)
+        self._run()
 
-        if not cache_exists:
-            self._script_output_directory.rename(self.output_directory)
-        else:
-            shutil.rmtree(self._script_output_directory)
+        self._script_output_directory.rename(self.output_directory)
 
     def _run_in_docker(
             self,
