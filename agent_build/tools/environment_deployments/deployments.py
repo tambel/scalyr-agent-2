@@ -699,6 +699,14 @@ class BuildAlpineDockerBaseImageStep(BuildDockerBaseImageStep):
     BASE_DOCKER_IMAGE_TAG_SUFFIX = "alpine"
 
 
+class BuildWindowsDockerBaseImageStep(BuildDockerBaseImageStep):
+    """
+    Subclass that builds agent's base docker image based on alpine.
+    """
+
+    BASE_DOCKER_IMAGE_TAG_SUFFIX = "windows"
+
+
 # Create common test environment that will be used by GitHub Actions CI
 COMMON_TEST_ENVIRONMENT = Deployment(
     # Name of the deployment.

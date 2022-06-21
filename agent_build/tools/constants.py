@@ -75,8 +75,8 @@ class PackageType(enum.Enum):
 # CPU architectures or platforms that has to be supported by the Agent docker images,
 AGENT_DOCKER_IMAGE_SUPPORTED_PLATFORMS = [
     DockerPlatform.AMD64,
-    DockerPlatform.ARM64,
-    DockerPlatform.ARMV7,
+    # DockerPlatform.ARM64,
+    # DockerPlatform.ARMV7,
 ]
 
 AGENT_DOCKER_IMAGE_SUPPORTED_PLATFORMS_STRING = []

@@ -37,6 +37,7 @@ from agent_build.tools import constants
 from agent_build.tools.environment_deployments import deployments
 from agent_build.tools import build_in_docker
 from agent_build.tools import common
+from agent_build.prepare_agent_filesystem import build_agent_base_files
 
 
 __PARENT_DIR__ = pl.Path(__file__).absolute().parent
@@ -543,6 +544,14 @@ class PackageBuilder(abc.ABC):
         self._package_root_path.mkdir()
 
         # Build files in the agent's install root.
+
+        # build_agent_base_files(
+        #     copy_agent_source=not self.USE_FROZEN_BINARIES,
+        #     output_path=self._package_root_path,
+        #     install_type=type(self).INSTALL_TYPE,
+        #     config_path=
+        # )
+
         self._build_agent_install_root()
 
     def _build_agent_install_root(self):
@@ -750,16 +759,22 @@ class ContainerPackageBuilder(LinuxFhsBasedPackageBuilder):
         return self._name
 
     def _build_package_files(self):
-        super(ContainerPackageBuilder, self)._build_package_files()
+        #super(ContainerPackageBuilder, self)._build_package_files()
+        from agent_build.prepare_agent_filesystem import build_linux_lfs_agent_files
+        build_linux_lfs_agent_files(
+            copy_agent_source=True,
+            output_path=self._package_root_path,
+            config_path=self.config_path
+        )
 
         # Need to create some docker specific directories.
         pl.Path(self._package_root_path / "var/log/scalyr-agent-2/containers").mkdir()
 
-        # Copy config
-        self._add_config(
-            config_source_path=self.config_path,
-            output_path=self._package_root_path / "etc/scalyr-agent-2",
-        )
+        # # Copy config
+        # self._add_config(
+        #     config_source_path=self.config_path,
+        #     output_path=self._package_root_path / "etc/scalyr-agent-2",
+        # )
 
     def _build(self):
         self._build_package_files()
@@ -1084,8 +1099,28 @@ class DockerApiPackageBuilder(ContainerPackageBuilder):
     RESULT_IMAGE_NAMES = ["scalyr-agent-docker-api"]
 
 
+class WindowsContainerPackageBuilder(ContainerPackageBuilder):
+    PACKAGE_TYPE = constants.PackageType.DOCKER_JSON
+    RESULT_IMAGE_NAMES = ["scalyr-agent-docker-json"]
+
+    def _build_package_files(self):
+        build_agent_base_files(
+            copy_agent_source=True,
+            output_path=self._package_root_path,
+            install_type="package",
+            config_path=self.config_path
+        )
+
+
 _CONFIGS_PATH = __SOURCE_ROOT__ / "docker"
 _AGENT_BUILD_DOCKER_PATH = constants.SOURCE_ROOT / "agent_build" / "docker"
+
+DOCKER_JSON_CONTAINER_BUILDER_WINDOWS = WindowsContainerPackageBuilder(
+    name="docker-json-windows",
+    config_path=_CONFIGS_PATH / "docker-json-config",
+    base_image_deployment_step_cls=deployments.BuildDebianDockerBaseImageStep,
+)
+
 
 # Create builders for each scalyr agent docker image. Those builders will be executed in the Dockerfile to
 # create the filesystem for the image.
