@@ -19,6 +19,8 @@ from __future__ import absolute_import
 
 __author__ = "imron@scalyr.com"
 
+import platform
+
 import six
 
 
@@ -73,6 +75,7 @@ from scalyr_agent.monitor_utils.k8s import (
     DockerMetricFetcher,
     QualifiedName,
 )
+from scalyr_agent.monitor_utils.docker import validate_docker_socket
 import scalyr_agent.monitor_utils.k8s as k8s_utils
 from scalyr_agent.third_party.requests.exceptions import ConnectionError
 
@@ -122,6 +125,11 @@ define_config_option(
     env_aware=True,
 )
 
+if platform.system() == "Windows":
+    default_api_socket = "\\.\pipe\docker_engine"
+else:
+    default_api_socket = "/var/scalyr/docker.sock"
+
 define_config_option(
     __monitor__,
     "api_socket",
@@ -131,7 +139,7 @@ define_config_option(
     "Note:  You need to map the host's /run/docker.sock to the same value as specified here, using the -v parameter, e.g."
     "\tdocker run -v /run/docker.sock:/var/scalyr/docker.sock ...",
     convert_to=six.text_type,
-    default="/var/scalyr/docker.sock",
+    default=default_api_socket,
 )
 
 define_config_option(
@@ -2549,6 +2557,7 @@ class ContainerChecker(object):
             else:
                 self.__parse_format = "raw"
 
+        validate_docker_socket(socket_file)
         self.__socket_file = socket_file
         self.__docker_api_version = docker_api_version
         self.__client = None
@@ -2605,20 +2614,6 @@ class ContainerChecker(object):
         self.raw_logs = []
 
         self.__stopped = False
-
-    def _validate_socket_file(self):
-        """Gets the Docker API socket file and validates that it is a UNIX socket"""
-        # make sure the API socket exists and is a valid socket
-        api_socket = self.__socket_file
-        try:
-            st = os.stat(api_socket)
-            if not stat.S_ISSOCK(st.st_mode):
-                raise Exception()
-        except Exception:
-            raise DockerSocketException(
-                "The file '%s' specified by the 'api_socket' configuration option does not exist or is not a socket.\n\tPlease make sure you have mapped the docker socket from the host to this container using the -v parameter.\n\tNote: Due to problems Docker has mapping symbolic links, you should specify the final file and not a path that contains a symbolic link, e.g. map /run/docker.sock rather than /var/run/docker.sock as on many unices /var/run is a symbolic link to the /run directory."
-                % api_socket
-            )
 
     def _is_running_in_docker(self):
         """
@@ -2752,7 +2747,6 @@ class ContainerChecker(object):
                 global_log.info(
                     "kubernetes_monitor is using docker for listing containers"
                 )
-                self._validate_socket_file()
                 self.__client = DockerClient(
                     base_url=scalyr_util.get_full_unix_socket_path_if_supported(
                         self.__socket_file
@@ -3693,6 +3687,7 @@ cluster.
 
         self.__ignore_pod_sandboxes = self._config.get("k8s_ignore_pod_sandboxes")
         self.__socket_file = self._config.get("api_socket")
+        validate_docker_socket(self.__socket_file)
         self.__docker_api_version = self._config.get("docker_api_version")
         self.__k8s_api_url = self._global_config.k8s_api_url
         self.__docker_max_parallel_stats = self._config.get("docker_max_parallel_stats")

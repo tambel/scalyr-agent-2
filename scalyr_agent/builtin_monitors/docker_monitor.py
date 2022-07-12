@@ -58,6 +58,7 @@ from scalyr_agent.scalyr_monitor import BadMonitorConfiguration
 from scalyr_agent.date_parsing_utils import rfc3339_to_datetime
 
 from scalyr_agent.util import StoppableThread
+from scalyr_agent.monitor_utils.docker import validate_docker_socket
 
 
 global_log = scalyr_logging.getLogger(__name__)
@@ -106,6 +107,11 @@ define_config_option(
     env_aware=True,
 )
 
+if platform.system() == "Windows":
+    default_api_socket = "\\.\pipe\docker_engine"
+else:
+    default_api_socket = "/var/scalyr/docker.sock"
+
 define_config_option(
     __monitor__,
     "api_socket",
@@ -115,7 +121,7 @@ define_config_option(
     "Note:  You need to map the host's /run/docker.sock to the same value as specified here, using the -v parameter, e.g."
     "\tdocker run -v /run/docker.sock:/var/scalyr/docker.sock ...",
     convert_to=six.text_type,
-    default="/var/scalyr/docker.sock",
+    default=default_api_socket,
 )
 
 define_config_option(
@@ -2210,22 +2216,6 @@ TODO:  Back fill the instructions here.
     """
     # fmt: on
 
-    def __get_socket_file(self):
-        """Gets the Docker API socket file and validates that it is a UNIX socket"""
-        # make sure the API socket exists and is a valid socket
-        api_socket = self._config.get("api_socket")
-        try:
-            st = os.stat(api_socket)
-            if not stat.S_ISSOCK(st.st_mode):
-                raise Exception()
-        except Exception:
-            raise Exception(
-                "The file '%s' specified by the 'api_socket' configuration option does not exist or is not a socket.\n\tPlease make sure you have mapped the docker socket from the host to this container using the -v parameter.\n\tNote: Due to problems Docker has mapping symbolic links, you should specify the final file and not a path that contains a symbolic link, e.g. map /run/docker.sock rather than /var/run/docker.sock as on many unices /var/run is a symbolic link to the /run directory."
-                % api_socket
-            )
-
-            return api_socket
-
     def _initialize(self):
         data_path = ""
         log_path = ""
@@ -2243,7 +2233,9 @@ TODO:  Back fill the instructions here.
             else:
                 self._logger.info("no server attributes in global config")
 
-        self.__socket_file = self.__get_socket_file()
+        # make sure the API socket exists and is a valid socket
+        self.__socket_file = self._config.get("api_socket")
+        validate_docker_socket(self.__socket_file)
         self.__docker_api_version = self._config.get("docker_api_version")
 
         self.__client = DockerClient(
