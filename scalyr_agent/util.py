@@ -20,6 +20,7 @@ from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
 
+import platform
 import re
 import socket
 
@@ -2504,6 +2505,16 @@ def match_glob(pathname):
         # use the third party glob library to handle a recursive glob.
         result = glob2.glob(pathname)
     return result
+
+
+def get_full_unix_socket_path_if_supported(path):
+    """
+    Return full UNIX socket path if current OS support UNIX sockets.
+    """
+    if platform.system() == "Windows":
+        return path
+    else:
+        return "unix:/%s" % path
 
 
 class ProcessWatchDog(threading.Thread):

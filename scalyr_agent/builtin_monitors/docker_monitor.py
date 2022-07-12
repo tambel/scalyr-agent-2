@@ -20,6 +20,8 @@ from __future__ import absolute_import
 __author__ = "imron@scalyr.com"
 
 import datetime
+import platform
+
 import docker
 import fnmatch
 import traceback
@@ -949,7 +951,9 @@ class ContainerChecker(StoppableThread):
         self.__socket_file = socket_file
         self.__docker_api_version = docker_api_version
         self.__client = DockerClient(
-            base_url=("unix:/%s" % self.__socket_file),
+            base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                self.__socket_file
+            ),
             version=self.__docker_api_version,
         )
 
@@ -1596,7 +1600,9 @@ class DockerLogger(object):
                 "Starting to retrieve logs for cid=%s" % six.text_type(self.cid),
             )
             self.__client = DockerClient(
-                base_url=("unix:/%s" % self.__socket_file),
+                base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                    self.__socket_file
+                ),
                 version=self.__docker_api_version,
             )
 
@@ -1757,7 +1763,10 @@ class ContainerIdResolver:
         self.__cache_expiration_secs = cache_expiration_secs
         self.__cache_clean_secs = cache_clean_secs
         self.__docker_client = docker.APIClient(  # pylint: disable=no-member
-            base_url=("unix:/%s" % docker_api_socket), version=docker_api_version
+            base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                docker_api_socket
+            ),
+            version=docker_api_version
         )
         # The set of container ids that have not been used since the last cleaning.  These are eviction candidates.
         self.__untouched_ids = dict()
@@ -2215,7 +2224,7 @@ TODO:  Back fill the instructions here.
                 % api_socket
             )
 
-        return api_socket
+            return api_socket
 
     def _initialize(self):
         data_path = ""
@@ -2238,7 +2247,9 @@ TODO:  Back fill the instructions here.
         self.__docker_api_version = self._config.get("docker_api_version")
 
         self.__client = DockerClient(
-            base_url=("unix:/%s" % self.__socket_file),
+            base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                self.__socket_file
+            ),
             version=self.__docker_api_version,
         )
 

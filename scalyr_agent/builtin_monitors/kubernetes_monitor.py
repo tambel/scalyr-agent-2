@@ -2754,7 +2754,9 @@ class ContainerChecker(object):
                 )
                 self._validate_socket_file()
                 self.__client = DockerClient(
-                    base_url=("unix:/%s" % self.__socket_file),
+                    base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                        self.__socket_file
+                    ),
                     version=self.__docker_api_version,
                 )
                 self._container_enumerator = DockerEnumerator(
@@ -4455,7 +4457,9 @@ cluster.
 
                 if runtime == "docker":
                     self.__client = DockerClient(
-                        base_url=("unix:/%s" % self.__socket_file),
+                        base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                            self.__socket_file
+                        ),
                         version=self.__docker_api_version,
                     )
                     self.__metric_fetcher = DockerMetricFetcher(
