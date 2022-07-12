@@ -27,7 +27,7 @@ def validate_docker_socket(socket_path):
     """
     Verify that the API unix socket exists and valid
     """
-    if platform.system() != "Windows":
+    if platform.system() == "Windows":
         # If we do not expect unix socket, then just return it as it is.
         # TODO maybe add existence check for Windows named pipes, but
         # it may require messing with direct WinAPI calls.
