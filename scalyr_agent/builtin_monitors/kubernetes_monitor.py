@@ -4451,6 +4451,11 @@ cluster.
                     runtime = k8s_cache.get_container_runtime()
 
                 if runtime == "docker":
+                    self._logger.critical(self.__socket_file)
+                    full = get_full_api_socket_path_if_supported(
+                            self.__socket_file
+                        )
+                    self._logger.critical("FULL: ".format(full))
                     self.__client = DockerClient(
                         base_url=get_full_api_socket_path_if_supported(
                             self.__socket_file
