@@ -53,6 +53,6 @@ def get_full_api_socket_path_if_supported(path):
     """
     if platform.system() == "Windows":
 
-        return "npipe:%s" % path
+        return "npipe://%s" % path
     else:
         return "unix:/%s" % path
