@@ -4477,6 +4477,7 @@ cluster.
                     verify_https=self._global_config.k8s_verify_kubelet_queries,
                 )
         except Exception as e:
+            raise
             self._logger.error(
                 "Error creating KubeletApi object. Kubernetes metrics will not be logged: %s"
                 % six.text_type(e)
