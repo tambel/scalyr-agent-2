@@ -58,7 +58,7 @@ from scalyr_agent.scalyr_monitor import BadMonitorConfiguration
 from scalyr_agent.date_parsing_utils import rfc3339_to_datetime
 
 from scalyr_agent.util import StoppableThread
-from scalyr_agent.monitor_utils.docker import validate_docker_socket
+from scalyr_agent.monitor_utils.docker import validate_docker_socket, get_full_api_socket_path_if_supported
 
 
 global_log = scalyr_logging.getLogger(__name__)
@@ -957,7 +957,7 @@ class ContainerChecker(StoppableThread):
         self.__socket_file = socket_file
         self.__docker_api_version = docker_api_version
         self.__client = DockerClient(
-            base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+            base_url=get_full_api_socket_path_if_supported(
                 self.__socket_file
             ),
             version=self.__docker_api_version,
@@ -1606,7 +1606,7 @@ class DockerLogger(object):
                 "Starting to retrieve logs for cid=%s" % six.text_type(self.cid),
             )
             self.__client = DockerClient(
-                base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                base_url=get_full_api_socket_path_if_supported(
                     self.__socket_file
                 ),
                 version=self.__docker_api_version,
@@ -1769,7 +1769,7 @@ class ContainerIdResolver:
         self.__cache_expiration_secs = cache_expiration_secs
         self.__cache_clean_secs = cache_clean_secs
         self.__docker_client = docker.APIClient(  # pylint: disable=no-member
-            base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+            base_url=get_full_api_socket_path_if_supported(
                 docker_api_socket
             ),
             version=docker_api_version
@@ -2239,7 +2239,7 @@ TODO:  Back fill the instructions here.
         self.__docker_api_version = self._config.get("docker_api_version")
 
         self.__client = DockerClient(
-            base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+            base_url=get_full_api_socket_path_if_supported(
                 self.__socket_file
             ),
             version=self.__docker_api_version,

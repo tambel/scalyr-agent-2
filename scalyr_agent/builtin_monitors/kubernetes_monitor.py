@@ -75,7 +75,7 @@ from scalyr_agent.monitor_utils.k8s import (
     DockerMetricFetcher,
     QualifiedName,
 )
-from scalyr_agent.monitor_utils.docker import validate_docker_socket
+from scalyr_agent.monitor_utils.docker import validate_docker_socket, get_full_api_socket_path_if_supported
 import scalyr_agent.monitor_utils.k8s as k8s_utils
 from scalyr_agent.third_party.requests.exceptions import ConnectionError
 
@@ -2748,7 +2748,7 @@ class ContainerChecker(object):
                     "kubernetes_monitor is using docker for listing containers"
                 )
                 self.__client = DockerClient(
-                    base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                    base_url=get_full_api_socket_path_if_supported(
                         self.__socket_file
                     ),
                     version=self.__docker_api_version,
@@ -4452,7 +4452,7 @@ cluster.
 
                 if runtime == "docker":
                     self.__client = DockerClient(
-                        base_url=scalyr_util.get_full_unix_socket_path_if_supported(
+                        base_url=get_full_api_socket_path_if_supported(
                             self.__socket_file
                         ),
                         version=self.__docker_api_version,

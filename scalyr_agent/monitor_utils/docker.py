@@ -45,3 +45,14 @@ def validate_docker_socket(socket_path):
             "rather than /var/run/docker.sock as on many unices /var/run is a symbolic link to "
             "the /run directory." % socket_path
         )
+
+
+def get_full_api_socket_path_if_supported(path):
+    """
+    Return full docker UNIX socket or Windows naped pipe path for the docker API socker.
+    """
+    if platform.system() == "Windows":
+
+        return "npipe://%s" % path
+    else:
+        return "unix:/%s" % path

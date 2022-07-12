@@ -2507,16 +2507,6 @@ def match_glob(pathname):
     return result
 
 
-def get_full_unix_socket_path_if_supported(path):
-    """
-    Return full UNIX socket path if current OS support UNIX sockets.
-    """
-    if platform.system() == "Windows":
-        return path
-    else:
-        return "unix:/%s" % path
-
-
 class ProcessWatchDog(threading.Thread):
     """
     A watchdog that creates a new thread and pools a particular process.
