@@ -108,7 +108,7 @@ define_config_option(
 )
 
 if platform.system() == "Windows":
-    default_api_socket = "//./pipe/docker_engine"
+    default_api_socket = "\\.\\pipe\\docker_engine"
 else:
     default_api_socket = "/var/scalyr/docker.sock"
 
