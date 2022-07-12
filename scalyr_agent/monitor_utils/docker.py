@@ -49,10 +49,10 @@ def validate_docker_socket(socket_path):
 
 def get_full_api_socket_path_if_supported(path):
     """
-    Return full docker UNIX socket or Windows naped pipe path for the docker API socker.
+    Return full docker UNIX socket or Windows named pipe path for the docker API socker.
     """
     if platform.system() == "Windows":
 
-        return "npipe://%s" % path
+        return "npipe:\\\\%s" % path
     else:
         return "unix:/%s" % path
