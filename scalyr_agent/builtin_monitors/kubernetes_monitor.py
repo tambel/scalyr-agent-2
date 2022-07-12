@@ -4452,12 +4452,13 @@ cluster.
                     runtime = k8s_cache.get_container_runtime()
 
                 if runtime == "docker":
-                    subprocess.check_output([
+                    o = subprocess.check_output([
                         "powershell",
                         "-Command",
                         "get-childitem \\\\.\\pipe\\",
-                    ])
+                    ]).decode()
                     self._logger.critical(self.__socket_file)
+                    self._logger.critical("PIPES {}".format(o))
                     full = get_full_api_socket_path_if_supported(
                             self.__socket_file
                         )
