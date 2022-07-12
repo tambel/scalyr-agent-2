@@ -20,6 +20,7 @@ from __future__ import absolute_import
 __author__ = "imron@scalyr.com"
 
 import platform
+import subprocess
 
 import six
 
@@ -4451,6 +4452,11 @@ cluster.
                     runtime = k8s_cache.get_container_runtime()
 
                 if runtime == "docker":
+                    subprocess.check_output([
+                        "powershell",
+                        "-Command",
+                        "get-childitem \\\\.\\pipe\\",
+                    ])
                     self._logger.critical(self.__socket_file)
                     full = get_full_api_socket_path_if_supported(
                             self.__socket_file
