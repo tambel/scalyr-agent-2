@@ -2758,6 +2758,7 @@ class ContainerChecker(object):
                 )
 
                 self.__client.version()
+                global_log.critical("CHECKEEER22222")
                 self._container_enumerator = DockerEnumerator(
                     self.__client,
                     self.__agent_pod,
