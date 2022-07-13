@@ -3266,7 +3266,10 @@ class ContainerChecker(object):
                 scalyr_logging.DEBUG_LEVEL_1, "no k8s info for container %s" % short_cid
             )
 
-        self._logger.critical("PATH: {}".format(info.get("log_path")))
+        p = info.get("log_path")
+        self._logger.critical("PATH: {}".format(p))
+        import pathlib
+        self._logger.critical("CONTENT {}".format(pathlib.Path(p).read_text()))
         result = self.__k8s_config_builder.get_log_config(
             info=info,
             k8s_info=k8s_info,
