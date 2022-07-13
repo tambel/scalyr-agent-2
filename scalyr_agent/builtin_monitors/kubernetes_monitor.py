@@ -2749,12 +2749,15 @@ class ContainerChecker(object):
                 global_log.info(
                     "kubernetes_monitor is using docker for listing containers"
                 )
+                global_log.critical("CHECKEEER")
                 self.__client = DockerClient(
                     base_url=get_full_api_socket_path_if_supported(
                         self.__socket_file
                     ),
                     version=self.__docker_api_version,
                 )
+
+                self.__client.version()
                 self._container_enumerator = DockerEnumerator(
                     self.__client,
                     self.__agent_pod,
