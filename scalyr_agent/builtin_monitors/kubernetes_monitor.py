@@ -4464,6 +4464,7 @@ cluster.
                             self.__socket_file
                         )
                     self._logger.critical("FULL: ".format(full))
+
                     self.__client = DockerClient(
                         base_url=get_full_api_socket_path_if_supported(
                             self.__socket_file
@@ -4474,7 +4475,6 @@ cluster.
                         self.__client, self.__docker_max_parallel_stats
                     )
 
-                logging.critical("GGGGGGGGGGG")
                 k8s = KubernetesApi.create_instance(
                     self._global_config, k8s_api_url=self.__k8s_api_url
                 )
@@ -4491,7 +4491,7 @@ cluster.
                     verify_https=self._global_config.k8s_verify_kubelet_queries,
                 )
         except Exception as e:
-            self._logger.error(
+            self._logger.exception(
                 "Error creating KubeletApi object. Kubernetes metrics will not be logged: %s"
                 % six.text_type(e)
             )
