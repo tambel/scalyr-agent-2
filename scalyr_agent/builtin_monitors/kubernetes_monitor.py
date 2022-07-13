@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 __author__ = "imron@scalyr.com"
 
+import logging
 import platform
 import subprocess
 
@@ -4473,6 +4474,7 @@ cluster.
                         self.__client, self.__docker_max_parallel_stats
                     )
 
+                logging.critical("GGGGGGGGGGG")
                 k8s = KubernetesApi.create_instance(
                     self._global_config, k8s_api_url=self.__k8s_api_url
                 )
