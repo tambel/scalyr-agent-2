@@ -2749,16 +2749,12 @@ class ContainerChecker(object):
                 global_log.info(
                     "kubernetes_monitor is using docker for listing containers"
                 )
-                global_log.critical("CHECKEEER")
                 self.__client = DockerClient(
                     base_url=get_full_api_socket_path_if_supported(
                         self.__socket_file
                     ),
                     version=self.__docker_api_version,
                 )
-
-                vv = self.__client.version()
-                global_log.critical("CHECKEEER22222={}".format(vv))
                 self._container_enumerator = DockerEnumerator(
                     self.__client,
                     self.__agent_pod,
@@ -3270,6 +3266,7 @@ class ContainerChecker(object):
                 scalyr_logging.DEBUG_LEVEL_1, "no k8s info for container %s" % short_cid
             )
 
+        self._logger.critical("PATH: {}".format(info.get("log_path")))
         result = self.__k8s_config_builder.get_log_config(
             info=info,
             k8s_info=k8s_info,
@@ -4457,26 +4454,12 @@ cluster.
                     runtime = k8s_cache.get_container_runtime()
 
                 if runtime == "docker":
-                    o = subprocess.check_output([
-                        "powershell",
-                        "-Command",
-                        "get-childitem \\\\.\\pipe\\",
-                    ]).decode()
-                    self._logger.critical(self.__socket_file)
-                    self._logger.critical("PIPES {}".format(o))
-                    full = get_full_api_socket_path_if_supported(
-                            self.__socket_file
-                        )
-                    self._logger.critical("FULL: ".format(full))
-
                     self.__client = DockerClient(
                         base_url=get_full_api_socket_path_if_supported(
                             self.__socket_file
                         ),
                         version=self.__docker_api_version,
                     )
-
-                    self.__client.version()
                     self.__metric_fetcher = DockerMetricFetcher(
                         self.__client, self.__docker_max_parallel_stats
                     )
