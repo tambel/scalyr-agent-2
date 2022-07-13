@@ -4471,6 +4471,8 @@ cluster.
                         ),
                         version=self.__docker_api_version,
                     )
+
+                    self.__client.version()
                     self.__metric_fetcher = DockerMetricFetcher(
                         self.__client, self.__docker_max_parallel_stats
                     )
