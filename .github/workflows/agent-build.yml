@@ -22,7 +22,8 @@ permissions:
 # For example: https://github.com/scalyr/scalyr-agent-2/pull/804/commits/0eccf278623552b51d9289d75a47794e88f02862
 jobs:
   test-images:
-    runs-on: windows-2019
+    #runs-on: windows-2019
+    runs-on: ubuntu-20.04
 
     strategy:
       matrix:
@@ -43,14 +44,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 #
-#      - name: Build and push
-#        uses: docker/build-push-action@v3
-#        with:
-#          dockerfile: Dockerfile
-#          tags: tambel/win-test:latest
-#          context: .
-#          cache-from: type=gha, scope=${{ github.workflow }}
-#          cache-to: type=gha, scope=${{ github.workflow }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          dockerfile: Dockerfile
+          tags: tambel/ubu:latest
+          context: .
+          cache-from: type=gha, scope=${{ github.workflow }}
+          cache-to: type=gha, scope=${{ github.workflow }}
 
 #      - name: Install python
 #        uses: actions/setup-python@v4
