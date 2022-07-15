@@ -61,28 +61,29 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /var/lib/docker/containers
+        #- mountPath: /var/lib/docker/containers
+        - mountPath: /ProgramData/docker/containers
           name: varlibdockercontainers
           readOnly: true
-        - mountPath: /var/log/pods
-          name: varlogpods
-          readOnly: true
-        - mountPath: /var/log/containers
-          name: varlogcontainers
-          readOnly: true
+        # - mountPath: /var/log/pods
+        #   name: varlogpods
+        #   readOnly: true
+        # - mountPath: /var/log/containers
+        #   name: varlogcontainers
+        #   readOnly: true
         - mountPath: \\.\pipe\docker_engine
           name: dockersock
         - mountPath: /var/lib/scalyr-agent-2
           name: checkpoints
-        livenessProbe:
-          exec:
-            command:
-            - scalyr-agent-2
-            - status
-            - -H
-          initialDelaySeconds: 60
-          periodSeconds: 60
-          timeoutSeconds: 10
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #     - scalyr-agent-2
+        #     - status
+        #     - -H
+        #   initialDelaySeconds: 60
+        #   periodSeconds: 60
+        #   timeoutSeconds: 10
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -93,19 +94,21 @@ spec:
       volumes:
       - hostPath:
           path: /ProgramData/docker/containers
+          #path: /var/lib/docker/containers
           type: ""
         name: varlibdockercontainers
-      - hostPath:
-          path: /var/log/pods
-          type: ""
-        name: varlogpods
-      - hostPath:
-          path: /var/log/containers
-          type: ""
-        name: varlogcontainers
+      # - hostPath:
+      #     path: /var/log/pods
+      #     type: ""
+      #   name: varlogpods
+      # - hostPath:
+      #     path: /var/log/containers
+      #     type: ""
+      #   name: varlogcontainers
       - hostPath:
           path: \\.\pipe\docker_engine
-          type: null
+          #path: /var/run/docker.sock
+          #type: null
         name: dockersock
       - hostPath:
           path: /tmp/scalyr-agent-2
