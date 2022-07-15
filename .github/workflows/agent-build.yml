@@ -50,7 +50,6 @@ jobs:
           dockerfile: Dockerfile
           tags: tambel/ubu:latest
           context: .
-          push: false
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
 
