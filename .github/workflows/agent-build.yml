@@ -51,7 +51,7 @@ jobs:
           #tags: tambel/ubu:latest
           tags: tambel/ubu:latest
           context: .
-          load: true
+          push: true
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
 
