@@ -48,7 +48,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           dockerfile: Dockerfile
-          image_tag: tambel/ubu:latest
+          #tags: tambel/ubu:latest
+          tags: ubu:latest
+          push: false
           context: .
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
