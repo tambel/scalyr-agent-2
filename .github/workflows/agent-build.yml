@@ -40,24 +40,26 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 #
-#      - name: Build and push
-#        uses: docker/build-push-action@v3
-#        with:
-#          dockerfile: Dockerfile
-#          tags: tambel/win-test:latest
-#          context: .
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          dockerfile: Dockerfile
+          tags: tambel/win-test:latest
+          context: .
+          cache-from: type=gha, scope=${{ github.workflow }}
+          cache-to: type=gha, scope=${{ github.workflow }}
 
-#      - name: Install python
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: ${{ matrix.python-version }}
+      - name: Install python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
 
 
-      - name: Run image build
-        run: |
-          docker build -t tambel/test -f Dockerfile .
-          docker push tambel/test
+#      - name: Run image build
+#        run: |
+#          docker build -t tambel/test -f Dockerfile .
+#          docker push tambel/test
 
 
 
