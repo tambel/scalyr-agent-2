@@ -63,10 +63,10 @@ jobs:
 
 
 
-      - name: Run image build
-        run: |
-          docker buildx build -t tambel/test -f Dockerfile .
-          docker push tambel/test
+#      - name: Run image build
+#        run: |
+#          docker buildx build -t tambel/test -f Dockerfile .
+#          docker push tambel/test
 
 
 
